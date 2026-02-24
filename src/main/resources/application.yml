@@ -1,0 +1,21 @@
+spring:
+  profiles:
+    active: dev # Par défaut
+  application:
+    name: data-mastery-hub
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+
+# Configuration de l'audit (champs createdBy, etc.)
+jpa:
+  hibernate:
+    ddl-auto: validate
+server:
+  port: 8085
+dotenv:
+  filenames: .env

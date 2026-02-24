@@ -1,0 +1,55 @@
+services:
+  # Base de données
+  db:
+    image: postgres:15-alpine
+    container_name: modeltech_db
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Gestion BDD
+  adminer:
+    image: adminer
+    container_name: modeltech_adminer
+    ports:
+      - "8081:8080"
+
+  # Stockage d'objets (MinIO)
+  minio:
+    image: minio/minio
+    container_name: modeltech_minio
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console UI
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  # Logs
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: modeltech_logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8888:8080"
+
+volumes:
+  postgres_data:
+  minio_data:

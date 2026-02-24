@@ -1,0 +1,30 @@
+# Java & Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Secrets (IMPORTANT)
+.env
+.env
+.env.staging
+.env.prod
+
+# IDE - IntelliJ
+.idea/
+*.iml
+*.iws
+
+# IDE - VS Code
+.vscode/
+.factorypath
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+
+.claude/*
