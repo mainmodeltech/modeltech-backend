@@ -6,7 +6,8 @@ endif
 # Variables
 ENV_FILE=.env
 DOCKER_COMPOSE=docker-compose --env-file $(ENV_FILE)
-MVNW=./mvnw
+JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
+MVNW=JAVA_HOME=$(JAVA_HOME) ./mvnw
 
 .PHONY: help up down start stop run build test clean
 
