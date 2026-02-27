@@ -1,0 +1,12 @@
+# Profil PROD
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.modeltech: INFO
+    org.springframework.security: WARN

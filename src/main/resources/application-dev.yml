@@ -1,23 +1,12 @@
+# Profil DEV
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/mtech_db
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
-
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-
+  config:
+    activate:
+      on-profile: dev
   jpa:
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
 
-# MinIO Custom Config
-minio:
-  endpoint: http://localhost:9000
-  access-key: ${MINIO_ROOT_USER}
-  secret-key: ${MINIO_ROOT_PASSWORD}
-  bucket: ${MINIO_BUCKET}
+logging:
+  level:
+    com.modeltech: DEBUG
+    org.springframework.security: DEBUG

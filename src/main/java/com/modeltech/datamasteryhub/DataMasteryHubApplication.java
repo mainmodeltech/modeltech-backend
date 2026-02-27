@@ -28,6 +28,8 @@ public class DataMasteryHubApplication {
         }
 
         String serverPort = env.getProperty("server.port", "8080");
+        String swaggerPath = env.getProperty("springdoc.swagger-ui.path", "/swagger-ui/index.html");
+
         String contextPath = env.getProperty("server.servlet.context-path", "/");
         String hostAddress = "localhost";
 
@@ -45,6 +47,7 @@ public class DataMasteryHubApplication {
             \t🌍 Accès local: \t\t{}://localhost:{}{}
             \t🌐 Accès externe: \t\t{}://{}:{}{}
             \t📊 Monitoring: \t\t{}://{}:{}{}actuactor/health
+            \t📊 Swagger: \t\t{}://{}:{}{}
             \t
             \t📋 Profil(s): \t\t{}
             \t🗃️ Base de données: \t{}
@@ -53,6 +56,7 @@ public class DataMasteryHubApplication {
                 protocol, serverPort, contextPath,
                 protocol, hostAddress, serverPort, contextPath,
                 protocol, hostAddress, serverPort, contextPath,
+                protocol, hostAddress, serverPort, swaggerPath,
                 env.getActiveProfiles().length == 0 ? "default" : Arrays.toString(env.getActiveProfiles()),
                 env.getProperty("spring.datasource.url", "H2 (en mémoire)")
         );

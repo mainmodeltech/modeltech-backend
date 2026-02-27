@@ -1,5 +1,6 @@
 services:
-  # Base de données
+
+  # ── Base de données ──────────────────────────────────────
   db:
     image: postgres:15-alpine
     container_name: modeltech_db
@@ -13,42 +14,91 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - modeltech_network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  # Gestion BDD
-  adminer:
-    image: adminer
-    container_name: modeltech_adminer
+  # ── Backend Spring Boot ──────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: modeltech_backend
     ports:
-      - "8081:8080"
+      - "8085:8085"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # ⚠️ En Docker : utiliser le nom du service "db", pas "localhost"
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - modeltech_network
+    restart: unless-stopped
 
-  # Stockage d'objets (MinIO)
+  # ── Stockage d'objets (MinIO) ────────────────────────────
   minio:
     image: minio/minio
     container_name: modeltech_minio
     ports:
-      - "9000:9000" # API
-      - "9001:9001" # Console UI
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .env
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+    networks:
+      - modeltech_network
+    restart: unless-stopped
 
-  # Logs
+  # ── Adminer (gestion BDD) ────────────────────────────────
+  adminer:
+    image: adminer
+    container_name: modeltech_adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - modeltech_network
+    restart: unless-stopped
+
+  # ── Dozzle (logs Docker) ─────────────────────────────────
   dozzle:
     image: amir20/dozzle:latest
-    container_name: modeltech_logs
+    container_name: modeltech_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "8888:8080"
+      - "8082:8080"
+    networks:
+      - modeltech_network
+    restart: unless-stopped
+
+networks:
+  modeltech_network:
+    driver: bridge
 
 volumes:
   postgres_data:
