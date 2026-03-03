@@ -110,6 +110,22 @@ public class SecurityConfig {
     }
 
     @Bean
+    public WebMvcConfigurer corsConfigurer(
+            @Value("${CORS_ALLOWED_ORIGINS}") String allowedOrigins) {
+
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins(allowedOrigins)
+                        .allowedMethods("*")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
+            }
+        };
+    }
+
+    @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
