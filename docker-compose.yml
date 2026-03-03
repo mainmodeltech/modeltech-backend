@@ -29,8 +29,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: modeltech_backend
-    ports:
-      - "8085:8085"
     env_file:
       - .env
     environment:
@@ -59,9 +57,6 @@ services:
   minio:
     image: minio/minio
     container_name: modeltech_minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     env_file:
       - .env
     environment:
@@ -78,8 +73,6 @@ services:
   adminer:
     image: adminer
     container_name: modeltech_adminer
-    ports:
-      - "8081:8080"
     networks:
       - modeltech_network
     restart: unless-stopped
@@ -90,8 +83,6 @@ services:
     container_name: modeltech_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8082:8080"
     networks:
       - modeltech_network
     restart: unless-stopped
