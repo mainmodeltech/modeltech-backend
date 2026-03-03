@@ -20,7 +20,7 @@ COPY src ./src
 RUN ./mvnw package -DskipTests -B
 
 # ── Stage 2 : Run ───────────────────────────────────────────
-FROM eclipse-temurin:17-jre AS runtime
+FROM eclipse-temurin:17-jdk AS runtime
 
 WORKDIR /app
 
