@@ -46,13 +46,19 @@ services:
     restart: unless-stopped
 
 
+  adminer:
+    image: adminer
+    container_name: modeltech_adminer
+    networks:
+      - dokploy-network
+    restart: unless-stopped
+
+
   dozzle:
     image: amir20/dozzle:latest
     container_name: modeltech_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8082:8080"
     networks:
       - dokploy-network
     restart: unless-stopped
