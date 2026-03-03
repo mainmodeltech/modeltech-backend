@@ -38,50 +38,24 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger / API docs
                         .requestMatchers(
                                 "/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-
-                        // Auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
-
-                        // Routes publiques — lecture seule
-                        .requestMatchers(
-                                "/api/v1/bootcamps",
-                                "/api/v1/bootcamps/**",
-                                "/api/v1/services",
-                                "/api/v1/services/**",
-                                "/api/v1/testimonials",
-                                "/api/v1/testimonials/**",
-                                "/api/v1/alumni",
-                                "/api/v1/alumni/**",
-                                "/api/v1/projects",
-                                "/api/v1/projects/**",
-                                "/api/v1/references",
-                                "/api/v1/references/**"
-                        ).permitAll()
-
-                        // Contact messages — insertion publique
-                        .requestMatchers("POST", "/api/v1/contact-messages").permitAll()
-
-                        // Inscriptions — soumission publique
-                        .requestMatchers("POST", "/api/v1/registrations").permitAll()
-
-                        // Tout /admin/** requiert le rôle ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/v1/contact-messages").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/registrations").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-
-                        // Tout le reste requiert une authentification
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll() // 👈 IMPORTANT pour éviter blocage CORS preflight
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -91,38 +65,24 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
 
         List<String> origins = Arrays.stream(allowedOriginsRaw.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
+
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept", "X-Requested-With"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
-    }
-
-    @Bean
-    public WebMvcConfigurer corsConfigurer(
-            @Value("${CORS_ALLOWED_ORIGINS}") String allowedOrigins) {
-
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins(allowedOrigins)
-                        .allowedMethods("*")
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
-            }
-        };
     }
 
     @Bean
@@ -131,11 +91,6 @@ public class SecurityConfig {
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
     }
 
     @Bean
