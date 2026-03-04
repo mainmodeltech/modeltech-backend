@@ -78,8 +78,8 @@ up-all:
 	@echo "$(CYAN)▶ Démarrage de la stack complète...$(RESET)"
 	$(DOCKER_COMPOSE) up --build
 	@echo "$(GREEN)✓ Stack complète démarrée$(RESET)"
-	@echo "  API      → http://localhost:8085"
-	@echo "  Swagger  → http://localhost:8085/swagger-ui.html"
+	@echo "  API      → http://localhost:8081"
+	@echo "  Swagger  → http://localhost:8081/swagger-ui.html"
 	@echo "  Adminer  → http://localhost:8081"
 	@echo "  MinIO    → http://localhost:9001"
 	@echo "  Dozzle   → http://localhost:8888"
@@ -124,8 +124,8 @@ endif
 ## La BDD doit être up via: make up
 run:
 	@echo "$(CYAN)▶ Démarrage Spring Boot (profil dev)...$(RESET)"
-	@echo "  API      → http://localhost:8085"
-	@echo "  Swagger  → http://localhost:8085/swagger-ui.html"
+	@echo "  API      → http://localhost:8081"
+	@echo "  Swagger  → http://localhost:8081/swagger-ui.html"
 	$(MVNW) spring-boot:run -Dspring-boot.run.profiles=dev
 
 ## Compiler et générer le JAR
@@ -159,8 +159,8 @@ docker-run:
 	@echo "$(CYAN)▶ Démarrage du backend Docker...$(RESET)"
 	$(DOCKER_COMPOSE) up -d backend
 	@echo "$(GREEN)✓ Backend démarré$(RESET)"
-	@echo "  API     → http://localhost:8085"
-	@echo "  Swagger → http://localhost:8085/swagger-ui.html"
+	@echo "  API     → http://localhost:8081"
+	@echo "  Swagger → http://localhost:8081/swagger-ui.html"
 
 ## Arrêter le backend Docker
 docker-stop:
