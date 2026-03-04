@@ -1,0 +1,109 @@
+package com.modeltech.datamasteryhub.modules.notification.service;
+
+import com.modeltech.datamasteryhub.modules.training.entity.Registration;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Envoie une notification Slack via Incoming Webhook.
+ */
+@Component
+@Slf4j
+public class SlackNotifier {
+
+    @Value("${app.notifications.slack.webhook-url:}")
+    private String webhookUrl;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    public void send(Registration registration) {
+        if (webhookUrl == null || webhookUrl.isBlank()) {
+            log.debug("Slack webhook URL non configuree, notification ignoree");
+            return;
+        }
+
+        try {
+            String bootcamp = registration.getBootcampTitle() != null
+                    ? registration.getBootcampTitle()
+                    : "Non specifie";
+
+            String date = registration.getCreatedAt() != null
+                    ? registration.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                    : "—";
+
+            String payload = String.format("""
+                    {
+                      "blocks": [
+                        {
+                          "type": "header",
+                          "text": { "type": "plain_text", "text": "📋 Nouvelle inscription !", "emoji": true }
+                        },
+                        {
+                          "type": "section",
+                          "fields": [
+                            { "type": "mrkdwn", "text": "*Nom :*\\n%s %s" },
+                            { "type": "mrkdwn", "text": "*Email :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Telephone :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Bootcamp :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Entreprise :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Poste :*\\n%s" }
+                          ]
+                        },
+                        %s
+                        {
+                          "type": "context",
+                          "elements": [
+                            { "type": "mrkdwn", "text": "📅 %s | Statut : En attente" }
+                          ]
+                        }
+                      ]
+                    }
+                    """,
+                    escapeJson(registration.getFirstName()),
+                    escapeJson(registration.getLastName()),
+                    escapeJson(registration.getEmail()),
+                    escapeJson(registration.getPhone() != null ? registration.getPhone() : "—"),
+                    escapeJson(bootcamp),
+                    escapeJson(registration.getCompany() != null ? registration.getCompany() : "—"),
+                    escapeJson(registration.getPosition() != null ? registration.getPosition() : "—"),
+                    registration.getMessage() != null && !registration.getMessage().isBlank()
+                            ? String.format("""
+                              {
+                                "type": "section",
+                                "text": { "type": "mrkdwn", "text": "*Message :*\\n> %s" }
+                              },
+                              """, escapeJson(registration.getMessage()))
+                            : "",
+                    date
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> request = new HttpEntity<>(payload, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(webhookUrl, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Notification Slack envoyee pour l'inscription de {} {}",
+                        registration.getFirstName(), registration.getLastName());
+            } else {
+                log.warn("Slack a repondu avec le statut {}", response.getStatusCode());
+            }
+        } catch (Exception e) {
+            log.error("Erreur lors de l'envoi de la notification Slack : {}", e.getMessage(), e);
+        }
+    }
+
+    private String escapeJson(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "");
+    }
+}
