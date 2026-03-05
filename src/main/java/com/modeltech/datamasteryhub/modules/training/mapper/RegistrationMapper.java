@@ -10,10 +10,16 @@ import org.mapstruct.Mapping;
 public interface RegistrationMapper {
 
     @Mapping(target = "bootcampId", source = "bootcamp.id")
+    @Mapping(target = "sessionId", source = "session.id")
     RegistrationResponse toResponse(Registration entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "bootcamp", ignore = true)
+    @Mapping(target = "session", ignore = true)
+    @Mapping(target = "sessionName", ignore = true)
+    @Mapping(target = "promoCodeId", ignore = true)
+    @Mapping(target = "promoCodeUsed", ignore = true)
+    @Mapping(target = "discountPercent", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

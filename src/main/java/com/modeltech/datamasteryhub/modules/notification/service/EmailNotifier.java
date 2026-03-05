@@ -88,6 +88,11 @@ public class EmailNotifier {
                         <td style="padding: 8px 0; font-weight: 600; color: #1e3a5f;">%s</td>
                       </tr>
                       <tr>
+                        <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Session</td>
+                        <td style="padding: 8px 0;">%s</td>
+                      </tr>
+                      %s
+                      <tr>
                         <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Entreprise</td>
                         <td style="padding: 8px 0;">%s</td>
                       </tr>
@@ -110,6 +115,15 @@ public class EmailNotifier {
                 escapeHtml(reg.getEmail()),
                 escapeHtml(reg.getPhone() != null ? reg.getPhone() : "—"),
                 escapeHtml(bootcamp),
+                escapeHtml(reg.getSessionName() != null ? reg.getSessionName() : "—"),
+                reg.getPromoCodeUsed() != null
+                        ? String.format("""
+                          <tr>
+                            <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Code promo</td>
+                            <td style="padding: 8px 0; color: #16a34a; font-weight: 600;">%s (-%d%%)</td>
+                          </tr>
+                          """, escapeHtml(reg.getPromoCodeUsed()), reg.getDiscountPercent())
+                        : "",
                 escapeHtml(reg.getCompany() != null ? reg.getCompany() : "—"),
                 escapeHtml(reg.getPosition() != null ? reg.getPosition() : "—"),
                 reg.getMessage() != null && !reg.getMessage().isBlank()

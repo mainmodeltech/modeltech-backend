@@ -32,6 +32,14 @@ public class SlackNotifier {
                     ? registration.getBootcampTitle()
                     : "Non specifie";
 
+            String sessionInfo = registration.getSessionName() != null
+                    ? registration.getSessionName()
+                    : "—";
+
+            String promoInfo = registration.getPromoCodeUsed() != null
+                    ? registration.getPromoCodeUsed() + " (-" + registration.getDiscountPercent() + "%)"
+                    : "—";
+
             String date = registration.getCreatedAt() != null
                     ? registration.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                     : "—";
@@ -50,6 +58,8 @@ public class SlackNotifier {
                             { "type": "mrkdwn", "text": "*Email :*\\n%s" },
                             { "type": "mrkdwn", "text": "*Telephone :*\\n%s" },
                             { "type": "mrkdwn", "text": "*Bootcamp :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Session :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Code promo :*\\n%s" },
                             { "type": "mrkdwn", "text": "*Entreprise :*\\n%s" },
                             { "type": "mrkdwn", "text": "*Poste :*\\n%s" }
                           ]
@@ -69,6 +79,8 @@ public class SlackNotifier {
                     escapeJson(registration.getEmail()),
                     escapeJson(registration.getPhone() != null ? registration.getPhone() : "—"),
                     escapeJson(bootcamp),
+                    escapeJson(sessionInfo),
+                    escapeJson(promoInfo),
                     escapeJson(registration.getCompany() != null ? registration.getCompany() : "—"),
                     escapeJson(registration.getPosition() != null ? registration.getPosition() : "—"),
                     registration.getMessage() != null && !registration.getMessage().isBlank()

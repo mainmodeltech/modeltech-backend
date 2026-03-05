@@ -5,10 +5,14 @@ import com.modeltech.datamasteryhub.modules.notification.service.NotificationSer
 import com.modeltech.datamasteryhub.modules.training.dto.request.CreateRegistrationRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.RegistrationResponse;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
+import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
+import com.modeltech.datamasteryhub.modules.training.entity.PromoCode;
 import com.modeltech.datamasteryhub.modules.training.entity.Registration;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import com.modeltech.datamasteryhub.modules.training.mapper.RegistrationMapper;
 import com.modeltech.datamasteryhub.modules.training.repository.BootcampRepository;
+import com.modeltech.datamasteryhub.modules.training.repository.BootcampSessionRepository;
+import com.modeltech.datamasteryhub.modules.training.repository.PromoCodeRepository;
 import com.modeltech.datamasteryhub.modules.training.repository.RegistrationRepository;
 import com.modeltech.datamasteryhub.modules.training.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +33,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private final RegistrationRepository registrationRepository;
     private final BootcampRepository bootcampRepository;
+    private final BootcampSessionRepository sessionRepository;
+    private final PromoCodeRepository promoCodeRepository;
     private final RegistrationMapper registrationMapper;
     private final NotificationService notificationService;
 
@@ -38,8 +44,28 @@ public class RegistrationServiceImpl implements RegistrationService {
         Registration registration = registrationMapper.toEntity(request);
         registration.setStatus(RegistrationStatus.PENDING);
 
-        // Si bootcampId fourni, on associe le bootcamp et on recupere le titre
-        if (request.getBootcampId() != null) {
+        // ── Session ────────────────────────────────────────────────
+        if (request.getSessionId() != null) {
+            BootcampSession session = sessionRepository.findById(request.getSessionId())
+                    .filter(s -> !s.isDeleted())
+                    .orElse(null);
+
+            if (session != null) {
+                if (Boolean.TRUE.equals(session.getIsFull())) {
+                    throw new IllegalStateException("Cette session est complete, inscription impossible.");
+                }
+
+                registration.setSession(session);
+                registration.setSessionName(session.getSessionName());
+
+                // Auto-remplir le bootcamp depuis la session
+                registration.setBootcamp(session.getBootcamp());
+                registration.setBootcampTitle(session.getBootcamp().getTitle());
+            }
+        }
+
+        // ── Bootcamp (fallback si pas de session) ──────────────────
+        if (registration.getBootcamp() == null && request.getBootcampId() != null) {
             Bootcamp bootcamp = bootcampRepository.findById(request.getBootcampId())
                     .orElse(null);
             if (bootcamp != null) {
@@ -48,15 +74,45 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        // Si pas de bootcampTitle auto-rempli mais fourni dans la request
         if (registration.getBootcampTitle() == null && request.getBootcampTitle() != null) {
             registration.setBootcampTitle(request.getBootcampTitle());
         }
 
+        // ── Code promo ─────────────────────────────────────────────
+        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
+            promoCodeRepository.findByCodeAndIsActiveTrueAndIsDeletedFalse(request.getPromoCode().trim().toUpperCase())
+                    .ifPresent(promo -> {
+                        // Verifier expiration
+                        if (promo.getExpiresAt() != null && promo.getExpiresAt().isBefore(LocalDateTime.now())) {
+                            log.info("Code promo {} expire, ignore", promo.getCode());
+                            return;
+                        }
+                        // Verifier max utilisations
+                        if (promo.getMaxUses() != null && promo.getUsageCount() >= promo.getMaxUses()) {
+                            log.info("Code promo {} a atteint le max d'utilisations ({}), ignore",
+                                    promo.getCode(), promo.getMaxUses());
+                            return;
+                        }
+
+                        // Appliquer le code promo
+                        registration.setPromoCodeId(promo.getId());
+                        registration.setPromoCodeUsed(promo.getCode());
+                        registration.setDiscountPercent(promo.getDiscountPercent());
+
+                        // Incrementer le compteur d'utilisation
+                        promo.setUsageCount(promo.getUsageCount() + 1);
+                        promoCodeRepository.save(promo);
+
+                        log.info("Code promo {} applique : -{}% (parrain: {})",
+                                promo.getCode(), promo.getDiscountPercent(), promo.getReferrerName());
+                    });
+        }
+
         Registration saved = registrationRepository.save(registration);
 
-        log.info("Nouvelle inscription creee : {} {} pour {}",
-                saved.getFirstName(), saved.getLastName(), saved.getBootcampTitle());
+        log.info("Nouvelle inscription creee : {} {} pour {} (session: {}, promo: {})",
+                saved.getFirstName(), saved.getLastName(), saved.getBootcampTitle(),
+                saved.getSessionName(), saved.getPromoCodeUsed());
 
         // Notifications asynchrones (Slack + Email)
         notificationService.notifyNewRegistration(saved);
@@ -84,10 +140,23 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public RegistrationResponse updateStatus(UUID id, RegistrationStatus status) {
+    public RegistrationResponse updateStatus(UUID id, RegistrationStatus newStatus) {
         Registration registration = registrationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inscription", "id", id));
-        registration.setStatus(status);
+
+        RegistrationStatus oldStatus = registration.getStatus();
+        registration.setStatus(newStatus);
+
+        // ── Gestion des places sur la session ──────────────────────
+        if (registration.getSession() != null) {
+            if (newStatus == RegistrationStatus.CONFIRMED && oldStatus != RegistrationStatus.CONFIRMED) {
+                incrementParticipants(registration.getSession());
+            } else if (oldStatus == RegistrationStatus.CONFIRMED &&
+                    (newStatus == RegistrationStatus.CANCELLED || newStatus == RegistrationStatus.COMPLETED)) {
+                decrementParticipants(registration.getSession());
+            }
+        }
+
         return registrationMapper.toResponse(registrationRepository.save(registration));
     }
 
@@ -96,8 +165,34 @@ public class RegistrationServiceImpl implements RegistrationService {
     public void softDelete(UUID id) {
         Registration registration = registrationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inscription", "id", id));
+
+        // Si l'inscription etait confirmee, on libere la place
+        if (registration.getStatus() == RegistrationStatus.CONFIRMED && registration.getSession() != null) {
+            decrementParticipants(registration.getSession());
+        }
+
         registration.setDeleted(true);
         registration.setDeletedAt(LocalDateTime.now());
         registrationRepository.save(registration);
+    }
+
+    // ── Gestion des places ────────────────────────────────────────
+
+    private void incrementParticipants(BootcampSession session) {
+        if (session == null) return;
+        session.setCurrentParticipants(session.getCurrentParticipants() + 1);
+        session.setIsFull(session.getCurrentParticipants() >= session.getMaxParticipants());
+        sessionRepository.save(session);
+        log.info("Session {} : {} / {} participants",
+                session.getSessionName(), session.getCurrentParticipants(), session.getMaxParticipants());
+    }
+
+    private void decrementParticipants(BootcampSession session) {
+        if (session == null) return;
+        session.setCurrentParticipants(Math.max(0, session.getCurrentParticipants() - 1));
+        session.setIsFull(false);
+        sessionRepository.save(session);
+        log.info("Session {} : {} / {} participants (place liberee)",
+                session.getSessionName(), session.getCurrentParticipants(), session.getMaxParticipants());
     }
 }
