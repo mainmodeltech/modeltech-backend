@@ -52,6 +52,8 @@ server:
 
 # JWT
 app:
+  masterclass:
+    meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}
