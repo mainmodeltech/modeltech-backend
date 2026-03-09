@@ -47,4 +47,10 @@ public class NotificationServiceImpl implements NotificationService {
         slackNotifier.sendContactMessage(contactMessage);
         emailNotifier.sendContactMessage(contactMessage);
     }
+
+    @Override
+    public void notifyPasswordResetEmail(String to, String resetLink, int expiresMinutes) {
+        log.info("Envoi de l'email de réinitialisation de mot de passe à {}", to);
+        emailNotifier.sendPasswordResetEmail(to, resetLink, expiresMinutes);
+    }
 }

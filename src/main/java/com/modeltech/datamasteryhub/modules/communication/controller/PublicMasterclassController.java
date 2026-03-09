@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  * Public  : POST /api/v1/masterclass/register
  */
 
-
+@RequestMapping("/api/v1/masterclass")
 @RestController
 @RequiredArgsConstructor
 public class PublicMasterclassController {
@@ -25,7 +25,7 @@ public class PublicMasterclassController {
 
     // ── Public ─────────────────────────────────────────────────────────────
 
-    @PostMapping("/api/v1/masterclass/register")
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse<MasterclassRegistrationResponseDTO>> register(
             @Valid @RequestBody MasterclassRegistrationRequestDTO request) {
         try {

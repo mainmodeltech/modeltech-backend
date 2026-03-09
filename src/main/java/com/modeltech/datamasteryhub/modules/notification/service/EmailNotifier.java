@@ -7,6 +7,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,9 @@ public class EmailNotifier {
 
     @Value("${spring.mail.properties.mail.from:noreply@model-technologie.com}")
     private String fromEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.from:noreply@modeltechnologie.com}")
+    private String fromAddress;
 
     public void send(Registration registration) {
         if (recipientEmail == null || recipientEmail.isBlank()) {
@@ -166,6 +170,43 @@ public class EmailNotifier {
             log.error("Erreur email (contact) : {}", e.getMessage(), e);
         }
     }
+
+    // ----- Email de réinitialisation de mot de passe (exemple) -----
+    public void sendPasswordResetEmail(String to, String resetLink, int expiresMinutes) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(to);
+            message.setSubject("[Model Technologie] Réinitialisation de votre mot de passe");
+            message.setText(buildEmailBody(resetLink, expiresMinutes));
+            mailSender.send(message);
+            log.info("Email de réinitialisation envoyé à: {}", to);
+        } catch (Exception e) {
+            // On logue l'erreur mais on ne la propage pas au controller
+            // pour éviter de révéler l'état du système
+            log.error("Échec d'envoi de l'email de réinitialisation à {}: {}", to, e.getMessage());
+        }
+    }
+
+    private String buildEmailBody(String resetLink, int expiresMinutes) {
+        return """
+                Bonjour,
+                
+                Vous avez demandé la réinitialisation de votre mot de passe.
+                
+                Cliquez sur le lien ci-dessous pour définir un nouveau mot de passe :
+                %s
+                
+                Ce lien est valable %d minutes.
+                
+                Si vous n'avez pas fait cette demande, ignorez cet email.
+                Votre mot de passe ne sera pas modifié.
+                
+                ---
+                L'équipe Model Technologie
+                """.formatted(resetLink, expiresMinutes);
+    }
+
 
     // ── HTML builders ──────────────────────────────────────────────────────
 

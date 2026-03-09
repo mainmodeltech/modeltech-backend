@@ -20,7 +20,6 @@ public class AdminMasterclassController {
     private final MasterclassService masterclassService;
 
     @GetMapping("/api/v1/admin/masterclass/{masterclassId}/registrations")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<java.util.List<MasterclassRegistrationResponseDTO>>> getRegistrations(
             @PathVariable String masterclassId,
             @RequestParam(defaultValue = "0")  int page,
@@ -34,7 +33,6 @@ public class AdminMasterclassController {
     }
 
     @GetMapping("/api/v1/admin/masterclass/{masterclassId}/count")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Long>> count(@PathVariable String masterclassId) {
         return ResponseEntity.ok(
                 ApiResponse.ok("Nombre d'inscrits", masterclassService.count(masterclassId)));

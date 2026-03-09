@@ -22,7 +22,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/testimonials")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminTestimonialController {
 
     private final TestimonialService testimonialService;
