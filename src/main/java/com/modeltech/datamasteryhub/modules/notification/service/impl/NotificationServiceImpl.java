@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.notification.service.impl;
 
+import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessage;
 import com.modeltech.datamasteryhub.modules.notification.service.EmailNotifier;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import com.modeltech.datamasteryhub.modules.notification.service.SlackNotifier;
@@ -34,5 +35,16 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (Exception e) {
             log.error("Erreur Email notification : {}", e.getMessage());
         }
+    }
+
+    // ── Message de contact ─────────────────────────────────────────────────
+
+    @Override
+    @Async
+    public void notifyNewContactMessage(ContactMessage contactMessage) {
+        log.info("Envoi des notifications pour le message de contact de {} {}",
+                contactMessage.getFirstName(), contactMessage.getLastName());
+        slackNotifier.sendContactMessage(contactMessage);
+        emailNotifier.sendContactMessage(contactMessage);
     }
 }

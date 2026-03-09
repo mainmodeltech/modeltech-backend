@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.notification.service;
 
+import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessage;
 import com.modeltech.datamasteryhub.modules.training.entity.Registration;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -138,11 +139,148 @@ public class EmailNotifier {
         );
     }
 
+    // ── Message de contact ─────────────────────────────────────────────────
+
+    public void sendContactMessage(ContactMessage contact) {
+        if (isDisabled()) return;
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            String fullName = contact.getFirstName() + " " + contact.getLastName();
+            String sujet = contact.getSubject() != null && !contact.getSubject().isBlank()
+                    ? contact.getSubject() : "Sans objet";
+
+            helper.setFrom(fromEmail);
+            helper.setTo(recipientEmail);
+            // Mettre l'email du visiteur en Reply-To pour répondre directement
+            helper.setReplyTo(contact.getEmail());
+            helper.setSubject("✉️ Nouveau message de contact — " + fullName + " — " + sujet);
+            helper.setText(buildContactHtml(contact, fullName, sujet), true);
+
+            mailSender.send(mimeMessage);
+            log.info("Email (contact) envoyé à {} pour {}", recipientEmail, fullName);
+
+        } catch (MessagingException e) {
+            log.error("Erreur email (contact) : {}", e.getMessage(), e);
+        }
+    }
+
+    // ── HTML builders ──────────────────────────────────────────────────────
+
+    private String buildRegistrationHtml(Registration reg, String fullName, String bootcamp) {
+        String date = reg.getCreatedAt() != null
+                ? reg.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")) : "—";
+
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head><meta charset="UTF-8"></head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                  <div style="background: linear-gradient(135deg, #1e3a5f 0%%, #0ea5e9 100%%); padding: 24px; border-radius: 12px 12px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 20px;">📋 Nouvelle inscription</h1>
+                    <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Model Technologie — Data Mastery Hub</p>
+                  </div>
+                  <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+                    <table style="width: 100%%; border-collapse: collapse;">
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280; width: 140px;">Nom complet</td><td style="padding: 8px 0;">%s</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Email</td><td style="padding: 8px 0;"><a href="mailto:%s" style="color: #0ea5e9;">%s</a></td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Téléphone</td><td style="padding: 8px 0;">%s</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Bootcamp</td><td style="padding: 8px 0; font-weight: 600; color: #1e3a5f;">%s</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Session</td><td style="padding: 8px 0;">%s</td></tr>
+                      %s
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Entreprise</td><td style="padding: 8px 0;">%s</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Poste</td><td style="padding: 8px 0;">%s</td></tr>
+                      %s
+                    </table>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
+                    <p style="font-size: 13px; color: #9ca3af; margin: 0;">Inscription reçue le %s — Statut : En attente</p>
+                  </div>
+                </body>
+                </html>
+                """,
+                escapeHtml(fullName),
+                escapeHtml(reg.getEmail()), escapeHtml(reg.getEmail()),
+                escapeHtml(reg.getPhone() != null ? reg.getPhone() : "—"),
+                escapeHtml(bootcamp),
+                escapeHtml(reg.getSessionName() != null ? reg.getSessionName() : "—"),
+                reg.getPromoCodeUsed() != null
+                        ? String.format("<tr><td style=\"padding:8px 0;font-weight:600;color:#6b7280;\">Code promo</td><td style=\"padding:8px 0;color:#16a34a;font-weight:600;\">%s (-%d%%)</td></tr>",
+                        escapeHtml(reg.getPromoCodeUsed()), reg.getDiscountPercent()) : "",
+                escapeHtml(reg.getCompany() != null ? reg.getCompany() : "—"),
+                escapeHtml(reg.getPosition() != null ? reg.getPosition() : "—"),
+                reg.getMessage() != null && !reg.getMessage().isBlank()
+                        ? String.format("<tr><td style=\"padding:8px 0;font-weight:600;color:#6b7280;vertical-align:top;\">Message</td><td style=\"padding:12px;background:#f9fafb;border-radius:8px;\">%s</td></tr>",
+                        escapeHtml(reg.getMessage())) : "",
+                date
+        );
+    }
+
+    private String buildContactHtml(ContactMessage contact, String fullName, String sujet) {
+        String date = contact.getCreatedAt() != null
+                ? contact.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")) : "—";
+
+        String entreprise = contact.getCompany() != null && !contact.getCompany().isBlank()
+                ? contact.getCompany() : "—";
+
+        return String.format("""
+                <!DOCTYPE html>
+                <html>
+                <head><meta charset="UTF-8"></head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                  <div style="background: linear-gradient(135deg, #1e3a5f 0%%, #0ea5e9 100%%); padding: 24px; border-radius: 12px 12px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 20px;">✉️ Nouveau message de contact</h1>
+                    <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Model Technologie — Data Mastery Hub</p>
+                  </div>
+                  <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+                    <table style="width: 100%%; border-collapse: collapse;">
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280; width: 140px;">Nom</td><td style="padding: 8px 0;">%s</td></tr>
+                      <tr>
+                        <td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Email</td>
+                        <td style="padding: 8px 0;"><a href="mailto:%s" style="color: #0ea5e9;">%s</a></td>
+                      </tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Sujet</td><td style="padding: 8px 0; font-weight: 600; color: #1e3a5f;">%s</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: 600; color: #6b7280;">Entreprise</td><td style="padding: 8px 0;">%s</td></tr>
+                    </table>
+                    <div style="margin-top: 16px; padding: 16px; background: #f9fafb; border-left: 4px solid #0ea5e9; border-radius: 0 8px 8px 0;">
+                      <p style="font-weight: 600; color: #6b7280; margin: 0 0 8px;">Message :</p>
+                      <p style="margin: 0; white-space: pre-wrap; line-height: 1.6;">%s</p>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
+                    <p style="font-size: 13px; color: #9ca3af; margin: 0;">Message reçu le %s — Statut : Non lu</p>
+                    <p style="font-size: 13px; color: #9ca3af; margin: 4px 0 0;">
+                      💡 Répondez directement à cet email pour contacter <strong>%s</strong>.
+                    </p>
+                  </div>
+                </body>
+                </html>
+                """,
+                escapeHtml(fullName),
+                escapeHtml(contact.getEmail()), escapeHtml(contact.getEmail()),
+                escapeHtml(sujet),
+                escapeHtml(entreprise),
+                escapeHtml(contact.getMessage()),
+                date,
+                escapeHtml(fullName)
+        );
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    private boolean isDisabled() {
+        if (recipientEmail == null || recipientEmail.isBlank()) {
+            log.debug("Email destinataire non configuré, notification ignorée");
+            return true;
+        }
+        return false;
+    }
+
     private String escapeHtml(String text) {
         if (text == null) return "";
         return text.replace("&", "&amp;")
-                   .replace("<", "&lt;")
-                   .replace(">", "&gt;")
-                   .replace("\"", "&quot;");
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 }

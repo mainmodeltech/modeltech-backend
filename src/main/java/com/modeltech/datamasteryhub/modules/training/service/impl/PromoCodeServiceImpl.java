@@ -87,6 +87,10 @@ public class PromoCodeServiceImpl implements PromoCodeService {
                     if (promo.getExpiresAt() != null && promo.getExpiresAt().isBefore(LocalDateTime.now())) {
                         return false;
                     }
+
+                    if (promo.getIsActive() != null && !promo.getIsActive()) {
+                        return false;
+                    }
                     // Max pas atteint
                     if (promo.getMaxUses() != null && promo.getUsageCount() >= promo.getMaxUses()) {
                         return false;
