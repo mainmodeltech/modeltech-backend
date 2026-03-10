@@ -63,15 +63,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/reset-password"
+                                "/api/v1/auth/reset-password",
+                                "/api/v1/masterclass/register",
+                                "/api/v1/contact-messages"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/bootcamps",
-                                "/api/v1/promo-codes",
+                                "/api/v1/promo-codes/validate",
                                 "/api/v1/testimonials/published",
-                                "/api/v1/contact-messages",
                                 "/api/v1/registrations",
-                                "/api/v1/masterclass/register",
                                 "/api/v1/sessions/**"
                         ).permitAll()
                         // ── Swagger (dev uniquement — à restreindre en prod) ───────
