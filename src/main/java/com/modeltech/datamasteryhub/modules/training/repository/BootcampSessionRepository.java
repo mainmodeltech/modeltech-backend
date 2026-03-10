@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.repository;
 
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
+import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,4 +43,6 @@ public interface BootcampSessionRepository extends JpaRepository<BootcampSession
         ORDER BY s.startDate ASC
     """)
     List<BootcampSession> findAllUpcomingSessions();
+
+    Optional<BootcampSession> findByIdAndIsDeletedFalse(UUID sessionId);
 }

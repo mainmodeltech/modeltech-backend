@@ -12,6 +12,10 @@ public class RegistrationResponse {
     private UUID id;
     private UUID bootcampId;
     private String bootcampTitle;
+    private UUID sessionId;
+    private String sessionName;
+    private String promoCodeUsed;
+    private Integer discountPercent;
     private String firstName;
     private String lastName;
     private String email;

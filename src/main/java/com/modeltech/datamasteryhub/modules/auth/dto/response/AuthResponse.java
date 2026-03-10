@@ -1,10 +1,8 @@
 package com.modeltech.datamasteryhub.modules.auth.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -26,6 +24,7 @@ public class AuthResponse {
         private UUID id;
         private String email;
         private String fullName;
-        private String role;
+        private String primaryRole;       // rôle principal (compatibilité)
+        private Set<String> roles;        // tous les rôles RBAC
     }
 }

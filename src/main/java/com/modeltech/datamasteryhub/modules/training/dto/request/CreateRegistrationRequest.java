@@ -11,7 +11,12 @@ public class CreateRegistrationRequest {
 
     private UUID bootcampId;
 
+    private UUID sessionId;
+
     private String bootcampTitle;
+
+    /** Code promo/parrainage saisi par le visiteur (optionnel) */
+    private String promoCode;
 
     @NotBlank(message = "Le prenom est obligatoire")
     private String firstName;

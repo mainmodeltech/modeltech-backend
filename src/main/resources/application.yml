@@ -46,12 +46,10 @@ spring:
             enable: true
         from: ${MAIL_FROM:noreply@model-technologie.com}
 
-
-server:
-  port: ${SERVER_PORT:8080}
-
 # JWT
 app:
+  masterclass:
+    meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}
@@ -78,3 +76,13 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: alpha
     tags-sorter: alpha
+
+# Ajouter cette section
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

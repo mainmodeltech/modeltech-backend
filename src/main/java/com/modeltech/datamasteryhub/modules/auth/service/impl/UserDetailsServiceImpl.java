@@ -1,4 +1,4 @@
-package com.modeltech.datamasteryhub.security;
+package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
@@ -10,9 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,22 +21,23 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final AdminUserRepository adminUserRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        AdminUser adminUser = adminUserRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> {
-                    log.error("Utilisateur introuvable: {}", email);
-                    return new UsernameNotFoundException("Utilisateur introuvable: " + email);
-                });
+        AdminUser adminUser = adminUserRepository
+                .findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Utilisateur non trouvé : " + email));
 
-        if (!adminUser.isActive()) {
-            throw new UsernameNotFoundException("Compte désactivé: " + email);
-        }
+        // AVANT (cassé) : List.of(new SimpleGrantedAuthority(adminUser.getRole()))
+        // APRÈS (RBAC)  : on mappe le Set<Role> vers des GrantedAuthority
+        var authorities = adminUser.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .collect(Collectors.toList());
 
         return User.builder()
                 .username(adminUser.getEmail())
                 .password(adminUser.getPasswordHash())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + adminUser.getRole())))
+                .authorities(authorities)
+                .accountLocked(!adminUser.isActive())
                 .build();
     }
 }

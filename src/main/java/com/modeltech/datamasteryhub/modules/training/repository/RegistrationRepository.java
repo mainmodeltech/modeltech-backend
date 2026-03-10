@@ -13,4 +13,6 @@ import java.util.UUID;
 public interface RegistrationRepository extends SoftDeleteRepository<Registration, UUID> {
 
     Page<Registration> findAllByStatusAndIsDeletedFalse(RegistrationStatus status, Pageable pageable);
+
+    int countBySession_IdAndStatusAndIsDeletedFalse(UUID sessionId, RegistrationStatus status);
 }
