@@ -77,3 +77,13 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: alpha
     tags-sorter: alpha
+
+# Ajouter cette section
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

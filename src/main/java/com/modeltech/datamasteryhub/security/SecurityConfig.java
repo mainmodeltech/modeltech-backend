@@ -58,6 +58,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         // ── Routes publiques ────────────────────────────────────────
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/login",
