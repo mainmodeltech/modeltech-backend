@@ -4,12 +4,12 @@ spring:
     activate:
       on-profile: staging
   jpa:
-    show-sql: false
+    show-sql: true
 
 logging:
   level:
-    com.modeltech: INFO
-    org.springframework.security: INFO
+    com.modeltech: DEBUG
+    org.springframework.security: DEBUG
 
 app:
   cors:
