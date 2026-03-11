@@ -39,7 +39,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
     @Value("${spring.mail.properties.mail.from:noreply@model-technologie.com}")
     private String fromEmail;
 
-    @Value("${app.masterclass.meet-link:https://meet.google.com/xxx-yyyy-zzz}")
+    @Value("${app.masterclass.meet-link:https://tel.meet/bqy-eyst-bgj?pin=5837873367976}")
     private String meetLink;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -98,7 +98,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
 
             helper.setFrom(fromEmail);
             helper.setTo(reg.getEmail());
-            helper.setSubject("✅ Inscription confirmée — Masterclass Power BI · 20 mars 2026");
+            helper.setSubject("✅ Inscription confirmée — Masterclass Power BI · 24 mars 2026");
             helper.setText(buildConfirmationHtml(reg), true);
 
             mailSender.send(msg);
@@ -187,7 +187,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
 
                 <p style="font-size: 16px; margin: 0 0 24px;">Bonjour <strong>%s</strong>,</p>
                 <p style="color: #4b5563; margin: 0 0 24px; line-height: 1.7;">
-                  Votre inscription à la masterclass <strong>"Construire son premier tableau de bord avec Microsoft Power BI"</strong> est bien confirmée. Rendez-vous le <strong>vendredi 20 mars 2026 de 18h à 20h</strong>.
+                  Votre inscription à la masterclass <strong>"Construire son premier tableau de bord avec Microsoft Power BI"</strong> est bien confirmée. Rendez-vous le <strong>Mardi 24 mars 2026 de 18h à 20h</strong>.
                 </p>
 
                 <!-- Event card -->
@@ -195,7 +195,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
                   <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                     <div style="font-size: 28px;">📅</div>
                     <div>
-                      <p style="margin: 0; font-weight: 800; font-size: 17px; color: #1a1a2e;">Vendredi 20 mars 2026</p>
+                      <p style="margin: 0; font-weight: 800; font-size: 17px; color: #1a1a2e;">Mardi 24 mars 2026</p>
                       <p style="margin: 4px 0 0; color: #6b7280; font-size: 14px;">18h00 – 20h00 (heure de Dakar, GMT+0)</p>
                     </div>
                   </div>
@@ -226,7 +226,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
 
                 <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
                 <p style="font-size: 13px; color: #9ca3af; margin: 0; text-align: center;">
-                  Model Technologie · Data Mastery Hub · Dakar, Sénégal<br />
+                  Model Technologie · Dakar, Sénégal<br />
                   Des questions ? Répondez directement à cet email.
                 </p>
               </div>
