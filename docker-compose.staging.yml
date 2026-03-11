@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
 
-  db:
+  db-staging:
     image: postgres:15-alpine
     container_name: modeltech_staging_db
     environment:
@@ -15,7 +15,7 @@ services:
       - dokploy-network
     restart: unless-stopped
 
-  backend:
+  backend-staging:
     build:
       context: .
       dockerfile: Dockerfile
@@ -44,12 +44,12 @@ services:
       MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK}
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
     depends_on:
-      - modeltech_staging_db
+      - db-staging
     networks:
       - dokploy-network
     restart: unless-stopped
 
-  adminer:
+  adminer-staging:
     image: adminer
     container_name: modeltech_staging_adminer
     networks:
@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
 
 
-  dozzle:
+  dozzle-staging:
     image: amir20/dozzle:latest
     container_name: modeltech_staging_dozzle
     volumes:
