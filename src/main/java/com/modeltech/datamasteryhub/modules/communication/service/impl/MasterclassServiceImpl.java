@@ -66,7 +66,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
         MasterclassRegistration saved = repository.save(reg);
 
         // Notifications asynchrones — ne bloquent pas la réponse
-//        sendConfirmationEmail(saved);
+        sendConfirmationEmail(saved);
         notifySlack(saved);
 
         return toResponse(saved);
