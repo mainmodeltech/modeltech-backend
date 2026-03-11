@@ -27,4 +27,11 @@ public class MasterclassRegistrationRequestDTO {
     private String profile;
 
     private String company;
+
+    /**
+     * Token généré par reCAPTCHA v3 côté frontend.
+     * Vérifié côté backend avant tout traitement.
+     */
+    @NotBlank(message = "La vérification reCAPTCHA est requise")
+    private String recaptchaToken;
 }

@@ -7,6 +7,7 @@ import com.modeltech.datamasteryhub.modules.communication.dto.response.Mastercla
 import com.modeltech.datamasteryhub.modules.communication.entity.MasterclassRegistration;
 import com.modeltech.datamasteryhub.modules.communication.repository.MasterclassRegistrationRepository;
 import com.modeltech.datamasteryhub.modules.communication.service.MasterclassService;
+import com.modeltech.datamasteryhub.modules.communication.service.RecaptchaService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
 
     private final MasterclassRegistrationRepository repository;
     private final JavaMailSender mailSender;
+    private final RecaptchaService recaptchaService;  // ← ajout
 
     @Value("${app.notifications.slack.webhook-url:}")
     private String slackWebhookUrl;
@@ -39,7 +41,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
     @Value("${spring.mail.properties.mail.from:noreply@model-technologie.com}")
     private String fromEmail;
 
-    @Value("${app.masterclass.meet-link:https://tel.meet/bqy-eyst-bgj?pin=5837873367976}")
+    @Value("${app.masterclass.meet-link:https://meet.google.com/vbh-nodg-qwe}")
     private String meetLink;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -48,9 +50,19 @@ public class MasterclassServiceImpl implements MasterclassService  {
 
     @Transactional
     public MasterclassRegistrationResponseDTO register(MasterclassRegistrationRequestDTO req) {
+
+        // 1. Vérification reCAPTCHA — avant tout traitement BDD
+        if (!recaptchaService.verify(req.getRecaptchaToken())) {
+            log.error("Échec vérification reCAPTCHA pour email {} et masterclassId {}",
+                    req.getEmail(), req.getMasterclassId());
+            throw new SecurityException("Vérification anti-bot échouée. Veuillez réessayer.");
+        }
+
         // Vérifier doublon
         if (repository.existsByMasterclassIdAndEmailAndIsDeletedFalse(
                 req.getMasterclassId(), req.getEmail())) {
+            log.error("Doublon inscription pour email {} et masterclassId {}",
+                    req.getEmail(), req.getMasterclassId());
             throw new IllegalStateException("Cet email est déjà inscrit à cette masterclass.");
         }
 
@@ -63,7 +75,12 @@ public class MasterclassServiceImpl implements MasterclassService  {
         reg.setProfile(req.getProfile());
         reg.setCompany(req.getCompany());
 
+        log.info("Enregistrement inscription masterclass : email={}, masterclassId={}", req.getEmail(), req.getMasterclassId());
+
         MasterclassRegistration saved = repository.save(reg);
+
+        log.info("Inscription masterclass enregistrée avec succès : id={}, email={}, masterclassId={}",
+                saved.getId(), saved.getEmail(), saved.getMasterclassId());
 
         // Notifications asynchrones — ne bloquent pas la réponse
         sendConfirmationEmail(saved);

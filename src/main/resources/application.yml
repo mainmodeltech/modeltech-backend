@@ -48,6 +48,9 @@ spring:
 
 # JWT
 app:
+  recaptcha:
+    secret-key: ${RECAPTCHA_SECRET_KEY}
+    enabled: true   # false en dev local
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
   jwt:
