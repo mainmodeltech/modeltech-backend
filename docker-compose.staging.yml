@@ -4,6 +4,7 @@ services:
 
   db:
     image: postgres:15-alpine
+    container_name: modeltech_staging_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -43,7 +44,7 @@ services:
       MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK}
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
     depends_on:
-      - db
+      - modeltech_staging_db
     networks:
       - dokploy-network
     restart: unless-stopped
