@@ -5,7 +5,7 @@ endif
 
 # ── Variables ────────────────────────────────────────────────
 ENV_FILE       = .env
-DOCKER_COMPOSE = docker-compose --env-file $(ENV_FILE)
+DOCKER_COMPOSE = docker-compose -f docker-compose.dev.yml --env-file $(ENV_FILE)
 JAVA_HOME      = /Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 MVNW           = JAVA_HOME=$(JAVA_HOME) ./mvnw
 

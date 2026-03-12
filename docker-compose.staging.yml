@@ -2,8 +2,9 @@ version: '3.8'
 
 services:
 
-  db:
+  db-staging:
     image: postgres:15-alpine
+    container_name: modeltech_staging_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -14,7 +15,7 @@ services:
       - dokploy-network
     restart: unless-stopped
 
-  backend:
+  backend-staging:
     build:
       context: .
       dockerfile: Dockerfile
@@ -27,7 +28,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: "8080"
-      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      DB_URL: jdbc:postgresql://db-staging:5432/${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
@@ -43,36 +44,22 @@ services:
       MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK}
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
     depends_on:
-      - db
-      - minio
+      - db-staging
     networks:
       - dokploy-network
     restart: unless-stopped
 
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    volumes:
-      - minio_data:/data
-    networks:
-      - dokploy-network
-    restart: unless-stopped
-
-
-  adminer:
+  adminer-staging:
     image: adminer
-    container_name: modeltech_adminer
+    container_name: modeltech_staging_adminer
     networks:
       - dokploy-network
     restart: unless-stopped
 
 
-  dozzle:
+  dozzle-staging:
     image: amir20/dozzle:latest
-    container_name: modeltech_dozzle
+    container_name: modeltech_staging_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
