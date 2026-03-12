@@ -8,8 +8,16 @@ spring:
 
 logging:
   level:
-    com.modeltech: DEBUG
-    org.springframework.security: DEBUG
+    ROOT: INFO
+    bank.cbao.smartbilling: INFO
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/modeltech-backend.log
 
 app:
   cors:

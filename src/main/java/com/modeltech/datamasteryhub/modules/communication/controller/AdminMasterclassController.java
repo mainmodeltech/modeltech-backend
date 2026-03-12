@@ -23,7 +23,7 @@ public class AdminMasterclassController {
     public ResponseEntity<ApiResponse<java.util.List<MasterclassRegistrationResponseDTO>>> getRegistrations(
             @PathVariable String masterclassId,
             @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "10") int size) {
 
         Page<MasterclassRegistrationResponseDTO> result =
                 masterclassService.getAll(masterclassId, page, size);
