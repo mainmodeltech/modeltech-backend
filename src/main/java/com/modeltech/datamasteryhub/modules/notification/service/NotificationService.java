@@ -5,23 +5,30 @@ import com.modeltech.datamasteryhub.modules.training.entity.Registration;
 
 public interface NotificationService {
 
-    /**
-     * Envoie les notifications (Slack + Email) pour une nouvelle inscription.
-     * Appel asynchrone pour ne pas bloquer la reponse API.
-     */
+    // ── Inscriptions bootcamp ──────────────────────────────────────────────
+
+    /** Notifie l'équipe (Slack) d'une nouvelle inscription. */
     void notifyNewRegistration(Registration registration);
 
     /**
-     * Envoie les notifications (Slack + Email) pour un nouveau message de contact.
-     * Appel asynchrone pour ne pas bloquer la réponse API.
+     * Envoie un email au CANDIDAT pour confirmer la réception de son inscription
+     * et lui communiquer les instructions de paiement.
+     * Déclenché immédiatement après la sauvegarde (statut PENDING).
      */
-    void notifyNewContactMessage(ContactMessage contactMessage);
+    void sendRegistrationPendingEmail(Registration registration);
 
     /**
-     * Envoie un email de réinitialisation de mot de passe avec un lien sécurisé.
-     * @param to
-     * @param resetLink
-     * @param expiresMinutes
+     * Envoie un email au CANDIDAT pour lui confirmer que sa place est
+     * définitivement réservée suite à la validation de son paiement.
+     * Déclenché quand le backoffice passe le statut à CONFIRMED.
      */
+    void sendRegistrationConfirmedEmail(Registration registration);
+
+    // ── Contact ────────────────────────────────────────────────────────────
+
+    void notifyNewContactMessage(ContactMessage contactMessage);
+
+    // ── Auth ───────────────────────────────────────────────────────────────
+
     void notifyPasswordResetEmail(String to, String resetLink, int expiresMinutes);
 }
