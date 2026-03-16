@@ -74,27 +74,6 @@ services:
     networks:
       - dokploy-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-
-      # ── API S3 (port 9000) — accès aux fichiers ──────────────────────────────
-      - "traefik.http.routers.minio-api-staging.rule=Host(`${MINIO_PUBLIC_DOMAIN}`)"
-      - "traefik.http.routers.minio-api-staging.entrypoints=websecure"
-      - "traefik.http.routers.minio-api-staging.tls=true"
-      - "traefik.http.routers.minio-api-staging.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.minio-api-staging.service=minio-api-staging-svc"
-      - "traefik.http.services.minio-api-staging-svc.loadbalancer.server.port=9000"
-      # Header passthrough nécessaire pour l'API S3
-      - "traefik.http.routers.minio-api-staging.middlewares=minio-headers-staging"
-      - "traefik.http.middlewares.minio-headers-staging.headers.customrequestheaders.X-Forwarded-Proto=https"
-
-      # ── Console (port 9001) ───────────────────────────────────────────────────
-      - "traefik.http.routers.minio-console-staging.rule=Host(`${MINIO_CONSOLE_DOMAIN}`)"
-      - "traefik.http.routers.minio-console-staging.entrypoints=websecure"
-      - "traefik.http.routers.minio-console-staging.tls=true"
-      - "traefik.http.routers.minio-console-staging.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.minio-console-staging.service=minio-console-staging-svc"
-      - "traefik.http.services.minio-console-staging-svc.loadbalancer.server.port=9001"
 
   dozzle-staging:
     image: amir20/dozzle:latest
