@@ -92,11 +92,11 @@ down:
 
 ## Démarrer un service spécifique — usage: make start s=db
 start:
-	$(DOCKER_COMPOSE) start $(s)
+	$(DOCKER_COMPOSE) up backend
 
 ## Arrêter un service spécifique — usage: make stop s=minio
 stop:
-	$(DOCKER_COMPOSE) stop $(s)
+	$(DOCKER_COMPOSE) stop backend
 
 ## Redémarrer l'infra
 restart:

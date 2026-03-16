@@ -4,12 +4,12 @@ spring:
     activate:
       on-profile: staging
   jpa:
-    show-sql: true
+    show-sql: false
 
 logging:
   level:
     ROOT: INFO
-    bank.cbao.smartbilling: INFO
+    com.modeltech.datamasteryhub: DEBUG
     org.springframework.security: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG

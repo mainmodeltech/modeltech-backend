@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
 
   db:
     image: postgres:15-alpine
+    container_name: modeltech_prod_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -18,6 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: modeltech_prod_backend
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s
@@ -32,9 +32,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
@@ -51,6 +52,7 @@ services:
 
   minio:
     image: minio/minio
+    container_name: modeltech_prod_minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -64,7 +66,7 @@ services:
 
   adminer:
     image: adminer
-    container_name: modeltech_adminer
+    container_name: modeltech_prod_adminer
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -72,7 +74,7 @@ services:
 
   dozzle:
     image: amir20/dozzle:latest
-    container_name: modeltech_dozzle
+    container_name: modeltech_prod_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
