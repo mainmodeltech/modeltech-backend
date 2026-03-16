@@ -61,7 +61,7 @@ services:
 
   minio-staging:
     image: minio/minio
-    container_name: modeltech_staging_minio
+    container_name: modeltech_minio_staging
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
