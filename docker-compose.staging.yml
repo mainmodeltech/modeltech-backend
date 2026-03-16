@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   db-staging:
@@ -21,7 +19,7 @@ services:
       dockerfile: Dockerfile
     container_name: modeltech_staging_backend
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,10 +32,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      # ← réseau interne Docker : le backend contacte MinIO par son nom de service
+      MINIO_ENDPOINT: http://minio-staging:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
@@ -66,12 +66,35 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # Indique à MinIO son URL publique (important pour les redirections S3)
+      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_DOMAIN}
+      MINIO_SERVER_URL: https://${MINIO_PUBLIC_DOMAIN}
     volumes:
       - minio_data:/data
     networks:
       - dokploy-network
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
 
+      # ── API S3 (port 9000) — accès aux fichiers ──────────────────────────────
+      - "traefik.http.routers.minio-api-staging.rule=Host(`${MINIO_PUBLIC_DOMAIN}`)"
+      - "traefik.http.routers.minio-api-staging.entrypoints=websecure"
+      - "traefik.http.routers.minio-api-staging.tls=true"
+      - "traefik.http.routers.minio-api-staging.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-api-staging.service=minio-api-staging-svc"
+      - "traefik.http.services.minio-api-staging-svc.loadbalancer.server.port=9000"
+      # Header passthrough nécessaire pour l'API S3
+      - "traefik.http.routers.minio-api-staging.middlewares=minio-headers-staging"
+      - "traefik.http.middlewares.minio-headers-staging.headers.customrequestheaders.X-Forwarded-Proto=https"
+
+      # ── Console (port 9001) ───────────────────────────────────────────────────
+      - "traefik.http.routers.minio-console-staging.rule=Host(`${MINIO_CONSOLE_DOMAIN}`)"
+      - "traefik.http.routers.minio-console-staging.entrypoints=websecure"
+      - "traefik.http.routers.minio-console-staging.tls=true"
+      - "traefik.http.routers.minio-console-staging.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio-console-staging.service=minio-console-staging-svc"
+      - "traefik.http.services.minio-console-staging-svc.loadbalancer.server.port=9001"
 
   dozzle-staging:
     image: amir20/dozzle:latest
