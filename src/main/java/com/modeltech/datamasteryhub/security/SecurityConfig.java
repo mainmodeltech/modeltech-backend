@@ -73,7 +73,10 @@ public class SecurityConfig {
                                 "/api/v1/bootcamps",
                                 "/api/v1/promo-codes/validate",
                                 "/api/v1/testimonials/published",
-                                "/api/v1/sessions/**"
+                                "/api/v1/sessions/**",
+                                "/api/v1/alumni",
+                                "/api/v1/projects",
+                                "/api/v1/projects/**"
                         ).permitAll()
                         // ── Swagger (dev uniquement — à restreindre en prod) ───────
                         .requestMatchers(
