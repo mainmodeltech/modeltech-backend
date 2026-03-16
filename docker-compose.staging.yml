@@ -56,7 +56,7 @@ services:
       - dokploy-network
     restart: unless-stopped
 
-  minio:
+  minio-staging:
     image: minio/minio
     command: server /data --console-address ":9001"
     environment:
