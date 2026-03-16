@@ -56,7 +56,28 @@ public class Registration extends BaseEntity {
     private String email;
 
     private String phone;
+    /** Pays de provenance */
+    private String country;
+
+    /**
+     * Profil de l'inscrit.
+     * Stocké en TEXT uppercase (compatible CHECK constraint PostgreSQL).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "profile")
+    private RegistrationProfile profile;
+
+    /**
+     * École / institution — renseignée uniquement pour les étudiants.
+     */
+    private String school;
+
+    // ── Champs professionnels (existants) ─────────────────────────────────────
+
+    /** Organisation — obligatoire pour PROFESSIONAL, optionnel pour ENTREPRENEUR */
     private String company;
+
+    /** Poste actuel / secteur — obligatoire pour PROFESSIONAL, optionnel pour ENTREPRENEUR */
     private String position;
 
     @Column(columnDefinition = "TEXT")

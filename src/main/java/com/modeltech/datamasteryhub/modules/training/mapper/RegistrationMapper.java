@@ -13,20 +13,30 @@ public interface RegistrationMapper {
     @Mapping(target = "sessionId", source = "session.id")
     RegistrationResponse toResponse(Registration entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "bootcamp", ignore = true)
-    @Mapping(target = "session", ignore = true)
-    @Mapping(target = "sessionName", ignore = true)
-    @Mapping(target = "promoCodeId", ignore = true)
-    @Mapping(target = "promoCodeUsed", ignore = true)
+    // ── Champs gérés manuellement dans le service ──────────────────────────
+    @Mapping(target = "id",              ignore = true)
+    @Mapping(target = "bootcamp",        ignore = true)
+    @Mapping(target = "session",         ignore = true)
+    @Mapping(target = "sessionName",     ignore = true)
+    @Mapping(target = "promoCodeId",     ignore = true)
+    @Mapping(target = "promoCodeUsed",   ignore = true)
     @Mapping(target = "discountPercent", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "deleted", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
+    @Mapping(target = "status",          ignore = true)
+    @Mapping(target = "createdAt",       ignore = true)
+    @Mapping(target = "updatedAt",       ignore = true)
+    @Mapping(target = "createdBy",       ignore = true)
+    @Mapping(target = "updatedBy",       ignore = true)
+    @Mapping(target = "deleted",         ignore = true)
+    @Mapping(target = "deletedAt",       ignore = true)
+    @Mapping(target = "deletedBy",       ignore = true)
+
+    // ── recaptchaToken : présent dans le DTO, absent de l'entité ──────────
+    // MapStruct lèverait une erreur "unmapped source property" sans cet ignore.
+    //    @Mapping(target = "recaptchaToken",  ignore = true) // pas de champ en entité
+
+    // ── Nouveaux champs mappés automatiquement (noms identiques) ──────────
+    // country  → Registration.country  ✓
+    // profile  → Registration.profile  ✓  (enum RegistrantProfile)
+    // school   → Registration.school   ✓
     Registration toEntity(CreateRegistrationRequest request);
 }
