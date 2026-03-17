@@ -67,8 +67,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       # Indique à MinIO son URL publique (important pour les redirections S3)
-#      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_DOMAIN}
-#      MINIO_SERVER_URL: https://${MINIO_PUBLIC_DOMAIN}
+      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_DOMAIN}
+      MINIO_SERVER_URL: https://${MINIO_PUBLIC_DOMAIN}
     volumes:
       - minio_data:/data
     networks:
