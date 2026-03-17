@@ -25,7 +25,7 @@ public class EmailNotifier {
     private final JavaMailSender mailSender;
 
     /** Email de l'équipe interne (destinataire des notifications) */
-    @Value("${app.notifications.email.to:}")
+    @Value("${spring.mail.properties.mail.from:}")
     private String internalEmail;
 
     /** Adresse expéditeur Spring Mail */

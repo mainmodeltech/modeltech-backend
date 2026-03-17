@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   db-staging:
@@ -21,7 +19,7 @@ services:
       dockerfile: Dockerfile
     container_name: modeltech_staging_backend
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,10 +32,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      # ← réseau interne Docker : le backend contacte MinIO par son nom de service
+      MINIO_ENDPOINT: http://minio-staging:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
@@ -47,6 +47,7 @@ services:
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
     depends_on:
       - db-staging
+      - minio-staging
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -60,20 +61,19 @@ services:
 
   minio-staging:
     image: minio/minio
-    container_name: modeltech_staging_minio
+    container_name: modeltech_minio_staging
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+      # Indique à MinIO son URL publique (important pour les redirections S3)
+      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_DOMAIN}
+      MINIO_SERVER_URL: https://${MINIO_PUBLIC_DOMAIN}
     volumes:
       - minio_data:/data
     networks:
       - dokploy-network
     restart: unless-stopped
-
 
   dozzle-staging:
     image: amir20/dozzle:latest

@@ -62,7 +62,8 @@ public class SlackNotifier {
                             { "type": "mrkdwn", "text": "*Session :*\\n%s" },
                             { "type": "mrkdwn", "text": "*Code promo :*\\n%s" },
                             { "type": "mrkdwn", "text": "*Entreprise :*\\n%s" },
-                            { "type": "mrkdwn", "text": "*Poste :*\\n%s" }
+                            { "type": "mrkdwn", "text": "*Poste :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Ecole :*\\n%s" }
                           ]
                         },
                         %s
@@ -84,6 +85,7 @@ public class SlackNotifier {
                     escapeJson(promoInfo),
                     escapeJson(registration.getCompany() != null ? registration.getCompany() : "—"),
                     escapeJson(registration.getPosition() != null ? registration.getPosition() : "—"),
+                    escapeJson(registration.getSchool() != null ? registration.getSchool() : "—"),
                     registration.getMessage() != null && !registration.getMessage().isBlank()
                             ? String.format("""
                               {
