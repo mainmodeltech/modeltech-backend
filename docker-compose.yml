@@ -2,7 +2,6 @@ services:
 
   db:
     image: postgres:15-alpine
-    container_name: modeltech_prod_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -17,7 +16,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: modeltech_prod_backend
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s
@@ -52,7 +50,6 @@ services:
 
   minio:
     image: minio/minio
-    container_name: modeltech_minio_prod
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -66,7 +63,6 @@ services:
 
   adminer:
     image: adminer
-    container_name: modeltech_prod_adminer
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -74,7 +70,6 @@ services:
 
   dozzle:
     image: amir20/dozzle:latest
-    container_name: modeltech_prod_dozzle
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
