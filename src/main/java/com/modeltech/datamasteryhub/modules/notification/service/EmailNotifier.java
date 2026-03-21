@@ -25,15 +25,15 @@ public class EmailNotifier {
     private final JavaMailSender mailSender;
 
     /** Email de l'équipe interne (destinataire des notifications) */
-    @Value("${spring.mail.properties.mail.from:}")
+    @Value("${app.notifications.email.to:admin@model-technologie.com}")
     private String internalEmail;
 
     /** Adresse expéditeur Spring Mail */
-    @Value("${spring.mail.username:noreply@model-technologie.com}")
+    @Value("${spring.mail.username:business.modeltech@gmail.com}")
     private String fromEmail;
 
     /** Email de l'équipe interne (destinataire des notifications) */
-    @Value("${app.notifications.phone.to:}")
+    @Value("${app.notifications.phone.to:788625238}")
     private String paymentPhone;
 
     // =========================================================================

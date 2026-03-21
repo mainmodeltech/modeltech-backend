@@ -17,13 +17,15 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class SlackNotifier {
 
-    @Value("${app.notifications.slack.webhook-url:}")
+    @Value("${app.notifications.slack.webhook-url}")
     private String webhookUrl;
+    @Value("${app.notifications.slack.bootcamp-subscription-webhook-url}")
+    private String bootcampWebhookUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     public void send(Registration registration) {
-        if (webhookUrl == null || webhookUrl.isBlank()) {
+        if (bootcampWebhookUrl == null || bootcampWebhookUrl.isBlank()) {
             log.debug("Slack webhook URL non configuree, notification ignoree");
             return;
         }
@@ -101,7 +103,7 @@ public class SlackNotifier {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<String> request = new HttpEntity<>(payload, headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(webhookUrl, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(bootcampWebhookUrl, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Notification Slack envoyee pour l'inscription de {} {}",
