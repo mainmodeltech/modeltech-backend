@@ -62,8 +62,8 @@ app:
     phone:
       to: ${NOTIFICATION_PHONE_TO}
     slack:
-      webhook-url: ${SLACK_WEBHOOK_URL:}
-      bootcamp-subscription-webhook-url: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL:}
+      webhook-url: ${SLACK_WEBHOOK_URL}
+      bootcamp-subscription-webhook-url: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL}
     email:
       to: ${NOTIFICATION_EMAIL_TO}
 
