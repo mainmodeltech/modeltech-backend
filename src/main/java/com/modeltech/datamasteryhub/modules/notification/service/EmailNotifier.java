@@ -29,7 +29,7 @@ public class EmailNotifier {
     private String internalEmail;
 
     /** Adresse expéditeur Spring Mail */
-    @Value("${spring.mail.username:noreply@model-technologie.com}")
+    @Value("${spring.mail.username:business.modeltech@gmail.com}")
     private String fromEmail;
 
     /** Email de l'équipe interne (destinataire des notifications) */

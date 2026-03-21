@@ -25,7 +25,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   # Mail (Gmail SMTP)
@@ -63,6 +63,7 @@ app:
       to: ${NOTIFICATION_PHONE_TO:786310432}
     slack:
       webhook-url: ${SLACK_WEBHOOK_URL:}
+      bootcamp-subscription-webhook-url: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL:}
     email:
       to: ${NOTIFICATION_EMAIL_TO:business.modeltech@gmail.com}
 

@@ -9,10 +9,10 @@ spring:
 logging:
   level:
     ROOT: INFO
-    com.modeltech.datamasteryhub: INFO
+    com.modeltech.datamasteryhub: DEBUG
     org.springframework.security: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: OFF
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
