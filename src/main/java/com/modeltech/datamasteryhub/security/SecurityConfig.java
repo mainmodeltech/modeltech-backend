@@ -83,7 +83,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
-                        ).permitAll()
+                        ).authenticated()
                         // ── Toutes les autres routes → authentification requise ─────
                         .anyRequest().authenticated()
                 )

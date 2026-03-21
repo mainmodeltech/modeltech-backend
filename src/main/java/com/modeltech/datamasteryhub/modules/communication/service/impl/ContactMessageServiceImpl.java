@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.UUID;
 
@@ -36,6 +37,20 @@ public class ContactMessageServiceImpl implements ContactMessageService {
     public ContactMessageResponseDTO saveMessage(ContactMessageRequestDTO dto) {
         ContactMessage message = contactMessageMapper.toEntity(dto);
         message.setStatus(ContactMessageStatus.unread);
+
+        String safeName = HtmlUtils.htmlEscape(message.getFirstName() + " " + message.getLastName());
+        String safeEmail = HtmlUtils.htmlEscape(message.getEmail());
+        String safeSubject = HtmlUtils.htmlEscape(message.getSubject());
+        String safeCompany = HtmlUtils.htmlEscape(message.getCompany());
+        String safeMessage = HtmlUtils.htmlEscape(message.getMessage());
+
+        message.setFirstName(safeName);
+        message.setEmail(safeEmail);
+        message.setSubject(safeSubject);
+        message.setCompany(safeCompany);
+        message.setMessage(safeMessage);
+
+
         ContactMessage saved = contactMessageRepository.save(message);
 
         // Notification asynchrone — ne bloque pas la réponse API
