@@ -17,9 +17,9 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class SlackNotifier {
 
-    @Value("${app.notifications.slack.webhook-url:}")
+    @Value("${app.notifications.slack.webhook-url}")
     private String webhookUrl;
-    @Value("${app.notifications.slack.bootcamp-subscription-webhook-url:}")
+    @Value("${app.notifications.slack.bootcamp-subscription-webhook-url}")
     private String bootcampWebhookUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();

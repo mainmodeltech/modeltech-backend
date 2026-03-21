@@ -69,6 +69,7 @@ services:
       # Indique à MinIO son URL publique (important pour les redirections S3)
       MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_DOMAIN}
       MINIO_SERVER_URL: https://${MINIO_PUBLIC_DOMAIN}
+      SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL}
     volumes:
       - minio_data:/data
     networks:
