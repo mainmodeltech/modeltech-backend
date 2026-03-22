@@ -22,4 +22,7 @@ public class ContactMessageRequestDTO {
 
     @NotBlank(message = "Le message ne peut pas être vide")
     private String message;
+
+    @NotBlank(message = "Le token reCAPTCHA est obligatoire")
+    private String recaptchaToken;
 }

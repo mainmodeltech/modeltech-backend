@@ -10,8 +10,10 @@ import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessageS
 import com.modeltech.datamasteryhub.modules.communication.mapper.ContactMessageMapper;
 import com.modeltech.datamasteryhub.modules.communication.repository.ContactMessageRepository;
 import com.modeltech.datamasteryhub.modules.communication.service.ContactMessageService;
+import com.modeltech.datamasteryhub.modules.communication.service.RecaptchaService;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,17 +26,25 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ContactMessageServiceImpl implements ContactMessageService {
 
     private final ContactMessageRepository contactMessageRepository;
     private final ContactMessageMapper contactMessageMapper;
     private final NotificationService notificationService;
+    private final RecaptchaService recaptchaService;
 
     // ── Public ─────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
     public ContactMessageResponseDTO saveMessage(ContactMessageRequestDTO dto) {
+        // Vérification reCAPTCHA — avant tout traitement BDD
+        if (!recaptchaService.verify(dto.getRecaptchaToken())) {
+            log.error("Échec vérification reCAPTCHA pour email {}", dto.getEmail());
+            throw new SecurityException("Vérification anti-bot échouée. Veuillez réessayer.");
+        }
+
         ContactMessage message = contactMessageMapper.toEntity(dto);
         message.setStatus(ContactMessageStatus.unread);
 
