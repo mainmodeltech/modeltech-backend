@@ -2,6 +2,7 @@ package com.modeltech.datamasteryhub.modules.training.service;
 
 import com.modeltech.datamasteryhub.modules.training.dto.request.CreateRegistrationRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.RegistrationResponse;
+import com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +14,8 @@ public interface RegistrationService {
     /** Creer une inscription (endpoint public) */
     RegistrationResponse register(CreateRegistrationRequest request);
 
-    /** Recuperer toutes les inscriptions pour l'admin (avec filtre optionnel par statut) */
-    Page<RegistrationResponse> findAllForAdmin(Pageable pageable, RegistrationStatus status);
+    /** Recuperer toutes les inscriptions pour l'admin (avec filtres optionnels) */
+    Page<RegistrationResponse> findAllForAdmin(Pageable pageable, RegistrationStatus status, PaymentStatus paymentStatus);
 
     /** Recuperer une inscription par ID pour l'admin */
     RegistrationResponse findByIdForAdmin(UUID id);

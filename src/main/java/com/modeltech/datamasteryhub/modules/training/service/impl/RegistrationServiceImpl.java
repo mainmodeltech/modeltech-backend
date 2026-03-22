@@ -8,6 +8,7 @@ import com.modeltech.datamasteryhub.modules.training.dto.response.RegistrationRe
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
 import com.modeltech.datamasteryhub.modules.training.entity.Registration;
+import com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import com.modeltech.datamasteryhub.modules.training.mapper.RegistrationMapper;
 import com.modeltech.datamasteryhub.modules.training.repository.BootcampRepository;
@@ -64,6 +65,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         resolveBootcampFallback(request, registration);
         applyPromoCode(request, registration);
 
+        // Calcul du montant du (prix - promo)
+        registration.setAmountDue(PaymentServiceImpl.calculateAmountDue(registration));
+
         Registration saved = registrationRepository.save(registration);
 
         log.info("Nouvelle inscription : {} {} — bootcamp={} | session={} | pays={} | profil={} | promo={}",
@@ -82,10 +86,15 @@ public class RegistrationServiceImpl implements RegistrationService {
     // =========================================================================
 
     @Override
-    public Page<RegistrationResponse> findAllForAdmin(Pageable pageable, RegistrationStatus status) {
-        Page<Registration> page = (status != null)
-                ? registrationRepository.findAllByStatusAndIsDeletedFalse(status, pageable)
-                : registrationRepository.findAllByIsDeletedFalse(pageable);
+    public Page<RegistrationResponse> findAllForAdmin(Pageable pageable, RegistrationStatus status, PaymentStatus paymentStatus) {
+        Page<Registration> page;
+        if (status != null) {
+            page = registrationRepository.findAllByStatusAndIsDeletedFalse(status, pageable);
+        } else if (paymentStatus != null) {
+            page = registrationRepository.findAllByPaymentStatusAndIsDeletedFalse(paymentStatus, pageable);
+        } else {
+            page = registrationRepository.findAllByIsDeletedFalse(pageable);
+        }
         return page.map(registrationMapper::toResponse);
     }
 
