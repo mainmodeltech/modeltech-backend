@@ -84,11 +84,11 @@ up-all:
 	@echo "  MinIO    → http://localhost:9001"
 	@echo "  Dozzle   → http://localhost:8888"
 
-## Arrêter tout et supprimer les volumes
+## Arrêter tout (les volumes sont preserves)
 down:
 	@echo "$(RED)▼ Arrêt de tous les services...$(RESET)"
-	$(DOCKER_COMPOSE) down -v
-	@echo "$(GREEN)✓ Tous les services arrêtés$(RESET)"
+	$(DOCKER_COMPOSE) down
+	@echo "$(GREEN)✓ Tous les services arrêtés (données conservées)$(RESET)"
 
 ## Démarrer un service spécifique — usage: make start s=db
 start:
@@ -98,12 +98,12 @@ start:
 stop:
 	$(DOCKER_COMPOSE) stop backend
 
-## Redémarrer l'infra
+## Redémarrer l'infra (les volumes sont preserves)
 restart:
 	@echo "$(YELLOW)↺ Redémarrage de l'infrastructure...$(RESET)"
-	$(DOCKER_COMPOSE) down -v
+	$(DOCKER_COMPOSE) down
 	$(DOCKER_COMPOSE) up -d db minio adminer dozzle
-	@echo "$(GREEN)✓ Infrastructure redémarrée$(RESET)"
+	@echo "$(GREEN)✓ Infrastructure redémarrée (données conservées)$(RESET)"
 
 ## Statut des conteneurs
 ps:

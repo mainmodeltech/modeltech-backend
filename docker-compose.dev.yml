@@ -36,6 +36,9 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+      SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL}
+      NOTIFICATION_EMAIL_TO: ${NOTIFICATION_EMAIL_TO}
+      NOTIFICATION_PHONE_TO: ${NOTIFICATION_PHONE_TO}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
@@ -56,7 +59,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"   # API → http://localhost:9000  (URLs des fichiers)
+      - "9000:9000"   # API → http://localhost:9005  (URLs des fichiers)
       - "9001:9001"   # Console → http://localhost:9001
     volumes:
       - minio_data:/data
