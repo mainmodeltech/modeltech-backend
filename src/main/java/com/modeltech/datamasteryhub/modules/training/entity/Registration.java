@@ -1,12 +1,15 @@
 package com.modeltech.datamasteryhub.modules.training.entity;
 
 import com.modeltech.datamasteryhub.common.persistence.BaseEntity;
+import com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -86,4 +89,22 @@ public class Registration extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private RegistrationStatus status = RegistrationStatus.PENDING;
+
+    // ── Paiement ─────────────────────────────────────────────────────────────
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false, length = 50)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
+
+    /** Montant du en FCFA (prix - reduction promo) */
+    @Column(name = "amount_due")
+    private Integer amountDue;
+
+    /** Montant total paye (denormalise, somme des paiements) */
+    @Column(name = "amount_paid", nullable = false)
+    private Integer amountPaid = 0;
+
+    @OneToMany(mappedBy = "registration", fetch = FetchType.LAZY)
+    @OrderBy("paymentDate ASC")
+    private List<Payment> payments = new ArrayList<>();
 }
