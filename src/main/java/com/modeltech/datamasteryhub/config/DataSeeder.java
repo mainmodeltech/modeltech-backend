@@ -47,10 +47,10 @@ public class DataSeeder implements CommandLineRunner {
     // ─── Roles + Admin ──────────────────────────────────────────────────────────
 
     private void seedRolesAndAdmin() {
-        if (roleRepository.count() > 0) {
-            log.debug("Roles deja presents — skip seed roles");
-            return;
-        }
+//        if (roleRepository.count() > 0) {
+//            log.debug("Roles deja presents — skip seed roles");
+//            return;
+//        }
 
         log.info("Seeding roles et admin user...");
 

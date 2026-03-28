@@ -33,29 +33,6 @@ public class PublicMasterclassController {
 
     private final MasterclassService masterclassService;
 
-    // ── Rate Limiter — 5 requêtes / heure / IP ─────────────────────────────
-    // ConcurrentHashMap : thread-safe, bucket créé à la première requête de chaque IP
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
-
-    private Bucket getBucketForIp(String ip) {
-        return buckets.computeIfAbsent(ip, key -> {
-            Bandwidth limit = Bandwidth.classic(
-                    5,                                       // 5 tentatives max
-                    Refill.intervally(5, Duration.ofHours(1)) // rechargé toutes les heures
-            );
-            return Bucket.builder().addLimit(limit).build();
-        });
-    }
-
-    private String extractIp(HttpServletRequest request) {
-        // Support Traefik / reverse proxy (X-Forwarded-For)
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim(); // première IP = l'originale
-        }
-        return request.getRemoteAddr();
-    }
-
     // ── Public ─────────────────────────────────────────────────────────────
 
     @PostMapping("/register")
@@ -99,5 +76,28 @@ public class PublicMasterclassController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error(e.getMessage()));
         }
+    }
+
+    // ── Rate Limiter — 5 requêtes / heure / IP ─────────────────────────────
+    // ConcurrentHashMap : thread-safe, bucket créé à la première requête de chaque IP
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+
+    private Bucket getBucketForIp(String ip) {
+        return buckets.computeIfAbsent(ip, key -> {
+            Bandwidth limit = Bandwidth.classic(
+                    5,                                       // 5 tentatives max
+                    Refill.intervally(5, Duration.ofHours(1)) // rechargé toutes les heures
+            );
+            return Bucket.builder().addLimit(limit).build();
+        });
+    }
+
+    private String extractIp(HttpServletRequest request) {
+        // Support Traefik / reverse proxy (X-Forwarded-For)
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim(); // première IP = l'originale
+        }
+        return request.getRemoteAddr();
     }
 }

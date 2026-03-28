@@ -58,6 +58,17 @@ public class RegistrationServiceImpl implements RegistrationService {
         recaptchaService.verify(request.getRecaptchaToken());
         validateProfileFields(request);
 
+        log.info("Nouvelle tentative d'inscription : email={} | sessionId={} | bootcampId={} | profil={}",
+                request.getEmail(), request.getSessionId(), request.getBootcampId(), request.getProfile());
+
+        // Vérifier doublon
+        if (registrationRepository.existsBySessionIdAndEmailAndBootcampIdAndIsDeletedFalse(
+                request.getSessionId(), request.getEmail(), request.getBootcampId())) {
+            log.error("Doublon inscription pour email {} et masterclassId {}",
+                    request.getEmail(), request.getSessionId());
+            throw new IllegalStateException("Cet email est déjà inscrit à cette session de formation.");
+        }
+
         Registration registration = registrationMapper.toEntity(request);
         registration.setStatus(RegistrationStatus.PENDING);
 

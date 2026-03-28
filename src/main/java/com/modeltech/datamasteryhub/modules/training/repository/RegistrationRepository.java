@@ -21,4 +21,6 @@ public interface RegistrationRepository extends SoftDeleteRepository<Registratio
     int countBySession_IdAndStatusAndIsDeletedFalse(UUID sessionId, RegistrationStatus status);
 
     List<Registration> findAllBySessionIdAndIsDeletedFalse(UUID sessionId);
+
+    boolean existsBySessionIdAndEmailAndBootcampIdAndIsDeletedFalse(UUID sessionId, String email, UUID bootcampId);
 }
