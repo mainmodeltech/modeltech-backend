@@ -47,22 +47,22 @@ public class DataSeeder implements CommandLineRunner {
     // ─── Roles + Admin ──────────────────────────────────────────────────────────
 
     private void seedRolesAndAdmin() {
-//        if (roleRepository.count() > 0) {
-//            log.debug("Roles deja presents — skip seed roles");
-//            return;
-//        }
+        // findOrCreate pour etre idempotent — pas de doublon si les roles existent deja
+        Role roleAdmin = roleRepository.findByName("ROLE_ADMIN").orElseGet(() -> {
+            log.info("Seeding role ROLE_ADMIN");
+            Role r = new Role();
+            r.setName("ROLE_ADMIN");
+            r.setDescription("Administrateur complet");
+            return roleRepository.save(r);
+        });
 
-        log.info("Seeding roles et admin user...");
-
-        Role roleAdmin = new Role();
-        roleAdmin.setName("ROLE_ADMIN");
-        roleAdmin.setDescription("Administrateur complet");
-        roleAdmin = roleRepository.save(roleAdmin);
-
-        Role roleSuperAdmin = new Role();
-        roleSuperAdmin.setName("ROLE_SUPER_ADMIN");
-        roleSuperAdmin.setDescription("Super administrateur");
-        roleSuperAdmin = roleRepository.save(roleSuperAdmin);
+        Role roleSuperAdmin = roleRepository.findByName("ROLE_SUPER_ADMIN").orElseGet(() -> {
+            log.info("Seeding role ROLE_SUPER_ADMIN");
+            Role r = new Role();
+            r.setName("ROLE_SUPER_ADMIN");
+            r.setDescription("Super administrateur");
+            return roleRepository.save(r);
+        });
 
         // Admin par defaut — mot de passe a changer apres premier login
         if (!adminUserRepository.existsByEmailAndIsDeletedFalse("admin@model-technologie.com")) {

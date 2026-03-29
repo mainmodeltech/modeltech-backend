@@ -86,8 +86,8 @@ public class RegistrationServiceImpl implements RegistrationService {
                 saved.getBootcampTitle(), saved.getSessionName(),
                 saved.getCountry(), saved.getProfile(), saved.getPromoCodeUsed());
 
-        notificationService.notifyNewRegistration(saved);
-        notificationService.sendRegistrationPendingEmail(saved);
+//        notificationService.notifyNewRegistration(saved);
+//        notificationService.sendRegistrationPendingEmail(saved);
 
         return registrationMapper.toResponse(saved);
     }
