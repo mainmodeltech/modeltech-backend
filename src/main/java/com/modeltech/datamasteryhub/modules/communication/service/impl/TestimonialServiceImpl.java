@@ -6,6 +6,8 @@ import com.modeltech.datamasteryhub.modules.communication.entity.Testimonial;
 import com.modeltech.datamasteryhub.modules.communication.mapper.TestimonialMapper;
 import com.modeltech.datamasteryhub.modules.communication.repository.TestimonialRepository;
 import com.modeltech.datamasteryhub.modules.communication.service.TestimonialService;
+import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
+import com.modeltech.datamasteryhub.modules.training.repository.BootcampRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class TestimonialServiceImpl implements TestimonialService {
 
     private final TestimonialRepository testimonialRepository;
     private final TestimonialMapper testimonialMapper;
+    private final BootcampRepository bootcampRepository;
 
     // ── Public ──────────────────────────────────────────────────────────────
 
@@ -56,6 +59,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     @Transactional
     public TestimonialResponseDTO create(TestimonialRequestDTO request) {
         Testimonial testimonial = testimonialMapper.toEntity(request);
+        testimonial.setBootcampRef(resolveBootcampRef(request.getBootcampId()));
         return testimonialMapper.toResponse(testimonialRepository.save(testimonial));
     }
 
@@ -64,6 +68,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     public TestimonialResponseDTO update(UUID id, TestimonialRequestDTO request) {
         Testimonial testimonial = findOrThrow(id);
         testimonialMapper.updateEntity(testimonial, request);
+        testimonial.setBootcampRef(resolveBootcampRef(request.getBootcampId()));
         return testimonialMapper.toResponse(testimonialRepository.save(testimonial));
     }
 
@@ -89,5 +94,12 @@ public class TestimonialServiceImpl implements TestimonialService {
         return testimonialRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Témoignage introuvable : " + id));
+    }
+
+    private Bootcamp resolveBootcampRef(UUID bootcampId) {
+        if (bootcampId == null) return null;
+        return bootcampRepository.findById(bootcampId)
+                .filter(b -> !b.isDeleted())
+                .orElseThrow(() -> new EntityNotFoundException("Bootcamp introuvable : " + bootcampId));
     }
 }

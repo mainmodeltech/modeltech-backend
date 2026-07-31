@@ -32,4 +32,5 @@ public class CreateBootcampSessionRequest {
 
     private Boolean isFeatured = false;
     private Boolean published = true;
+    private String schedule;
 }

@@ -1,9 +1,12 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
+import com.modeltech.datamasteryhub.modules.communication.entity.Testimonial;
+import com.modeltech.datamasteryhub.modules.communication.repository.TestimonialRepository;
 import com.modeltech.datamasteryhub.modules.training.dto.request.*;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampSessionResponse;
+import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampTestimonialResponse;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
 import com.modeltech.datamasteryhub.modules.training.mapper.BootcampMapper;
@@ -14,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,6 +29,7 @@ public class BootcampServiceImpl implements BootcampService {
 
     private final BootcampRepository bootcampRepository;
     private final BootcampSessionRepository sessionRepository;
+    private final TestimonialRepository testimonialRepository;
     private final BootcampMapper mapper;
 
     // ── Public ──────────────────────────────────────────────────────
@@ -172,6 +177,7 @@ public class BootcampServiceImpl implements BootcampService {
                 .or(() -> sessionRepository.findNextUpcomingSession(bootcamp.getId()))
                 .map(mapper::toSessionResponse)
                 .ifPresent(response::setNextSession);
+        response.setTestimonial(resolveTestimonial(bootcamp.getId()));
         return response;
     }
 
@@ -191,6 +197,27 @@ public class BootcampServiceImpl implements BootcampService {
                 .or(() -> sessions.stream().findFirst())
                 .map(mapper::toSessionResponse)
                 .ifPresent(response::setNextSession);
+        response.setTestimonial(resolveTestimonial(bootcamp.getId()));
         return response;
+    }
+
+    /**
+     * Témoignage à afficher sur la fiche formation (le plus prioritaire, publié,
+     * lié à ce bootcamp). Absent si aucun témoignage n'est encore rattaché.
+     */
+    private BootcampTestimonialResponse resolveTestimonial(UUID bootcampId) {
+        return testimonialRepository
+                .findFirstByBootcampRefIdAndPublishedTrueAndIsDeletedFalseOrderByDisplayOrderAsc(bootcampId)
+                .map(t -> new BootcampTestimonialResponse(
+                        t.getName(), t.getRole(), t.getCompany(), t.getContent(), computeInitials(t.getName())))
+                .orElse(null);
+    }
+
+    private String computeInitials(String name) {
+        if (name == null || name.isBlank()) return null;
+        return Arrays.stream(name.trim().split("\\s+"))
+                .filter(part -> !part.isEmpty())
+                .map(part -> part.substring(0, 1).toUpperCase())
+                .collect(Collectors.joining());
     }
 }

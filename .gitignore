@@ -8,6 +8,7 @@ target/
 # Secrets (IMPORTANT)
 .env
 .env
+.env.dev
 .env.staging
 .env.prod
 

@@ -16,6 +16,7 @@ public class TestimonialMapper {
         response.setCompany(testimonial.getCompany());
         response.setRole(testimonial.getRole());
         response.setBootcamp(testimonial.getBootcamp());
+        response.setBootcampId(testimonial.getBootcampRef() != null ? testimonial.getBootcampRef().getId() : null);
         response.setResult(testimonial.getResult());
         response.setRating(testimonial.getRating());
         response.setPublished(testimonial.getPublished());
@@ -43,6 +44,8 @@ public class TestimonialMapper {
         t.setRole(req.getRole());
         t.setBootcamp(req.getBootcamp());
         t.setResult(req.getResult());
+        // Note : bootcampRef (relation) est résolu et affecté dans TestimonialServiceImpl,
+        // car il nécessite une recherche via BootcampRepository.
         t.setRating(req.getRating() != null ? req.getRating() : 5);
         t.setPublished(req.getPublished() != null ? req.getPublished() : true);
         t.setDisplayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : 0);

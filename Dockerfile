@@ -39,12 +39,14 @@ RUN chown modeltech:modeltech app.jar
 
 USER modeltech
 
-# Port exposé
+# Port exposé — surchargé au runtime par SERVER_PORT (docker-compose)
+ENV SERVER_PORT=8080
 EXPOSE 8080
 
-# Health check — utilise un endpoint public qui existe
+# Health check — /actuator/health est public (voir SecurityConfig) et le port
+# suit SERVER_PORT pour rester correct quel que soit l'environnement (dev=8081, staging/prod=8080)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/api/v1/services || exit 1
+  CMD curl -f http://localhost:$SERVER_PORT/actuator/health || exit 1
 
 # Démarrage avec options JVM optimisées pour conteneur
 ENTRYPOINT ["java", \

@@ -6,8 +6,19 @@ endif
 # ── Variables ────────────────────────────────────────────────
 ENV_FILE       = .env
 DOCKER_COMPOSE = docker-compose -f docker-compose.dev.yml --env-file $(ENV_FILE)
-JAVA_HOME      = /Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
-MVNW           = JAVA_HOME=$(JAVA_HOME) ./mvnw
+
+# Détection du JAVA_HOME Temurin 17 selon l'OS (macOS / Linux / Windows)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    JAVA_HOME := /Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
+else ifeq ($(UNAME_S),Linux)
+    JAVA_HOME := /usr/lib/jvm/temurin-17-jdk
+else
+    # Windows (Git Bash) : utilise le JAVA_HOME déjà défini dans l'environnement
+    JAVA_HOME := $(shell echo $$JAVA_HOME)
+endif
+
+MVNW           = JAVA_HOME="$(JAVA_HOME)" ./mvnw
 
 # ── Couleurs ─────────────────────────────────────────────────
 RESET  = \033[0m
