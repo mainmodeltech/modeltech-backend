@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Model Technologie — Accueil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#FAF7F2;color:#16202E}
+a{color:#1A3A5B;text-decoration:none}a:hover{color:#C73A08}
+h1,h2,h3{font-family:'Bricolage Grotesque','DM Sans',sans-serif}
+</style>
+</helmet>
+<div style="width: 1440px; height: 6700px; box-sizing: border-box; background: #FAF7F2; display: flex; flex-direction: column; font-family: 'DM Sans', system-ui, sans-serif; color: #16202E">
+
+<!-- NAV -->
+<header style="display: flex; align-items: center; justify-content: space-between; padding: 20px 80px; border-bottom: 1px solid #E7E0D4; background: #FAF7F2">
+<a href="#top" style="display: flex; align-items: center; gap: 10px">
+<span style="width: 40px; height: 40px; border-radius: 10px; background: #1A3A5B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">M</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 20px; color: #1A3A5B">Model<span style="color: {{accent}}">Technologie</span></span>
+</a>
+<nav style="display: flex; gap: 32px; font-size: 15px; font-weight: 500">
+<a href="Formations.dc.html">Formations</a>
+<a href="Coaching.dc.html">Coaching</a>
+<a href="Entreprises.dc.html">Entreprises</a>
+<a href="Alumni.dc.html">Alumni</a>
+<a href="Ressources.dc.html">Ressources</a>
+<a href="Contact.dc.html">Contact</a>
+</nav>
+<div style="display: flex; gap: 12px; align-items: center">
+<a href="#connexion" style="font-size: 15px; font-weight: 500; padding: 12px 16px">Connexion</a>
+<a href="#cohorte" style="font-size: 15px; font-weight: 600; padding: 12px 22px; border-radius: 999px; background: {{accent}}; color: #FFFFFF">Candidater</a>
+</div>
+</header>
+
+<!-- HERO -->
+<section style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 96px 160px 56px; gap: 28px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E7E0D4; font-size: 14px; font-weight: 500; color: #3E4A5C">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: #1F8A5B"></span>
+Prochaine cohorte — candidatures ouvertes · Dakar &amp; en ligne
+</div>
+<h1 style="margin: 0; font-size: 84px; line-height: 0.98; font-weight: 800; letter-spacing: -2.5px; color: #1A3A5B; max-width: 1080px">Des compétences concrètes pour <span style="color: {{accent}}">votre métier.</span></h1>
+<p style="margin: 0; font-size: 22px; line-height: 1.5; color: #4A5566; max-width: 760px">Data, Power BI, gestion de projet : des formations courtes, sur vos propres cas, pour les banquiers, comptables, RH et managers en poste.</p>
+<div style="display: flex; gap: 14px; margin-top: 8px">
+<a href="#cohorte" style="font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; background: {{accent}}; color: #FFFFFF">Rejoindre la prochaine cohorte</a>
+<a href="#entreprises" style="font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; background: #FFFFFF; color: #1A3A5B; border: 1.5px solid #1A3A5B">Former mon équipe</a>
+</div>
+<a href="#quiz" style="font-size: 15px; color: #4A5566; text-decoration: underline">Pas sûr du parcours ? Faites le quiz en 5 questions</a>
+</section>
+
+<!-- HERO VISUAL + QUOTE -->
+<section style="padding: 0 80px 96px; display: flex; flex-direction: column; gap: 0">
+<div style="position: relative; height: 520px; border-radius: 28px; background: #1A3A5B; overflow: hidden; display: flex; align-items: flex-end">
+<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #9FB3C8; font-size: 16px; letter-spacing: 1px">[ PHOTO RÉELLE — session de cohorte à Dakar, apprenants au travail sur Power BI ]</div>
+<div style="position: relative; margin: 32px; padding: 28px 32px; border-radius: 20px; background: #FFFFFF; max-width: 560px; display: flex; flex-direction: column; gap: 14px">
+<p style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; line-height: 1.2; font-weight: 700; color: #1A3A5B">« Mon reporting mensuel prenait 2 jours. Maintenant 2 heures. »</p>
+<p style="margin: 0; font-size: 15px; color: #4A5566">Emmanuel Bouadi — Data Analyst, Wave · alumni Power BI</p>
+</div>
+</div>
+</section>
+
+<!-- PROOF STRIP -->
+<section style="padding: 0 80px 96px">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid #E7E0D4; border-bottom: 1px solid #E7E0D4">
+<div style="padding: 32px 24px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid #E7E0D4">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 52px; font-weight: 800; color: #1A3A5B">30+</span>
+<span style="font-size: 15px; color: #4A5566">alumni formés depuis 2023</span>
+</div>
+<div style="padding: 32px 24px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid #E7E0D4">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 52px; font-weight: 800; color: #1A3A5B">[X] %</span>
+<span style="font-size: 15px; color: #4A5566">en poste ou promus en moins de 6 mois</span>
+</div>
+<div style="padding: 32px 24px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid #E7E0D4">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 52px; font-weight: 800; color: #1A3A5B">6</span>
+<span style="font-size: 15px; color: #4A5566">formations en Data &amp; BI et gestion de projet</span>
+</div>
+<div style="padding: 32px 24px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 52px; font-weight: 800; color: #1A3A5B">1 projet</span>
+<span style="font-size: 15px; color: #4A5566">réel de votre métier par parcours</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 40px; padding-top: 28px; justify-content: center; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; letter-spacing: 1.5px; color: #6B7482">NOS ALUMNI TRAVAILLENT CHEZ</span>
+<span style="font-size: 18px; font-weight: 700; color: #8A93A0">Wave</span>
+<span style="font-size: 18px; font-weight: 700; color: #8A93A0">UBA Sénégal</span>
+<span style="font-size: 18px; font-weight: 700; color: #8A93A0">CETUD</span>
+<span style="font-size: 18px; font-weight: 700; color: #8A93A0">Afrika Banque</span>
+<span style="font-size: 18px; font-weight: 700; color: #8A93A0">[+ logos validés]</span>
+</div>
+</section>
+
+<!-- COHORTE -->
+<section id="cohorte" style="padding: 0 80px 112px">
+<div style="border-radius: 28px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 64px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 64px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">PROCHAINE COHORTE · CANDIDATURES OUVERTES</span>
+<h2 style="margin: 0; font-size: 56px; line-height: 1.02; font-weight: 800; letter-spacing: -1.5px; color: #1A3A5B">[15] places par parcours. Vos données, vos cas.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #4A5566">4 semaines, en petit groupe, avec un formateur qui pratique en entreprise. Vous arrivez avec un problème de votre travail — vous repartez avec le tableau de bord ou l'automatisation qui le règle.</p>
+<div style="display: flex; gap: 14px; margin-top: 8px">
+<a href="#candidater" style="font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; background: {{accent}}; color: #FFFFFF">Candidater</a>
+<a href="#formations" style="font-size: 17px; font-weight: 600; padding: 18px 24px; color: #1A3A5B">Comparer les parcours →</a>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 0; border-top: 1px solid #E7E0D4">
+<div style="display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #E7E0D4; font-size: 17px"><span style="color: #4A5566">Démarrage</span><span style="font-weight: 600">[date de démarrage]</span></div>
+<div style="display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #E7E0D4; font-size: 17px"><span style="color: #4A5566">Rythme</span><span style="font-weight: 600">[soirs / samedi] — compatible emploi</span></div>
+<div style="display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #E7E0D4; font-size: 17px"><span style="color: #4A5566">Format</span><span style="font-weight: 600">Présentiel Dakar ou en ligne</span></div>
+<div style="display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #E7E0D4; font-size: 17px"><span style="color: #4A5566">Prérequis</span><span style="font-weight: 600">Aucun pour Excel · bases Excel pour Power BI</span></div>
+<div style="display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #E7E0D4; font-size: 17px"><span style="color: #4A5566">Tarif</span><span style="font-weight: 600">dès 75 000 FCFA · [facilités de paiement]</span></div>
+<div style="display: flex; justify-content: space-between; padding: 20px 0; font-size: 17px"><span style="color: #4A5566">Sélection</span><span style="font-weight: 600">un cas d'usage de votre métier</span></div>
+</div>
+</div>
+</section>
+
+<!-- PAR MÉTIER -->
+<section style="padding: 0 80px 112px; display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">PAR MÉTIER</span>
+<h2 style="margin: 0; font-size: 52px; line-height: 1.05; font-weight: 800; letter-spacing: -1.5px; color: #1A3A5B">Commencez par ce qui vous fait perdre du temps.</h2>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+<a href="#banque" style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 14px; color: #16202E">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; color: #1A3A5B">Banque &amp; Finance</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5566">Reporting réglementaire, suivi du PNB, tableaux de bord agences.</span>
+<span style="font-size: 14px; font-weight: 600; color: {{accent}}">Excel avancé → Power BI</span>
+</a>
+<a href="#compta" style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 14px; color: #16202E">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; color: #1A3A5B">Comptabilité &amp; Audit</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5566">Rapprochements, clôtures, états automatisés sans copier-coller.</span>
+<span style="font-size: 14px; font-weight: 600; color: {{accent}}">Excel VBA → Power BI</span>
+</a>
+<a href="#rh" style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 14px; color: #16202E">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; color: #1A3A5B">Ressources humaines</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5566">Masse salariale, absentéisme, bilan social en un clic.</span>
+<span style="font-size: 14px; font-weight: 600; color: {{accent}}">Excel avancé → Power BI</span>
+</a>
+<a href="#commercial" style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 14px; color: #16202E">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; color: #1A3A5B">Marketing &amp; Commercial</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5566">Pipeline, performance des ventes, segmentation clients.</span>
+<span style="font-size: 14px; font-weight: 600; color: {{accent}}">Power BI → Python / SQL</span>
+</a>
+</div>
+</section>
+
+<!-- FORMATIONS -->
+<section id="formations" style="padding: 0 80px 112px; display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 700px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">DATA &amp; BI — NOTRE SPÉCIALITÉ</span>
+<h2 style="margin: 0; font-size: 52px; line-height: 1.05; font-weight: 800; letter-spacing: -1.5px; color: #1A3A5B">4 semaines. Un livrable concret à la fin.</h2>
+</div>
+<a href="Formations.dc.html" style="font-size: 16px; font-weight: 600">Voir le catalogue complet →</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+<div style="border-radius: 20px; background: #1A3A5B; color: #FFFFFF; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 6px 10px; border-radius: 999px; background: #FFFFFF; color: #1A3A5B">LE PLUS DEMANDÉ</span>
+<h3 style="margin: 0; font-size: 28px; font-weight: 700">Power BI</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #D5DEE8">Des tableaux de bord interactifs et fiables : Power Query, modélisation, DAX, publication. Prépare au PL-300.</p>
+<div style="display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid #3A5A7B; font-size: 15px; margin-top: auto"><span>4 semaines</span><span style="font-weight: 700">150 000 FCFA</span></div>
+<a href="#powerbi" style="text-align: center; font-size: 15px; font-weight: 600; padding: 14px; border-radius: 999px; background: #FFFFFF; color: #1A3A5B">Voir le programme</a>
+</div>
+<div style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 6px 10px; border-radius: 999px; background: #F1ECE3; color: #4A5566">AUTOMATISATION</span>
+<h3 style="margin: 0; font-size: 28px; font-weight: 700; color: #1A3A5B">Excel VBA</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #4A5566">Automatisez vos tâches répétitives avec les macros : imports, mises en forme, rapports générés en un clic.</p>
+<div style="display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid #E7E0D4; font-size: 15px; margin-top: auto"><span>4 semaines</span><span style="font-weight: 700">75 000 FCFA</span></div>
+<a href="#vba" style="text-align: center; font-size: 15px; font-weight: 600; padding: 14px; border-radius: 999px; border: 1.5px solid #1A3A5B; color: #1A3A5B">Voir le programme</a>
+</div>
+<div style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 6px 10px; border-radius: 999px; background: #F1ECE3; color: #4A5566">ANALYSE</span>
+<h3 style="margin: 0; font-size: 28px; font-weight: 700; color: #1A3A5B">Python pour l'analyse</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #4A5566">pandas, visualisation et projets réels : traitez des volumes qu'Excel ne supporte plus.</p>
+<div style="display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid #E7E0D4; font-size: 15px; margin-top: auto"><span>4 semaines</span><span style="font-weight: 700">75 000 FCFA</span></div>
+<a href="#python" style="text-align: center; font-size: 15px; font-weight: 600; padding: 14px; border-radius: 999px; border: 1.5px solid #1A3A5B; color: #1A3A5B">Voir le programme</a>
+</div>
+<div style="border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 6px 10px; border-radius: 999px; background: #F1ECE3; color: #4A5566">DONNÉES</span>
+<h3 style="margin: 0; font-size: 28px; font-weight: 700; color: #1A3A5B">SQL</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #4A5566">Interrogez directement les bases de votre entreprise au lieu d'attendre les extractions.</p>
+<div style="display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid #E7E0D4; font-size: 15px; margin-top: auto"><span>4 semaines</span><span style="font-weight: 700">75 000 FCFA</span></div>
+<a href="#sql" style="text-align: center; font-size: 15px; font-weight: 600; padding: 14px; border-radius: 999px; border: 1.5px solid #1A3A5B; color: #1A3A5B">Voir le programme</a>
+</div>
+</div>
+</section>
+
+<!-- NOUVEAU DOMAINE -->
+<section style="padding: 0 80px 112px">
+<div style="border-radius: 28px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 48px 56px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; align-items: center">
+<div style="grid-column: span 2; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; gap: 10px; align-items: center"><span style="font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 6px 10px; border-radius: 999px; background: #FDE8DF; color: #9A2E06">NOUVEAU</span><span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">GESTION DE PROJET &amp; AGILE</span></div>
+<h2 style="margin: 0; font-size: 40px; line-height: 1.08; font-weight: 800; letter-spacing: -1px; color: #1A3A5B">Préparez PSM I ou CAPM avec nos partenaires experts.</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A5566">Des formations dispensées par [Partenaire], avec l'inscription, le paiement et le suivi assurés par Model Technologie.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<a href="Formations.dc.html" style="text-align: center; font-size: 16px; font-weight: 600; padding: 16px 24px; border-radius: 999px; background: #1A3A5B; color: #FFFFFF">Voir les formations</a>
+<a href="Partenaires.dc.html" style="text-align: center; font-size: 15px; font-weight: 600; padding: 10px">Vous êtes formateur ? Devenez partenaire →</a>
+</div>
+</div>
+</section>
+
+<!-- COACHING -->
+<section id="coaching" style="padding: 0 80px 112px">
+<div style="border-radius: 28px; background: #F1ECE3; padding: 56px 64px; display: flex; justify-content: space-between; align-items: center; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 720px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">COACHING INDIVIDUEL</span>
+<h2 style="margin: 0; font-size: 44px; line-height: 1.08; font-weight: 800; letter-spacing: -1px; color: #1A3A5B">Pas de cohorte à la bonne date ? Avancez en 1:1.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #4A5566">Séances Excel avancé ou Power BI, sur votre fichier, à votre rythme. 3 places par semaine seulement.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; min-width: 280px">
+<a href="Coaching.dc.html" style="text-align: center; font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; background: #1A3A5B; color: #FFFFFF">Réserver un créneau</a>
+<span style="text-align: center; font-size: 14px; color: #4A5566">[tarif / séance ou pack]</span>
+</div>
+</div>
+</section>
+
+<!-- TÉMOIGNAGES -->
+<section id="alumni" style="padding: 0 80px 112px; display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 700px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">ILS L'ONT FAIT</span>
+<h2 style="margin: 0; font-size: 52px; line-height: 1.05; font-weight: 800; letter-spacing: -1.5px; color: #1A3A5B">Des résultats, pas des promesses.</h2>
+</div>
+<a href="Alumni.dc.html" style="font-size: 16px; font-weight: 600">Tous les parcours alumni →</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+<figure style="margin: 0; border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 32px; display: flex; flex-direction: column; gap: 24px">
+<blockquote style="margin: 0; font-size: 19px; line-height: 1.55; color: #16202E">« Ce bootcamp ne m'a pas seulement formée, il m'a ouvert des portes : je suis passée de l'apprentissage à l'exercice concret du métier. »</blockquote>
+<figcaption style="display: flex; align-items: center; gap: 14px; margin-top: auto">
+<span style="width: 48px; height: 48px; border-radius: 999px; background: #1A3A5B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700">DL</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700">Lysiane Nawaal Diawara</span><span style="font-size: 14px; color: #4A5566">Data analyst · CETUD</span></span>
+<a href="#linkedin-1" style="margin-left: auto; font-size: 14px; font-weight: 600">LinkedIn ↗</a>
+</figcaption>
+</figure>
+<figure style="margin: 0; border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 32px; display: flex; flex-direction: column; gap: 24px">
+<blockquote style="margin: 0; font-size: 19px; line-height: 1.55; color: #16202E">« Je n'avais aucune notion de code. Aujourd'hui ça me sert à chaque instant de mon travail. »</blockquote>
+<figcaption style="display: flex; align-items: center; gap: 14px; margin-top: auto">
+<span style="width: 48px; height: 48px; border-radius: 999px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700">GS</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700">Fatima Gounougo Sohmon</span><span style="font-size: 14px; color: #4A5566">Assistante juridique · Afrika Banque</span></span>
+<a href="#linkedin-2" style="margin-left: auto; font-size: 14px; font-weight: 600">LinkedIn ↗</a>
+</figcaption>
+</figure>
+<figure style="margin: 0; border-radius: 20px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 32px; display: flex; flex-direction: column; gap: 24px">
+<blockquote style="margin: 0; font-size: 19px; line-height: 1.55; color: #16202E">« Une réelle compréhension de l'analyse et du traitement des données, et une meilleure visibilité sur les opportunités. »</blockquote>
+<figcaption style="display: flex; align-items: center; gap: 14px; margin-top: auto">
+<span style="width: 48px; height: 48px; border-radius: 999px; background: #1F6B4F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700">LC</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700">Lamine Chaibou</span><span style="font-size: 14px; color: #4A5566">Data Analyst · UBA Sénégal</span></span>
+<a href="#linkedin-3" style="margin-left: auto; font-size: 14px; font-weight: 600">LinkedIn ↗</a>
+</figcaption>
+</figure>
+</div>
+</section>
+
+<!-- CERTIF + COMMUNAUTÉ -->
+<section style="padding: 0 80px 112px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<div style="border-radius: 24px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 40px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">CERTIFICATION</span>
+<h3 style="margin: 0; font-size: 32px; line-height: 1.1; font-weight: 700; color: #1A3A5B">Un certificat vérifiable, à afficher sur LinkedIn.</h3>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A5566">Délivré après validation du projet final. Préparation à la certification Microsoft PL-300 pour le parcours Power BI.</p>
+</div>
+<div style="border-radius: 24px; background: #FFFFFF; border: 1px solid #E7E0D4; padding: 40px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: {{accent}}">COMMUNAUTÉ</span>
+<h3 style="margin: 0; font-size: 32px; line-height: 1.1; font-weight: 700; color: #1A3A5B">Le réseau alumni, après la formation.</h3>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A5566">Entraide, offres d'emploi data et [ateliers] entre anciens de toutes les cohortes.</p>
+</div>
+</section>
+
+<!-- ENTREPRISES -->
+<section id="entreprises" style="padding: 112px 80px; background: #1A3A5B; color: #FFFFFF; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 780px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #FFB08A">ENTREPRISES</span>
+<h2 style="margin: 0; font-size: 56px; line-height: 1.02; font-weight: 800; letter-spacing: -1.5px">Rendez vos équipes autonomes sur la donnée.</h2>
+<p style="margin: 0; font-size: 19px; line-height: 1.6; color: #D5DEE8">Un diagnostic gratuit, puis un programme construit sur vos fichiers et vos outils. En présentiel dans vos locaux ou à distance.</p>
+</div>
+<a href="Entreprises.dc.html" style="font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; background: #FFFFFF; color: #1A3A5B; white-space: nowrap">Demander un diagnostic gratuit</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+<div style="border-radius: 20px; background: #234A70; padding: 32px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #FFB08A">MISE À NIVEAU EXCEL</span>
+<h3 style="margin: 0; font-size: 26px; line-height: 1.15; font-weight: 700">Un socle Excel commun pour toute l'entreprise</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #D5DEE8">Débutant, intermédiaire, avancé : chaque collaborateur au bon palier, après un test de positionnement.</p>
+</div>
+<div style="border-radius: 20px; background: #234A70; padding: 32px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #FFB08A">POWER BI SUR MESURE</span>
+<h3 style="margin: 0; font-size: 26px; line-height: 1.15; font-weight: 700">Du tableur au tableau de bord interactif</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #D5DEE8">Modélisation, DAX, publication et gouvernance, sur vos propres rapports.</p>
+</div>
+<div style="border-radius: 20px; background: #234A70; padding: 32px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #FFB08A">PARCOURS DATA SUR MESURE</span>
+<h3 style="margin: 0; font-size: 26px; line-height: 1.15; font-weight: 700">Toute la chaîne : collecte, nettoyage, analyse, restitution</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #D5DEE8">Adapté aux outils déjà en place, avec un projet réel de votre équipe comme fil rouge.</p>
+</div>
+</div>
+<div style="display: flex; gap: 40px; align-items: center; padding-top: 32px; border-top: 1px solid #3A5A7B; font-size: 16px; color: #D5DEE8">
+<span style="font-weight: 700; color: #FFFFFF">Pour qui :</span>
+<span>Directions financières</span><span>Audit &amp; conformité</span><span>RH</span><span>Équipes commerciales</span><span>Institutions &amp; ONG</span>
+</div>
+</section>
+
+<!-- FAQ + CTA -->
+<section id="contact" style="padding: 112px 80px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 80px">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 52px; line-height: 1.05; font-weight: 800; letter-spacing: -1.5px; color: #1A3A5B">Prêt à gagner des heures chaque semaine ?</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #4A5566">Candidatez à la prochaine cohorte ou écrivez-nous sur WhatsApp : réponse sous [24 h].</p>
+<div style="display: flex; gap: 14px">
+<a href="#cohorte" style="font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; background: {{accent}}; color: #FFFFFF">Candidater</a>
+<a href="#whatsapp" style="font-size: 17px; font-weight: 600; padding: 18px 30px; border-radius: 999px; border: 1.5px solid #1A3A5B; color: #1A3A5B">WhatsApp</a>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; border-top: 1px solid #E7E0D4">
+<div style="padding: 22px 0; border-bottom: 1px solid #E7E0D4; display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; color: #1A3A5B"><span>Je travaille à temps plein, est-ce compatible ?</span><span>+</span></div>
+<div style="padding: 22px 0; border-bottom: 1px solid #E7E0D4; display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; color: #1A3A5B"><span>Quel parcours choisir selon mon niveau ?</span><span>+</span></div>
+<div style="padding: 22px 0; border-bottom: 1px solid #E7E0D4; display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; color: #1A3A5B"><span>Mon employeur peut-il financer la formation ?</span><span>+</span></div>
+<div style="padding: 22px 0; border-bottom: 1px solid #E7E0D4; display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; color: #1A3A5B"><span>Paiement : Wave, Orange Money, virement ?</span><span>+</span></div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer style="flex-grow: 1; background: #10263C; color: #C9D4E0; padding: 64px 80px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px; align-content: start">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px; color: #FFFFFF">Model Technologie</span>
+<span style="font-size: 15px; line-height: 1.6">Formations data pour professionnels et entreprises. Dakar, Sénégal.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px">
+<span style="font-weight: 700; color: #FFFFFF">Formations</span><span>Cohortes</span><span>Coaching 1:1</span><span>Entreprises</span><span>Quiz d'orientation</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px">
+<span style="font-weight: 700; color: #FFFFFF">Ressources</span><span>Blog</span><span>Alumni</span><span>FAQ</span><span>À propos</span><a href="Partenaires.dc.html" style="color: #C9D4E0">Devenir partenaire</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px">
+<span style="font-weight: 700; color: #FFFFFF">Contact</span><span>+221 78 631 04 32</span><span>admin@model-technologie.com</span><span>LinkedIn · Instagram</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C73A08","options":["#C73A08","#E6440A","#1F6B4F"]},"$preview":{"width":1440,"height":6700}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#C73A08' };
+}
+}
+</script>
+</body>
+</html>
