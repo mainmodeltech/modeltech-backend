@@ -14,6 +14,7 @@ public class TestimonialResponseDTO {
     private String company;
     private String role;
     private String bootcamp;
+    private UUID bootcampId;
     private String result;
     private Integer rating;
     private Boolean published;

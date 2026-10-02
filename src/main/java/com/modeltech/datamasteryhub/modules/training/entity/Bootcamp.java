@@ -1,6 +1,11 @@
 package com.modeltech.datamasteryhub.modules.training.entity;
 
 import com.modeltech.datamasteryhub.common.persistence.BaseEntity;
+import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampCertification;
+import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampOutcome;
+import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampProfile;
+import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampTool;
+import com.modeltech.datamasteryhub.modules.training.entity.content.CurriculumWeek;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -79,6 +84,39 @@ public class Bootcamp extends BaseEntity {
     @Column(name = "next_session")
     @Deprecated
     private String nextSession;
+
+    // ── Contenu riche de la fiche formation ──────────────────────────
+    // Accroche courte affichée sous le titre, ex: "Du tableur au tableau de bord"
+    private String tagline;
+
+    // Clé de couleur pour le thème visuel de la fiche, ex: "primary", "accent"
+    @Column(name = "color_key", length = 20)
+    private String colorKey;
+
+    // Profils cibles détaillés (icône + libellé), ex: {"💼", "Contrôleurs de gestion"}
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<BootcampProfile> profiles = new ArrayList<>();
+
+    // Outils/compétences avec niveau de maîtrise visé (0-100)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<BootcampTool> tools = new ArrayList<>();
+
+    // Programme détaillé, semaine par semaine
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<CurriculumWeek> curriculum = new ArrayList<>();
+
+    // Résultats chiffrés mis en avant, ex: {"94%", "taux de satisfaction alumni"}
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<BootcampOutcome> outcomes = new ArrayList<>();
+
+    // Certification préparée par le bootcamp (nom, logo, description)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private BootcampCertification certification;
 
     // ── Relations ───────────────────────────────────────────────────
     @OneToMany(

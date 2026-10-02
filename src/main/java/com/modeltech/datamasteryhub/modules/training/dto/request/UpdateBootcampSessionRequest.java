@@ -26,4 +26,5 @@ public class UpdateBootcampSessionRequest {
     private LocalDate earlyBirdDeadline;
     private Boolean isFeatured;
     private Boolean published;
+    private String schedule;
 }

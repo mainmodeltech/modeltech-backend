@@ -1,0 +1,13 @@
+# Force LF pour les scripts shell exécutés dans les conteneurs Linux (Docker),
+# même si core.autocrlf=true côté Windows.
+* text=auto eol=lf
+
+mvnw            text eol=lf
+*.sh            text eol=lf
+
+# Scripts Windows : CRLF explicite
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# Binaires : pas de conversion
+*.jar           binary

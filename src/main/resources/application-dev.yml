@@ -6,6 +6,10 @@ spring:
   jpa:
     show-sql: false
 
+app:
+  recaptcha:
+    enabled: false   # pas de clé reCAPTCHA réelle en dev local
+
 logging:
   level:
     ROOT: INFO

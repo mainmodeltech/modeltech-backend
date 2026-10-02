@@ -22,6 +22,7 @@ public interface BootcampMapper {
 
     @Mapping(target = "nextSession", ignore = true)  // calculé dans le service
     @Mapping(target = "sessions", ignore = true)      // chargé selon le contexte
+    @Mapping(target = "testimonial", ignore = true)   // résolu dans le service via TestimonialRepository
     BootcampResponse toResponse(Bootcamp bootcamp);
 
     List<BootcampResponse> toResponseList(List<Bootcamp> bootcamps);

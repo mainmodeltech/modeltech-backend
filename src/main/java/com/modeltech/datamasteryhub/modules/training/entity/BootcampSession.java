@@ -80,4 +80,7 @@ public class BootcampSession extends BaseEntity {
     private Boolean isFeatured = false;
 
     private Boolean published = true;
+
+    // Rythme des cours, ex: "Soirs & week-ends"
+    private String schedule;
 }

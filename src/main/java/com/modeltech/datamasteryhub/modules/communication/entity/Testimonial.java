@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.modules.communication.entity;
 
 import com.modeltech.datamasteryhub.common.persistence.BaseEntity;
+import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,8 +26,13 @@ public class Testimonial extends BaseEntity {
 
     private String role;
 
-    /** Ex: "Power BI", "Data Analyst" */
+    /** Ex: "Power BI", "Data Analyst" — conservé pour compatibilité, préférer bootcampRef */
     private String bootcamp;
+
+    // Lien optionnel vers le bootcamp concerné, pour affichage sur sa fiche formation
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bootcamp_id")
+    private Bootcamp bootcampRef;
 
     /** Ex: "Embauché en 3 mois après le bootcamp" */
     private String result;

@@ -6,9 +6,6 @@ import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateBootcampR
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateBootcampSessionRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampSessionResponse;
-import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampSummaryResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
