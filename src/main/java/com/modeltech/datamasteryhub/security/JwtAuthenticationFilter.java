@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -58,17 +59,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             String email = jwtTokenProvider.getEmailFromToken(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            UserDetails userDetails = loadActiveUser(email);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            // Compte supprimé ou désactivé depuis l'émission du jeton : la requête reste
+            // anonyme (donc refusée sur les routes protégées) au lieu de planter ou de passer.
+            if (userDetails != null) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /** @return l'utilisateur s'il existe et est actif, sinon null. */
+    private UserDetails loadActiveUser(String email) {
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            return userDetails.isEnabled() && userDetails.isAccountNonLocked() ? userDetails : null;
+        } catch (UsernameNotFoundException e) {
+            log.debug("Jeton valide pour un compte inexistant : {}", email);
+            return null;
+        }
     }
 
     private String extractTokenFromRequest(HttpServletRequest request) {

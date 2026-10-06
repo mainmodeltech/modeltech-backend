@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.auth.controller;
 
+import com.modeltech.datamasteryhub.common.ratelimit.IpRateLimiter;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ChangePasswordRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ForgotPasswordRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.LoginRequest;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,13 +27,14 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final IpRateLimiter rateLimiter;
 
     // ─────────────────────────────────────────────────────────────────────
     // LOGIN
     // ─────────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    @Operation(summary = "Connexion administrateur", description = "Retourne un JWT valide 24h")
+    @Operation(summary = "Connexion (back-office ou apprenant)", description = "Retourne un JWT valide 24h ; le jeton porte les claims roles et uty")
     @ApiResponse(responseCode = "200", description = "Connexion réussie")
     @ApiResponse(responseCode = "401", description = "Identifiants invalides")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -91,8 +94,10 @@ public class AuthController {
                     "Retourne toujours 200 pour éviter l'énumération d'emails.")
     @ApiResponse(responseCode = "200", description = "Email envoyé (si le compte existe)")
     public ResponseEntity<MessageResponse> forgotPassword(
-            @Valid @RequestBody ForgotPasswordRequest request) {
+            @Valid @RequestBody ForgotPasswordRequest request,
+            HttpServletRequest httpRequest) {
 
+        rateLimiter.check(httpRequest, "forgot-password"); // endpoint qui envoie des e-mails
         authService.forgotPassword(request);
         // Toujours le même message — sécurité anti-énumération
         return ResponseEntity.ok(new MessageResponse(
@@ -108,8 +113,10 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Mot de passe réinitialisé")
     @ApiResponse(responseCode = "400", description = "Token invalide ou expiré")
     public ResponseEntity<MessageResponse> resetPassword(
-            @Valid @RequestBody ResetPasswordRequest request) {
+            @Valid @RequestBody ResetPasswordRequest request,
+            HttpServletRequest httpRequest) {
 
+        rateLimiter.check(httpRequest, "reset-password");
         authService.resetPassword(request);
         return ResponseEntity.ok(new MessageResponse("Mot de passe réinitialisé avec succès"));
     }

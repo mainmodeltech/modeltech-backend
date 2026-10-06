@@ -6,6 +6,7 @@ import com.modeltech.datamasteryhub.modules.auth.dto.request.LoginRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ResetPasswordRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 
+/** Authentification des comptes de back-office ({@code admin_users}) et des apprenants ({@code learners}). */
 public interface AuthService {
 
     AuthResponse login(LoginRequest request);
@@ -31,4 +32,13 @@ public interface AuthService {
      * Valide le token de réinitialisation et change le mot de passe.
      */
     void resetPassword(ResetPasswordRequest request);
+
+    /**
+     * Émet un jeton « définir / réinitialiser mon mot de passe » (invalide les précédents)
+     * — utilisé par les invitations de comptes. À utiliser avec {@link #passwordSetupLink}.
+     */
+    String createPasswordResetToken(String email, int validityMinutes);
+
+    /** Lien frontend de définition de mot de passe, adapté au type de compte. */
+    String passwordSetupLink(String token, boolean learner);
 }

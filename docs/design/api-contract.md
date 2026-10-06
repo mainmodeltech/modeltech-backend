@@ -73,6 +73,39 @@ Préfixe de tous les chemins : `/api/v1`. « Front » = `data-mastery-hub` (fich
 | A6 | PUT | `/auth/change-password` | — | Existe | OK |
 | A7 | — | Google OAuth, lien magique e-mail, code WhatsApp | `ComingSoonLink` — **aucun appel** | Absent | **Hors périmètre** (consigne : seulement si le front les appelle) |
 
+### 3.A bis — Lot c livré (`feature/learner-accounts`) : contrats exacts à utiliser côté front
+
+**Auth (réponses brutes, inchangées dans leur forme)**
+
+- `POST /auth/login` → `{accessToken, tokenType, expiresIn, user:{id,email,fullName,primaryRole,roles[],userType,partnerId?}}`. Le **même** endpoint connecte admins et apprenants. `userType` = `ADMIN` | `LEARNER`. Le JWT porte `sub`, `roles[]` (noms stockés : `ROLE_ADMIN`, `ROLE_LEARNER`…), `uty`, `exp`. 401 si identifiants invalides, compte désactivé ou mot de passe pas encore défini.
+- `POST /auth/forgot-password` `{email}` → toujours 200 ; le lien envoyé dépend du type de compte : admin `…/admin/reset-password?token=…`, apprenant `…{app.frontend.learner-reset-path}?token=…` (défaut `/reinitialiser-mot-de-passe`, propriétés `app.frontend.url` / `app.frontend.learner-reset-path`, soit les variables d'environnement `APP_FRONTEND_URL` / `APP_FRONTEND_LEARNER_RESET_PATH` — **`APP_FRONTEND_URL` doit être renseignée en staging/prod** (défaut `http://localhost:5173`)).
+- `POST /auth/reset-password` `{token, newPassword(≥8)}` → 200 ; jeton invalide, expiré ou déjà utilisé → **400** « Lien de réinitialisation invalide ou expiré. ». Sert aussi à **définir le premier mot de passe** d'un compte invité.
+- `GET /auth/me` → profil (même forme que `user` ci-dessus).
+
+**Admin apprenants** (`ApiResponse`, rôles `SUPER_ADMIN`/`ADMIN`) — `LearnerResponse {id,email,firstName,lastName,phone,country,active,passwordSet,emailVerifiedAt,lastLoginAt,createdAt}`
+
+| Méthode | Chemin | Corps / effet |
+|---|---|---|
+| GET | `/admin/learners?page&size` | liste paginée |
+| GET | `/admin/learners/{id}` | détail ; 404 |
+| POST | `/admin/learners` | `{firstName*, lastName, email*, phone, country}` → 201 + e-mail d'invitation (72 h) ; 409 si l'e-mail est déjà un compte (apprenant **ou** back-office) |
+| PATCH | `/admin/learners/{id}/activate` · `/deactivate` | la désactivation refuse aussi les jetons déjà émis |
+| POST | `/admin/learners/{id}/resend-invitation` | 409 si le mot de passe est déjà défini |
+
+**Admin comptes back-office** (`ApiResponse`, **SUPER_ADMIN uniquement**) — `AdminUserSummaryResponse {id,email,fullName,roles[],active,partnerId,lastLoginAt,createdAt}`
+
+| Méthode | Chemin | Corps / effet |
+|---|---|---|
+| GET | `/admin/users` · `/admin/users/{id}` | liste paginée · détail |
+| POST | `/admin/users` | `{email*, fullName*, roles*[SUPER_ADMIN\|ADMIN\|EDITOR\|TRAINER\|PARTNER], partnerId}` → 201 + invitation ; `PARTNER` ⇒ `partnerId` obligatoire (400) ; `LEARNER`/inconnu ⇒ 400 ; e-mail pris ⇒ 409 |
+| PUT | `/admin/users/{id}` | champs optionnels `{fullName, roles, partnerId, active}` ; 409 si l'on se désactive / se retire SUPER_ADMIN, ou si l'on retirerait le dernier SUPER_ADMIN actif |
+
+**Sécurité** : matrice §6 appliquée (`EDITOR` n'a plus accès à `/admin/registrations` ni `/admin/promo-codes`, défaut Q22). Un JWT apprenant reçoit 403 sur tout `/admin/**`.
+
+**Migration V20** : crée `learners`/`learner_roles`, les rôles LEARNER/TRAINER/PARTNER, `admin_users.partner_id`, **rattrape les rôles des admins existants** (colonne historique `admin_users.role` → `ROLE_<ROLE>`, sinon `ROLE_ADMIN`) et **promeut le plus ancien admin actif SUPER_ADMIN si aucun n'existe** (sans quoi personne ne pourrait gérer les comptes). ⚠️ À contrôler sur une copie de la base de prod avant déploiement : `SELECT u.email, array_agg(r.name) FROM admin_users u LEFT JOIN admin_user_roles x ON x.admin_user_id=u.id LEFT JOIN roles r ON r.id=x.role_id GROUP BY u.email;`
+
+**À faire côté front pour ce lot** (cf. §9) : page « définir mon mot de passe » apprenant (route = `app.frontend.learner-reset-path`), lire `userType`/`roles` pour router apprenant vs back-office, pages Admin « Apprenants » et « Comptes » (§9 point 14), corriger `AdminForgotPassword`/`AdminResetPassword` (§9 point 0).
+
 ### 3.B Catalogue (lot a)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

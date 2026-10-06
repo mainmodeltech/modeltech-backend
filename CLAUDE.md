@@ -75,7 +75,8 @@ public interface SoftDeleteRepository<T extends BaseEntity, ID> extends JpaRepos
 ## SecurityConfig — principe (les listes de chemins évoluent : lire le fichier avant de la modifier)
 - Liste blanche **explicite** : `OPTIONS /**`, `GET /actuator/health`, quelques `POST` publics (auth login/forgot/reset, registrations, contact-messages, masterclass/register) et des `GET` publics (bootcamps, formations, domains, partners, services, témoignages publiés, alumni, projets, sessions, promo-codes/validate), Swagger.
 - **`.anyRequest().authenticated()`** : tout le reste exige un JWT. Un nouveau `GET` public doit être ajouté à la liste (avec son `/**` si le détail `/{id}` est public aussi — oubli déjà vu sur `/bootcamps/{id}`).
-- Il n'y a **pas encore de contrôle de rôle** sur `/api/v1/admin/**` (juste « authentifié ») : prévu au lot `learner-accounts` (voir docs/design/api-contract.md §6).
+- **Contrôle de rôle sur `/api/v1/admin/**`** (lot learner-accounts, ordre des règles = ordre dans le fichier) : `/admin/users/**` → `SUPER_ADMIN` ; `/admin/registrations|promo-codes|learners|payments|enrollments/**` → `SUPER_ADMIN`/`ADMIN` ; le reste de `/admin/**` → `SUPER_ADMIN`/`ADMIN`/`EDITOR`. Un compte apprenant (`ROLE_LEARNER`) n'entre jamais dans `/admin/**`. Nouvelle zone admin sensible : ajouter sa règle **avant** `/admin/**`.
+- Le filtre JWT recharge le compte (admin ou apprenant) à chaque requête : rôles et statut `active` viennent toujours de la base, pas du jeton (un compte désactivé est refusé immédiatement). Le jeton porte aussi `roles` et `uty` (`ADMIN`/`LEARNER`) pour le front.
 - **Formulaires publics** : toujours via `IpRateLimiter.check(request, "<scope>")` (429 au-delà de `app.rate-limit.forms.per-hour`, 10 par défaut). L'IP est la **dernière** entrée de `X-Forwarded-For` (celle du reverse proxy), jamais la première (falsifiable).
 - Les erreurs métier se lèvent avec `ResponseStatusException` (gérée par `GlobalExceptionHandler` → statut conservé) ou `ResourceNotFoundException` (404).
 
@@ -228,6 +229,9 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 `type` : `CONTACT` (formulaire de contact), `DIAGNOSTIC` (page Entreprises), `PARTNER_APPLICATION` (page Partenaires) — les trois sont stockés dans la même table et listés par `/admin/contact-messages` (filtre `?type=`). `lastName` est NOT NULL en base mais **facultatif** à l'entrée : un nom d'un seul mot est stocké avec `lastName = ""`. Les enums de formulaire (`PeopleCount`, `TrainingNeed`, `PartnerDomain`) sont dans `modules/communication/enums/` avec leur libellé français (`getLabel()`).
 **ATTENTION**: ContactMessage utilise `@Builder` (historique, devrait être retiré).
 
+### Comptes (V13 + V20)
+`AdminUser` (back-office : rôles `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `TRAINER`, `PARTNER` ; `partner` LAZY obligatoire pour `PARTNER`) et `Learner` (apprenant, rôle `LEARNER`, `passwordHash` **nul** tant que le lien d'invitation n'a pas été utilisé) sont deux tables distinctes ; une même adresse e-mail ne peut exister que dans l'une des deux (409). Constantes de rôles : `RoleNames`. Login/me/reset sont communs (`AuthService` cherche l'admin puis l'apprenant). Invitation : `authService.createPasswordResetToken(email, minutes)` + `passwordSetupLink(token, learner)` + `notificationService.sendAccountInvitationEmail(...)` (validité 72 h). Pour créer un compte à la confirmation du paiement : `LearnerService.findOrCreateInvited(...)`.
+
 ### NewsletterSubscription (V19)
 `id | email(unique, minuscules) | status(PENDING/CONFIRMED/UNSUBSCRIBED) | source | confirmationToken | confirmationExpiresAt | unsubscribeToken | confirmedAt | unsubscribedAt` — double opt-in ; **les jetons ne sortent jamais** dans l'API admin.
 
@@ -260,8 +264,9 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V20** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`).
+**Prochaine migration : V21** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -306,6 +311,8 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | *       | `/api/v1/admin/contact-messages/**`              | JWT ADMIN  | CRUD messages (`?type=` filtre)      |
 | GET     | `/api/v1/admin/newsletter-subscriptions`         | JWT ADMIN  | Abonnés newsletter (`?status=`)      |
 | *       | `/api/v1/admin/promo-codes/**`                   | JWT ADMIN  | CRUD codes promo                     |
+| GET/POST/PATCH | `/api/v1/admin/learners/**` (`/{id}/activate`, `/{id}/deactivate`, `POST /{id}/resend-invitation`) | JWT ADMIN | Comptes apprenants (ApiResponse) |
+| GET/POST/PUT | `/api/v1/admin/users/**`                    | JWT SUPER_ADMIN | Comptes back-office + invitation (ApiResponse) |
 
 ---
 

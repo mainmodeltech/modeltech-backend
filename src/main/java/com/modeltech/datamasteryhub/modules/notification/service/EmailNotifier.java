@@ -215,6 +215,54 @@ public class EmailNotifier {
     }
 
     // =========================================================================
+    //  EMAIL COMPTES — Invitation à définir son mot de passe
+    // =========================================================================
+
+    public void sendAccountInvitationEmail(String to, String firstName, String setupLink,
+                                           int validHours, boolean learner) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(to);
+            String hello = firstName != null && !firstName.isBlank() ? "Bonjour " + firstName.trim() + "," : "Bonjour,";
+            if (learner) {
+                msg.setSubject("[Model Technologie] Votre accès à la plateforme de formation");
+                msg.setText("""
+                        %s
+
+                        Votre inscription est confirmée : votre espace apprenant Model Technologie est prêt.
+
+                        Définissez votre mot de passe pour vous connecter :
+                        %s
+
+                        Ce lien est valable %d heures. Passé ce délai, utilisez « Mot de passe oublié »
+                        sur la page de connexion pour en recevoir un nouveau.
+
+                        — L'équipe Model Technologie
+                        """.formatted(hello, setupLink, validHours));
+            } else {
+                msg.setSubject("[Model Technologie] Votre compte du back-office");
+                msg.setText("""
+                        %s
+
+                        Un compte du back-office Model Technologie a été créé pour vous.
+
+                        Définissez votre mot de passe pour vous connecter :
+                        %s
+
+                        Ce lien est valable %d heures.
+
+                        — L'équipe Model Technologie
+                        """.formatted(hello, setupLink, validHours));
+            }
+            mailSender.send(msg);
+            log.info("Email d'invitation envoyé à {}", to);
+        } catch (Exception e) {
+            log.error("Erreur email d'invitation pour {} : {}", to, e.getMessage());
+        }
+    }
+
+    // =========================================================================
     //  HTML BUILDERS
     // =========================================================================
 

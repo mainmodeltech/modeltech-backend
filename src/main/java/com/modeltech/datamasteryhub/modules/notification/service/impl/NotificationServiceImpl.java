@@ -110,4 +110,11 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Email de réinitialisation de mot de passe → {}", to);
         emailNotifier.sendPasswordResetEmail(to, resetLink, expiresMinutes);
     }
+
+    @Override
+    @Async
+    public void sendAccountInvitationEmail(String to, String firstName, String setupLink, int validHours, boolean learner) {
+        log.info("Email d'invitation ({}) → {}", learner ? "apprenant" : "back-office", to);
+        emailNotifier.sendAccountInvitationEmail(to, firstName, setupLink, validHours, learner);
+    }
 }

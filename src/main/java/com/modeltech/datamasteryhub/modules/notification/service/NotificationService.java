@@ -36,4 +36,11 @@ public interface NotificationService {
     // ── Auth ───────────────────────────────────────────────────────────────
 
     void notifyPasswordResetEmail(String to, String resetLink, int expiresMinutes);
+
+    /**
+     * Invitation à définir son mot de passe (compte apprenant ou back-office créé par un admin).
+     *
+     * @param learner true pour un apprenant, false pour un compte de back-office
+     */
+    void sendAccountInvitationEmail(String to, String firstName, String setupLink, int validHours, boolean learner);
 }

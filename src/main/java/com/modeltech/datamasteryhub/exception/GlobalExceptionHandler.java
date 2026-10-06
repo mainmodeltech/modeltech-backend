@@ -4,7 +4,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -103,14 +105,28 @@ public class GlobalExceptionHandler {
         ));
     }
 
-    @ExceptionHandler(DisabledException.class)
+    @ExceptionHandler({DisabledException.class, LockedException.class})
     public ResponseEntity<ErrorResponse> handleDisabled(
-            DisabledException ex, HttpServletRequest request) {
+            RuntimeException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
                 "Compte désactivé, contactez un administrateur",
+                request.getRequestURI(),
+                null
+        ));
+    }
+
+    /** Droits insuffisants (contrôle de rôle par annotation) : 403, jamais 500. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                "Accès refusé : droits insuffisants",
                 request.getRequestURI(),
                 null
         ));

@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.modules.auth.entity;
 
 import com.modeltech.datamasteryhub.common.persistence.BaseEntity;
+import com.modeltech.datamasteryhub.modules.training.entity.Partner;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -55,6 +56,11 @@ public class AdminUser extends BaseEntity {
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
+
+    /** Partenaire rattaché (comptes ROLE_PARTNER : limités à leurs propres formations). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_id")
+    private Partner partner;
 
     // ─── Helpers ──────────────────────────────────────────────────────────
 

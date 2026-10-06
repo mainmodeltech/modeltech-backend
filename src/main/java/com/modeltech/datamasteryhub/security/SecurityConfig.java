@@ -96,6 +96,18 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        // ── Back-office : contrôle par rôle (les règles les plus précises d'abord) ──
+                        .requestMatchers("/api/v1/admin/users/**")
+                                .hasRole("SUPER_ADMIN")
+                        .requestMatchers(
+                                "/api/v1/admin/registrations/**",
+                                "/api/v1/admin/promo-codes/**",
+                                "/api/v1/admin/learners/**",
+                                "/api/v1/admin/payments/**",
+                                "/api/v1/admin/enrollments/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers("/api/v1/admin/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR")
                         // ── Toutes les autres routes → authentification requise ─────
                         .anyRequest().authenticated()
                 )
