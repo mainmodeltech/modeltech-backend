@@ -28,6 +28,11 @@ public interface NotificationService {
 
     void notifyNewContactMessage(ContactMessage contactMessage);
 
+    // ── Newsletter ─────────────────────────────────────────────────────────
+
+    /** E-mail de confirmation (double opt-in) envoyé à l'abonné. */
+    void sendNewsletterConfirmationEmail(String to, String confirmLink, int validDays);
+
     // ── Auth ───────────────────────────────────────────────────────────────
 
     void notifyPasswordResetEmail(String to, String resetLink, int expiresMinutes);

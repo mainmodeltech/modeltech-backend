@@ -91,6 +91,17 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // =========================================================================
+    //  NEWSLETTER
+    // =========================================================================
+
+    @Override
+    @Async
+    public void sendNewsletterConfirmationEmail(String to, String confirmLink, int validDays) {
+        log.info("Email de confirmation newsletter → {}", to);
+        emailNotifier.sendNewsletterConfirmationEmail(to, confirmLink, validDays);
+    }
+
+    // =========================================================================
     //  AUTH
     // =========================================================================
 

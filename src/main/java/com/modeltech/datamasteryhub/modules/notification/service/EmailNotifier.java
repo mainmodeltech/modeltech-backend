@@ -183,6 +183,38 @@ public class EmailNotifier {
     }
 
     // =========================================================================
+    //  EMAIL NEWSLETTER — Confirmation d'abonnement (double opt-in)
+    // =========================================================================
+
+    public void sendNewsletterConfirmationEmail(String to, String confirmLink, int validDays) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(to);
+            msg.setSubject("[Model Technologie] Confirmez votre inscription à la newsletter");
+            msg.setText("""
+                    Bonjour,
+
+                    Merci de votre intérêt pour la newsletter de Model Technologie.
+
+                    Pour confirmer votre inscription, cliquez sur le lien ci-dessous :
+                    %s
+
+                    Ce lien est valable %d jours.
+
+                    Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email :
+                    vous ne recevrez rien.
+
+                    — L'équipe Model Technologie
+                    """.formatted(confirmLink, validDays));
+            mailSender.send(msg);
+            log.info("Email de confirmation newsletter envoyé à {}", to);
+        } catch (Exception e) {
+            log.error("Erreur email confirmation newsletter pour {} : {}", to, e.getMessage());
+        }
+    }
+
+    // =========================================================================
     //  HTML BUILDERS
     // =========================================================================
 

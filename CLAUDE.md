@@ -76,6 +76,7 @@ public interface SoftDeleteRepository<T extends BaseEntity, ID> extends JpaRepos
 - Liste blanche **explicite** : `OPTIONS /**`, `GET /actuator/health`, quelques `POST` publics (auth login/forgot/reset, registrations, contact-messages, masterclass/register) et des `GET` publics (bootcamps, formations, domains, partners, services, témoignages publiés, alumni, projets, sessions, promo-codes/validate), Swagger.
 - **`.anyRequest().authenticated()`** : tout le reste exige un JWT. Un nouveau `GET` public doit être ajouté à la liste (avec son `/**` si le détail `/{id}` est public aussi — oubli déjà vu sur `/bootcamps/{id}`).
 - Il n'y a **pas encore de contrôle de rôle** sur `/api/v1/admin/**` (juste « authentifié ») : prévu au lot `learner-accounts` (voir docs/design/api-contract.md §6).
+- **Formulaires publics** : toujours via `IpRateLimiter.check(request, "<scope>")` (429 au-delà de `app.rate-limit.forms.per-hour`, 10 par défaut). L'IP est la **dernière** entrée de `X-Forwarded-For` (celle du reverse proxy), jamais la première (falsifiable).
 - Les erreurs métier se lèvent avec `ResponseStatusException` (gérée par `GlobalExceptionHandler` → statut conservé) ou `ResourceNotFoundException` (404).
 
 ---
@@ -223,8 +224,12 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 `id(UUID) | code(unique,50) | description | referrerName | referrerEmail | referrerPhone(50) | discountPercent(Integer=0) | maxUses(Integer, nullable) | usageCount(Integer=0) | expiresAt(LocalDateTime, nullable) | isActive(Boolean=true)`
 
 ### ContactMessage
-`id(UUID) | firstName | lastName | email | phone | company | subject | message(TEXT) | status(ContactMessageStatus=unread) | notes(TEXT)`
+`id(UUID) | firstName | lastName | email | phone | company | subject | message(TEXT) | status(ContactMessageStatus=unread) | notes(TEXT) | type(ContactType, NOT NULL) | requesterType(PARTICULIER/ENTREPRISE, nullable) | details(jsonb, nullable)`
+`type` : `CONTACT` (formulaire de contact), `DIAGNOSTIC` (page Entreprises), `PARTNER_APPLICATION` (page Partenaires) — les trois sont stockés dans la même table et listés par `/admin/contact-messages` (filtre `?type=`). `lastName` est NOT NULL en base mais **facultatif** à l'entrée : un nom d'un seul mot est stocké avec `lastName = ""`. Les enums de formulaire (`PeopleCount`, `TrainingNeed`, `PartnerDomain`) sont dans `modules/communication/enums/` avec leur libellé français (`getLabel()`).
 **ATTENTION**: ContactMessage utilise `@Builder` (historique, devrait être retiré).
+
+### NewsletterSubscription (V19)
+`id | email(unique, minuscules) | status(PENDING/CONFIRMED/UNSUBSCRIBED) | source | confirmationToken | confirmationExpiresAt | unsubscribeToken | confirmedAt | unsubscribedAt` — double opt-in ; **les jetons ne sortent jamais** dans l'API admin.
 
 ### Service (cms)
 `id(UUID) | title | description | iconName | features(text[]) | duration | displayOrder(Integer=0) | published(boolean=true)`
@@ -254,8 +259,9 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 | V16 | Audit columns alumni/projects                          |
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
+| V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
 
-**Prochaine migration : V19** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`).
+**Prochaine migration : V20** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -285,7 +291,10 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET     | `/api/v1/services`                               | Non        | Liste services publiés               |
 | GET     | `/api/v1/services/{id}`                          | Non        | Détail service publié                |
 | POST    | `/api/v1/registrations`                          | Non        | Inscription visiteur bootcamp        |
-| POST    | `/api/v1/contact-messages`                       | Non        | Message de contact                   |
+| POST    | `/api/v1/contact-messages`                       | Non        | Message de contact (limité par IP)   |
+| POST    | `/api/v1/diagnostic-requests`                    | Non        | Diagnostic gratuit entreprise (limité par IP) |
+| POST    | `/api/v1/partner-applications`                   | Non        | Candidature formateur partenaire (limité par IP) |
+| POST    | `/api/v1/newsletter/subscriptions` (+ `/confirm`, `/unsubscribe`) | Non | Newsletter, double opt-in (limité par IP) |
 | GET     | `/api/v1/admin/masterclass/{id}/registrations`   | JWT ADMIN  | Inscriptions masterclass (paginé)    |
 | GET     | `/api/v1/admin/masterclass/{id}/count`           | JWT ADMIN  | Nombre d'inscrits masterclass        |
 | *       | `/api/v1/admin/bootcamps/**`                     | JWT ADMIN  | CRUD bootcamps                       |
@@ -294,7 +303,8 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | *       | `/api/v1/admin/bootcamp-sessions/**`             | JWT ADMIN  | CRUD sessions                        |
 | *       | `/api/v1/admin/registrations/**`                 | JWT ADMIN  | CRUD inscriptions (paginé)           |
 | *       | `/api/v1/admin/services/**`                      | JWT ADMIN  | CRUD services                        |
-| *       | `/api/v1/admin/contact-messages/**`              | JWT ADMIN  | CRUD messages                        |
+| *       | `/api/v1/admin/contact-messages/**`              | JWT ADMIN  | CRUD messages (`?type=` filtre)      |
+| GET     | `/api/v1/admin/newsletter-subscriptions`         | JWT ADMIN  | Abonnés newsletter (`?status=`)      |
 | *       | `/api/v1/admin/promo-codes/**`                   | JWT ADMIN  | CRUD codes promo                     |
 
 ---

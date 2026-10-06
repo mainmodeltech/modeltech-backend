@@ -67,6 +67,11 @@ public class SecurityConfig {
                                 "/api/v1/auth/reset-password",
                                 "/api/v1/masterclass/register",
                                 "/api/v1/contact-messages",
+                                "/api/v1/diagnostic-requests",
+                                "/api/v1/partner-applications",
+                                "/api/v1/newsletter/subscriptions",
+                                "/api/v1/newsletter/subscriptions/confirm",
+                                "/api/v1/newsletter/subscriptions/unsubscribe",
                                 "/api/v1/registrations"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,

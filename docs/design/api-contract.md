@@ -162,6 +162,38 @@ Chemins publics : le README écrit `/public/...` ; la convention réelle du back
 
 Valeurs de champs fixées par le front et à reprendre telles quelles dans les DTO : `peopleCount` ∈ `"1 à 5" | "6 à 15" | "16 à 50" | "Plus de 50"` ; `need` ∈ `"Mise à niveau Excel" | "Power BI sur mesure" | "Parcours data sur mesure" | "Je ne sais pas encore"` ; `domain` (partenaire) ∈ `"Gestion de projet & Agile" | "IA appliquée" | "Finance & contrôle de gestion" | "Cybersécurité" | "Communication & leadership" | "Autre domaine"`. → je proposerais des **enums stables** côté back (`NEED_EXCEL_UPGRADE`…) avec libellés laissés au front ; à valider (sinon on stocke le libellé tel quel).
 
+### 3.E bis — Lot b livré (`feature/site-forms`) : contrats exacts à utiliser côté front
+
+Tous les endpoints ci-dessous répondent en `ApiResponse` (`{success, message, data?}`) ; les erreurs en `ErrorResponse` (`message`, `validationErrors`). **429** au-delà de 10 envois par heure et par IP (même compteur pour contact, diagnostic, partenaire, newsletter, par formulaire).
+
+| Endpoint | Corps | Réponse |
+|---|---|---|
+| `POST /contact-messages` (existant, **rétro-compatible**) | `firstName`, `lastName?` (**désormais facultatif**), `email`, `phone?`, `company?`, `subject?`, `requesterType?` (`PARTICULIER` \| `ENTREPRISE`), `message` | 201, `data` = message (`type: "CONTACT"`) |
+| `POST /diagnostic-requests` | `firstName`, `lastName?`, `email`, `phone?`, `company`, `role`, `peopleCount`, `need`, `context?` | 201, `data` = message (`type: "DIAGNOSTIC"`, `requesterType: "ENTREPRISE"`, `details`) |
+| `POST /partner-applications` | `firstName`, `lastName?`, `email`, `phone?`, `organization?`, `domain`, `linkedinUrl?`, `proposal`, `references?` | 201, `data` = message (`type: "PARTNER_APPLICATION"`, `details`) |
+| `POST /newsletter/subscriptions` | `email`, `source?` | 202 — **même réponse que l'adresse soit connue ou non** ; envoie un e-mail de confirmation (valable 7 jours) |
+| `POST /newsletter/subscriptions/confirm` | `token` | 200 (idempotent) ou 400 « Lien de confirmation invalide ou expiré. » |
+| `POST /newsletter/subscriptions/unsubscribe` | `token` | 200 (idempotent) ou 400 « Lien de désinscription invalide. » |
+| `GET /admin/contact-messages?type=` | — | filtre `CONTACT` \| `DIAGNOSTIC` \| `PARTNER_APPLICATION` ; chaque message expose `type`, `requesterType?`, `details?` |
+| `GET /admin/newsletter-subscriptions?status=` | — | `PENDING` \| `CONFIRMED` \| `UNSUBSCRIBED` ; **jamais de jeton** |
+
+**Valeurs d'énumération** (le front doit envoyer le **code**, pas le libellé) :
+
+| Champ | Code → libellé affiché |
+|---|---|
+| `peopleCount` | `RANGE_1_5` → « 1 à 5 » · `RANGE_6_15` → « 6 à 15 » · `RANGE_16_50` → « 16 à 50 » · `OVER_50` → « Plus de 50 » |
+| `need` | `EXCEL_UPGRADE` → « Mise à niveau Excel » · `POWER_BI_CUSTOM` → « Power BI sur mesure » · `DATA_PATH_CUSTOM` → « Parcours data sur mesure » · `UNDECIDED` → « Je ne sais pas encore » |
+| `domain` | `PROJECT_AGILE` → « Gestion de projet & Agile » · `APPLIED_AI` → « IA appliquée » · `FINANCE_CONTROL` → « Finance & contrôle de gestion » · `CYBERSECURITY` → « Cybersécurité » · `COMMUNICATION_LEADERSHIP` → « Communication & leadership » · `OTHER` → « Autre domaine » |
+
+Les demandes de diagnostic et candidatures partenaire restent **lisibles dans la page admin « Messages »** : le champ `message` contient le même récapitulatif texte qu'avant (« Fonction : … », « Domaine : … »), et `details` porte les mêmes informations structurées.
+
+**À faire côté front pour ce lot** (aucune modification faite ici) :
+1. `Entreprises.tsx` / `Partenaires.tsx` : appeler `/diagnostic-requests` et `/partner-applications` avec les codes ci-dessus (au lieu de `/contact-messages` + texte concaténé). Tant que ce n'est pas fait, les formulaires continuent de fonctionner via `/contact-messages` (désormais sans le 400 sur un nom d'un seul mot).
+2. `Contact.tsx` : envoyer `requesterType` (bascule particulier / entreprise) ; lire `?sujet=` (liens du Coaching).
+3. `Ressources.tsx` : appeler `POST /newsletter/subscriptions` (aujourd'hui `setSubscribed(true)` sans appel).
+4. **Deux nouvelles pages** : `/newsletter/confirmation?token=…` (appelle `/confirm`) et `/newsletter/desinscription?token=…` (appelle `/unsubscribe`) — les liens des e-mails pointent dessus (`app.frontend.url`).
+5. Gérer le **429** (« Trop de tentatives… ») sur les quatre formulaires.
+
 ### 3.F Autres endpoints consommés par le front (non-régression, hors lots)
 
 | # | Méthode | Chemin | Front | Back | Écart |

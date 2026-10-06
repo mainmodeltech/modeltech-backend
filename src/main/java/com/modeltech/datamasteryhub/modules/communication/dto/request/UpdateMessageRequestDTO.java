@@ -9,7 +9,7 @@ public class UpdateMessageRequestDTO {
     @NotBlank(message = "Le prénom est obligatoire")
     private String firstName;
 
-    @NotBlank(message = "Le nom est obligatoire")
+    /** Facultatif (voir ContactMessageRequestDTO). */
     private String lastName;
 
     @Email(message = "Email invalide")

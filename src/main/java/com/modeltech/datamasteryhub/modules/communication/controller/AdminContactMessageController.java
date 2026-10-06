@@ -4,6 +4,7 @@ import com.modeltech.datamasteryhub.common.dto.ApiResponse;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.UpdateMessageRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.response.ContactMessageResponseDTO;
 import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessageStatus;
+import com.modeltech.datamasteryhub.modules.communication.enums.ContactType;
 import com.modeltech.datamasteryhub.modules.communication.service.ContactMessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,14 +31,16 @@ public class AdminContactMessageController {
     /**
      * GET /api/v1/admin/contact-messages?page=0&size=20
      * Liste paginée de tous les messages, triée du plus récent au plus ancien.
+     * Filtre facultatif : ?type=CONTACT | DIAGNOSTIC | PARTNER_APPLICATION.
      */
     @GetMapping
     @Operation(summary = "Lister les messages de contact (paginé)")
     public ResponseEntity<ApiResponse<java.util.List<ContactMessageResponseDTO>>> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) ContactType type) {
 
-        Page<ContactMessageResponseDTO> result = contactMessageService.getAllMessages(page, size);
+        Page<ContactMessageResponseDTO> result = contactMessageService.getAllMessages(page, size, type);
         return ResponseEntity.ok(
                 ApiResponse.page("Messages récupérés avec succès", result)
         );

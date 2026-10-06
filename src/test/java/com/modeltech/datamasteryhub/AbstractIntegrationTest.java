@@ -1,8 +1,10 @@
 package com.modeltech.datamasteryhub;
 
+import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -39,8 +41,15 @@ public abstract class AbstractIntegrationTest {
         registry.add("JWT_SECRET", () -> "test-only-jwt-secret-".concat("x".repeat(80)));
         registry.add("MINIO_ROOT_USER", () -> "test-user");
         registry.add("MINIO_ROOT_PASSWORD", () -> "test-password");
+        // Tous les tests partagent la même IP (127.0.0.1) : la limite des formulaires est relevée.
+        // Le comportement de la limite est couvert par IpRateLimiterTest et RateLimitedFormsIT.
+        registry.add("app.rate-limit.forms.per-hour", () -> "1000");
     }
 
     @Autowired
     protected MockMvc mockMvc;
+
+    /** Aucun e-mail/Slack réel pendant les tests ; les tests vérifient les appels. */
+    @MockBean
+    protected NotificationService notificationService;
 }
