@@ -6,6 +6,9 @@ import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampOutc
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampProfile;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampTool;
 import com.modeltech.datamasteryhub.modules.training.entity.content.CurriculumWeek;
+import com.modeltech.datamasteryhub.modules.training.enums.DeliveredBy;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationFormat;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationLevel;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +17,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -117,6 +122,50 @@ public class Bootcamp extends BaseEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private BootcampCertification certification;
+
+    // ── Catalogue par domaines ──────────────────────────────────────
+    // Identifiant d'URL (/formations/:slug), unique, généré depuis le titre si absent
+    @Column(nullable = false, unique = true, length = 150)
+    private String slug;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "domain_id")
+    private Domain domain;
+
+    // Qui dispense la formation ; PARTNER impose un partenaire
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivered_by", nullable = false, length = 20)
+    private DeliveredBy deliveredBy = DeliveredBy.INTERNAL;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_id")
+    private Partner partner;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FormationLevel level;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FormationFormat format;
+
+    // Certification préparée, ex. « Microsoft Power BI Data Analyst (PL-300) »
+    @Column(name = "certification_prep", columnDefinition = "TEXT")
+    private String certificationPrep;
+
+    // Métiers ciblés (filtre « Métier » du catalogue)
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "target_roles", columnDefinition = "text[]")
+    private List<String> targetRoles = new ArrayList<>();
+
+    // Formations liées, choisies à la main (repli « même domaine » côté service)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "bootcamp_related",
+            joinColumns = @JoinColumn(name = "bootcamp_id"),
+            inverseJoinColumns = @JoinColumn(name = "related_bootcamp_id")
+    )
+    private Set<Bootcamp> relatedFormations = new LinkedHashSet<>();
 
     // ── Relations ───────────────────────────────────────────────────
     @OneToMany(

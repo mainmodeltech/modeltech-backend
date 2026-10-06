@@ -6,6 +6,9 @@ import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampOutc
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampProfile;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampTool;
 import com.modeltech.datamasteryhub.modules.training.entity.content.CurriculumWeek;
+import com.modeltech.datamasteryhub.modules.training.enums.DeliveredBy;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationFormat;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationLevel;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -39,6 +42,19 @@ public class BootcampResponse {
     private List<BootcampOutcome> outcomes;
     private BootcampCertification certification;
     private BootcampTestimonialResponse testimonial;
+
+    // ── Catalogue par domaines (contrat Formation de formation.type.ts) ──
+    private String slug;
+    private UUID domainId;
+    private DomainResponse domain;
+    private DeliveredBy deliveredBy;
+    private UUID partnerId;
+    private PartnerResponse partner;
+    private FormationLevel level;
+    private FormationFormat format;
+    private List<String> targetRoles;
+    private String certificationPrep;
+    private List<UUID> relatedFormationIds;
 
     // Session mise en avant (la prochaine session ouverte)
     private BootcampSessionResponse nextSession;

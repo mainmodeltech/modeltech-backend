@@ -5,10 +5,14 @@ import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampOutc
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampProfile;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampTool;
 import com.modeltech.datamasteryhub.modules.training.entity.content.CurriculumWeek;
+import com.modeltech.datamasteryhub.modules.training.enums.DeliveredBy;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationFormat;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationLevel;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class CreateBootcampRequest {
@@ -37,4 +41,17 @@ public class CreateBootcampRequest {
     private List<CurriculumWeek> curriculum;
     private List<BootcampOutcome> outcomes;
     private BootcampCertification certification;
+
+    // ── Catalogue par domaines (facultatif) ───────────────────────────
+    /** Identifiant d'URL ; généré depuis le titre si absent. */
+    private String slug;
+    private UUID domainId;
+    /** PARTNER impose un partnerId ; INTERNAL n'a pas de partenaire. */
+    private DeliveredBy deliveredBy = DeliveredBy.INTERNAL;
+    private UUID partnerId;
+    private FormationLevel level;
+    private FormationFormat format;
+    private String certificationPrep;
+    private List<String> targetRoles;
+    private List<UUID> relatedFormationIds;
 }

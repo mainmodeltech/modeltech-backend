@@ -5,8 +5,12 @@ import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampOutc
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampProfile;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampTool;
 import com.modeltech.datamasteryhub.modules.training.entity.content.CurriculumWeek;
+import com.modeltech.datamasteryhub.modules.training.enums.DeliveredBy;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationFormat;
+import com.modeltech.datamasteryhub.modules.training.enums.FormationLevel;
 import lombok.Data;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class UpdateBootcampRequest {
@@ -32,4 +36,17 @@ public class UpdateBootcampRequest {
     private List<CurriculumWeek> curriculum;
     private List<BootcampOutcome> outcomes;
     private BootcampCertification certification;
+
+    // ── Catalogue par domaines (facultatif) ───────────────────────────
+    private String slug;
+    private UUID domainId;
+    /** INTERNAL efface le partenaire ; PARTNER impose un partnerId. */
+    private DeliveredBy deliveredBy;
+    private UUID partnerId;
+    private FormationLevel level;
+    private FormationFormat format;
+    private String certificationPrep;
+    private List<String> targetRoles;
+    /** Remplace la liste des formations liées (liste vide = aucune). */
+    private List<UUID> relatedFormationIds;
 }

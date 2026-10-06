@@ -2,11 +2,15 @@ package com.modeltech.datamasteryhub.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -29,6 +33,47 @@ public class GlobalExceptionHandler {
                 "Les données fournies sont invalides",
                 request.getRequestURI(),
                 errors
+        ));
+    }
+
+    /**
+     * Erreurs métier levées via ResponseStatusException (409 « session complète »,
+     * 400 « profil obligatoire »…) : on conserve le statut voulu au lieu de les
+     * laisser retomber dans le handler générique (500).
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(
+            ResponseStatusException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        String error = status != null ? status.getReasonPhrase() : "Error";
+        String message = ex.getReason() != null ? ex.getReason() : error;
+        return ResponseEntity.status(ex.getStatusCode()).body(new ErrorResponse(
+                LocalDateTime.now(),
+                ex.getStatusCode().value(),
+                error,
+                message,
+                request.getRequestURI(),
+                null
+        ));
+    }
+
+    /** Paramètre ou corps de requête illisible / de mauvais type → 400 (et non 500). */
+    @ExceptionHandler({
+            MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class,
+            MissingServletRequestParameterException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex, HttpServletRequest request) {
+        String message = ex instanceof MethodArgumentTypeMismatchException mismatch
+                ? "Valeur invalide pour le paramètre « " + mismatch.getName() + " »"
+                : "Requête invalide";
+        return ResponseEntity.badRequest().body(new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                message,
+                request.getRequestURI(),
+                null
         ));
     }
 

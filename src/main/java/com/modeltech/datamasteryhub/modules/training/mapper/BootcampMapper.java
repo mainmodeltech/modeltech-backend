@@ -9,13 +9,18 @@ import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateBootcampR
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateBootcampSessionRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampSessionResponse;
+import com.modeltech.datamasteryhub.modules.training.dto.response.FormationSessionResponse;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
 import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(
+        componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+        uses = {DomainMapper.class, PartnerMapper.class}
+)
 public interface BootcampMapper {
 
     // ── Entity → Response ────────────────────────────────────────
@@ -23,16 +28,33 @@ public interface BootcampMapper {
     @Mapping(target = "nextSession", ignore = true)  // calculé dans le service
     @Mapping(target = "sessions", ignore = true)      // chargé selon le contexte
     @Mapping(target = "testimonial", ignore = true)   // résolu dans le service via TestimonialRepository
+    @Mapping(target = "domainId", source = "domain.id")
+    @Mapping(target = "partnerId", source = "partner.id")
+    @Mapping(target = "relatedFormationIds", ignore = true) // calculé dans le service (liées + repli même domaine)
     BootcampResponse toResponse(Bootcamp bootcamp);
 
     List<BootcampResponse> toResponseList(List<Bootcamp> bootcamps);
 
+    @Named("session")
     @Mapping(target = "bootcampId", source = "bootcamp.id")
     @Mapping(target = "price", expression = "java(resolvePrice(session))")
     @Mapping(target = "spotsRemaining", expression = "java(computeSpots(session))")
     BootcampSessionResponse toSessionResponse(BootcampSession session);
 
+    @IterableMapping(qualifiedByName = "session")
     List<BootcampSessionResponse> toSessionResponseList(List<BootcampSession> sessions);
+
+    /** Session « à plat » enrichie de sa formation (vue calendrier du catalogue). */
+    @Mapping(target = "bootcampId", source = "bootcamp.id")
+    @Mapping(target = "price", expression = "java(resolvePrice(session))")
+    @Mapping(target = "spotsRemaining", expression = "java(computeSpots(session))")
+    @Mapping(target = "formationId", source = "bootcamp.id")
+    @Mapping(target = "formationSlug", source = "bootcamp.slug")
+    @Mapping(target = "formationTitle", source = "bootcamp.title")
+    @Mapping(target = "domainName", source = "bootcamp.domain.name")
+    @Mapping(target = "deliveredBy", source = "bootcamp.deliveredBy")
+    @Mapping(target = "partnerName", source = "bootcamp.partner.name")
+    FormationSessionResponse toFormationSessionResponse(BootcampSession session);
 
     // ── Request → Entity ─────────────────────────────────────────
 
@@ -46,6 +68,10 @@ public interface BootcampMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "nextSession", ignore = true)
+    @Mapping(target = "slug", ignore = true)              // posé par le service (génération + unicité)
+    @Mapping(target = "domain", ignore = true)            // résolus par le service (domainId, partnerId…)
+    @Mapping(target = "partner", ignore = true)
+    @Mapping(target = "relatedFormations", ignore = true)
     Bootcamp toEntity(CreateBootcampRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -74,6 +100,10 @@ public interface BootcampMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "nextSession", ignore = true)
+    @Mapping(target = "slug", ignore = true)
+    @Mapping(target = "domain", ignore = true)
+    @Mapping(target = "partner", ignore = true)
+    @Mapping(target = "relatedFormations", ignore = true)
     void updateEntity(UpdateBootcampRequest request, @MappingTarget Bootcamp bootcamp);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

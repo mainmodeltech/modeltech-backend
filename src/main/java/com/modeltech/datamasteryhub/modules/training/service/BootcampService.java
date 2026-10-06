@@ -1,11 +1,13 @@
 package com.modeltech.datamasteryhub.modules.training.service;
 
+import com.modeltech.datamasteryhub.modules.training.dto.request.CatalogueFilter;
 import com.modeltech.datamasteryhub.modules.training.dto.request.CreateBootcampRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.CreateBootcampSessionRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateBootcampRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateBootcampSessionRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.BootcampSessionResponse;
+import com.modeltech.datamasteryhub.modules.training.dto.response.FormationSessionResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +17,11 @@ public interface BootcampService {
     // Public
     List<BootcampResponse> findAllPublished();
     BootcampResponse findPublishedById(UUID id);
+
+    // Public - catalogue par domaines (Formation = Bootcamp enrichi)
+    List<BootcampResponse> findCatalogue(CatalogueFilter filter);
+    BootcampResponse findCatalogueBySlug(String slug);
+    List<FormationSessionResponse> findCatalogueSessions();
 
     // Admin - bootcamps
     List<BootcampResponse> findAllForAdmin();

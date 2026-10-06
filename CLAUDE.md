@@ -72,18 +72,11 @@ public interface SoftDeleteRepository<T extends BaseEntity, ID> extends JpaRepos
 }
 ```
 
-## SecurityConfig — requestMatchers exacts (NE PAS LIRE le fichier)
-```java
-.authorizeHttpRequests(auth -> auth
-    .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-    .requestMatchers("/api/v1/auth/**").permitAll()
-    .requestMatchers(HttpMethod.POST, "/api/v1/contact-messages").permitAll()
-    .requestMatchers(HttpMethod.POST, "/api/v1/registrations").permitAll()
-    .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-    .anyRequest().permitAll()  // pour CORS preflight
-)
-```
-Pour ajouter un endpoint public POST → ajouter un `.requestMatchers(HttpMethod.POST, "/api/v1/xxx").permitAll()` AVANT `.anyRequest()`.
+## SecurityConfig — principe (les listes de chemins évoluent : lire le fichier avant de la modifier)
+- Liste blanche **explicite** : `OPTIONS /**`, `GET /actuator/health`, quelques `POST` publics (auth login/forgot/reset, registrations, contact-messages, masterclass/register) et des `GET` publics (bootcamps, formations, domains, partners, services, témoignages publiés, alumni, projets, sessions, promo-codes/validate), Swagger.
+- **`.anyRequest().authenticated()`** : tout le reste exige un JWT. Un nouveau `GET` public doit être ajouté à la liste (avec son `/**` si le détail `/{id}` est public aussi — oubli déjà vu sur `/bootcamps/{id}`).
+- Il n'y a **pas encore de contrôle de rôle** sur `/api/v1/admin/**` (juste « authentifié ») : prévu au lot `learner-accounts` (voir docs/design/api-contract.md §6).
+- Les erreurs métier se lèvent avec `ResponseStatusException` (gérée par `GlobalExceptionHandler` → statut conservé) ou `ResourceNotFoundException` (404).
 
 ---
 
@@ -188,7 +181,12 @@ record ErrorResponse(
 enum SessionStatus       { DRAFT, UPCOMING, OPEN, CLOSED, IN_PROGRESS, COMPLETED, CANCELLED }
 enum SessionFormat       { PRESENTIEL, REMOTE, HYBRID }
 enum RegistrationStatus  { PENDING, CONFIRMED, CANCELLED, COMPLETED }
-enum RegistrantProfile   { STUDENT, PROFESSIONAL, ENTREPRENEUR }
+enum DeliveredBy         { INTERNAL, PARTNER }
+enum FormationLevel      { DEBUTANT, INTERMEDIAIRE, AVANCE }
+enum FormationFormat     { PRESENTIEL, EN_LIGNE, HYBRIDE }   // ≠ SessionFormat (REMOTE/HYBRID) : voulu, c'est le contrat du front
+
+// modules/training/entity/RegistrationProfile.java  (dans le package entity, PAS enums)
+enum RegistrationProfile { STUDENT, PROFESSIONAL, ENTREPRENEUR }
 
 // modules/communication/entity/ContactMessageStatus.java  (dans le package entity, PAS enums)
 enum ContactMessageStatus { unread, read, replied, archived }  // ATTENTION: lowercase
@@ -198,12 +196,22 @@ enum ContactMessageStatus { unread, read, replied, archived }  // ATTENTION: low
 
 ## Entités existantes (champs)
 
-### Bootcamp
-`id(UUID) | title | description(TEXT) | duration | audience(TEXT) | prerequisites(TEXT) | price | benefits(text[]) | category(50, default "data") | tag | iconName | featured(Boolean=false) | published(Boolean=true) | displayOrder(Integer=0) | nextSession(@Deprecated)`
+### Bootcamp (= « Formation » côté front : même id, même table)
+`id(UUID) | title | description(TEXT) | duration | audience(TEXT) | prerequisites(TEXT) | price(String d'affichage) | benefits(text[]) | category(50, default "data") | tag | iconName | featured(Boolean=false) | published(Boolean=true) | displayOrder(Integer=0) | nextSession(@Deprecated)`
+Contenu riche (V17, nullables) : `tagline | colorKey | profiles, tools, curriculum, outcomes (jsonb, listes) | certification (jsonb)`
+Catalogue (V18) : `slug(unique, NOT NULL, généré depuis le titre — jamais modifié si le titre change) | domain(@ManyToOne LAZY, nullable) | deliveredBy(DeliveredBy=INTERNAL) | partner(@ManyToOne LAZY) | level | format | certificationPrep(TEXT) | targetRoles(text[]) | relatedFormations(@ManyToMany self, table bootcamp_related)`
+Règles : `PARTNER` ⇒ partenaire obligatoire (CHECK SQL + 400) ; `INTERNAL` efface le partenaire. Une formation **sans domaine** n'apparaît pas dans `/formations` (le front exige `domain`) mais reste dans `/bootcamps`.
 Relations: `@OneToMany sessions (mappedBy="bootcamp", cascade=ALL, orphanRemoval=true, LAZY, @OrderBy startDate ASC)`
 
+### Domain (V18)
+`id | slug(unique) | name | description | badge | comingSoon(Boolean=false) | visible(Boolean=true) | displayOrder(Integer=0)` — le domaine « Data & BI » (`data-bi`) est créé par la migration et rattaché aux formations existantes.
+
+### Partner (V18)
+`id | slug(unique) | name | logoUrl | logoObjectKey | bio | website | contactName | contactEmail | contactPhone | revenueSharePercent(0-100) | active(Boolean=true)`
+⚠️ `revenueSharePercent` et les champs `contact*` sont **internes** : jamais dans `PartnerResponse` (API publique) ; seulement dans `AdminPartnerResponse`.
+
 ### BootcampSession
-`id(UUID) | sessionName | cohortNumber(Integer) | year(Integer) | startDate(LocalDate) | endDate(LocalDate) | registrationDeadline(LocalDate) | maxParticipants(Integer=20) | currentParticipants(Integer=0) | isFull(Boolean=false) | status(SessionStatus=UPCOMING) | format(SessionFormat=PRESENTIEL) | location | priceOverride | earlyBirdPrice | earlyBirdDeadline(LocalDate) | isFeatured(Boolean=false) | published(Boolean=true)`
+`id(UUID) | sessionName | cohortNumber(Integer) | year(Integer) | startDate(LocalDate) | endDate(LocalDate) | registrationDeadline(LocalDate) | maxParticipants(Integer=20) | currentParticipants(Integer=0) | isFull(Boolean=false) | status(SessionStatus=UPCOMING) | format(SessionFormat=PRESENTIEL) | location | priceOverride | earlyBirdPrice | earlyBirdDeadline(LocalDate) | isFeatured(Boolean=false) | published(Boolean=true) | schedule (V17)`
 Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 
 ### Registration
@@ -237,9 +245,19 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 | V7  | Fix registration status (uppercase + CHECK)            |
 | V8  | Add session and promo to registrations                 |
 | V9  | Create promo_codes                                     |
-| V10 | Add country, profile (CHECK), school to registrations  |
+| V10 | Add bootcamp/result to testimonials                    |
+| V11 | Audit columns sur testimonials                         |
+| V12 | Create masterclass_registrations                       |
+| V13 | RBAC : roles, admin_user_roles, reset tokens, blacklist|
+| V14 | Add country, profile (CHECK), school to registrations  |
+| V15 | Module networking (alumni, projects, membres, captures)|
+| V16 | Audit columns alumni/projects                          |
+| V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
+| V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 
-**Prochaine migration : V11**
+**Prochaine migration : V19** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`).
+
+> Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
 ### V10 — référence
 ```sql
@@ -259,6 +277,11 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | POST    | `/api/v1/auth/login`                             | Non        | Login admin → JWT                    |
 | GET     | `/api/v1/bootcamps`                              | Non        | Liste bootcamps publiés              |
 | GET     | `/api/v1/bootcamps/{id}`                         | Non        | Détail bootcamp + sessions           |
+| GET     | `/api/v1/formations`                             | Non        | Catalogue (filtres : domain, level, format, deliveredBy, targetRole) — JSON brut |
+| GET     | `/api/v1/formations/slug/{slug}`                 | Non        | Fiche formation par slug             |
+| GET     | `/api/v1/formations/sessions`                    | Non        | Sessions OPEN/UPCOMING à plat (calendrier) |
+| GET     | `/api/v1/domains`                                | Non        | Domaines visibles                    |
+| GET     | `/api/v1/partners`                               | Non        | Partenaires (sans part de revenu)    |
 | GET     | `/api/v1/services`                               | Non        | Liste services publiés               |
 | GET     | `/api/v1/services/{id}`                          | Non        | Détail service publié                |
 | POST    | `/api/v1/registrations`                          | Non        | Inscription visiteur bootcamp        |
@@ -266,6 +289,8 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET     | `/api/v1/admin/masterclass/{id}/registrations`   | JWT ADMIN  | Inscriptions masterclass (paginé)    |
 | GET     | `/api/v1/admin/masterclass/{id}/count`           | JWT ADMIN  | Nombre d'inscrits masterclass        |
 | *       | `/api/v1/admin/bootcamps/**`                     | JWT ADMIN  | CRUD bootcamps                       |
+| *       | `/api/v1/admin/domains/**`                       | JWT ADMIN  | CRUD domaines (ApiResponse)          |
+| *       | `/api/v1/admin/partners/**` (+ `POST /{id}/logo`) | JWT ADMIN  | CRUD partenaires (ApiResponse)       |
 | *       | `/api/v1/admin/bootcamp-sessions/**`             | JWT ADMIN  | CRUD sessions                        |
 | *       | `/api/v1/admin/registrations/**`                 | JWT ADMIN  | CRUD inscriptions (paginé)           |
 | *       | `/api/v1/admin/services/**`                      | JWT ADMIN  | CRUD services                        |
@@ -623,7 +648,8 @@ CREATE TABLE xxx_table_name (
 ```bash
 make compile     # compile (JAVA_HOME force Temurin 17)
 make run         # spring-boot:run profil dev
-make test        # tests
+make test        # tests (idem ./mvnw test) — les tests d'intégration utilisent Testcontainers : Docker doit tourner
+                 # (si Maven refuse un certificat : MAVEN_OPTS="-Djavax.net.ssl.trustStoreType=Windows-ROOT -Djavax.net.ssl.trustStore=NUL")
 make up          # docker-compose up (db + minio + adminer)
 make up-all      # docker-compose up --build (tout)
 ```
