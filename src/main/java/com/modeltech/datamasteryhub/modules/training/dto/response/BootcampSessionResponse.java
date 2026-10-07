@@ -27,6 +27,8 @@ public class BootcampSessionResponse {
     private String location;
     private String price;           // priceOverride si défini, sinon prix du bootcamp
     private String earlyBirdPrice;
+    private Long priceOverrideAmount;
+    private Long earlyBirdAmount;
     private LocalDate earlyBirdDeadline;
     private Boolean isFeatured;
     private Boolean published;

@@ -178,6 +178,41 @@ public class SlackNotifier {
         }
     }
 
+    // ── Paiement déclaré ───────────────────────────────────────────────────
+
+    public void sendPaymentDeclared(PaymentNotice n) {
+        if (isDisabled()) return;
+        try {
+            String payload = String.format("""
+                    {
+                      "blocks": [
+                        {
+                          "type": "header",
+                          "text": { "type": "plain_text", "text": "💸 Paiement à confirmer", "emoji": true }
+                        },
+                        {
+                          "type": "section",
+                          "fields": [
+                            { "type": "mrkdwn", "text": "*Candidat :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Montant :*\\n%d %s (échéance %d/%d)" },
+                            { "type": "mrkdwn", "text": "*Formation :*\\n%s" },
+                            { "type": "mrkdwn", "text": "*Moyen / réf. :*\\n%s — %s" }
+                          ]
+                        }
+                      ]
+                    }
+                    """,
+                    escapeJson(n.fullName()), n.amount(), escapeJson(n.currency()),
+                    n.installmentNumber(), n.installmentCount(),
+                    escapeJson(n.bootcampTitle() != null ? n.bootcampTitle() : "—"),
+                    escapeJson(n.method() != null ? n.method() : "—"),
+                    escapeJson(n.reference() != null ? n.reference() : "—"));
+            postToSlack(payload);
+        } catch (Exception e) {
+            log.error("Erreur Slack (paiement déclaré) : {}", e.getMessage(), e);
+        }
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private void postToSlack(String jsonPayload) {

@@ -182,8 +182,12 @@ record ErrorResponse(
 // modules/training/enums/
 enum SessionStatus       { DRAFT, UPCOMING, OPEN, CLOSED, IN_PROGRESS, COMPLETED, CANCELLED }
 enum SessionFormat       { PRESENTIEL, REMOTE, HYBRID }
-enum RegistrationStatus  { PENDING, CONFIRMED, CANCELLED, COMPLETED }
+enum RegistrationStatus  { PENDING, PAYMENT_PENDING, PAYMENT_TO_CONFIRM, CONFIRMED, CANCELLED, COMPLETED, REJECTED }
 enum DeliveredBy         { INTERNAL, PARTNER }
+enum PaymentStatus       { PENDING, DECLARED, CONFIRMED, CANCELLED }
+enum PaymentMethod       { WAVE, ORANGE_MONEY, VIREMENT, ENTREPRISE, ESPECES }   // seuls les 3 premiers sont déclarables par le candidat
+enum EnrollmentStatus    { ACTIVE, SUSPENDED, COMPLETED, CANCELLED }
+enum PayerType           { INDIVIDUAL, COMPANY }
 enum FormationLevel      { DEBUTANT, INTERMEDIAIRE, AVANCE }
 enum FormationFormat     { PRESENTIEL, EN_LIGNE, HYBRIDE }   // ≠ SessionFormat (REMOTE/HYBRID) : voulu, c'est le contrat du front
 
@@ -220,6 +224,7 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 `id(UUID) | bootcamp(@ManyToOne LAZY) | bootcampTitle | session(@ManyToOne LAZY, bootcamp_session_id) | sessionName | promoCodeId(UUID) | promoCodeUsed(50) | discountPercent(Integer) | firstName | lastName | email | phone | country | profile(RegistrantProfile) | school | company | position | message(TEXT) | status(RegistrationStatus=PENDING)`
 
 **Champs ajoutés (V10) :** `country`, `profile`, `school`
+**Champs ajoutés (V21) :** `acceptedAt/acceptedBy | rejectedReason | payerType | totalAmount (XOF, figé à l'acceptation) | learner(@ManyToOne LAZY)`
 
 ### PromoCode
 `id(UUID) | code(unique,50) | description | referrerName | referrerEmail | referrerPhone(50) | discountPercent(Integer=0) | maxUses(Integer, nullable) | usageCount(Integer=0) | expiresAt(LocalDateTime, nullable) | isActive(Boolean=true)`
@@ -228,6 +233,11 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 `id(UUID) | firstName | lastName | email | phone | company | subject | message(TEXT) | status(ContactMessageStatus=unread) | notes(TEXT) | type(ContactType, NOT NULL) | requesterType(PARTICULIER/ENTREPRISE, nullable) | details(jsonb, nullable)`
 `type` : `CONTACT` (formulaire de contact), `DIAGNOSTIC` (page Entreprises), `PARTNER_APPLICATION` (page Partenaires) — les trois sont stockés dans la même table et listés par `/admin/contact-messages` (filtre `?type=`). `lastName` est NOT NULL en base mais **facultatif** à l'entrée : un nom d'un seul mot est stocké avec `lastName = ""`. Les enums de formulaire (`PeopleCount`, `TrainingNeed`, `PartnerDomain`) sont dans `modules/communication/enums/` avec leur libellé français (`getLabel()`).
 **ATTENTION**: ContactMessage utilise `@Builder` (historique, devrait être retiré).
+
+### Paiements et accès (V21)
+`Payment` = une **échéance** (1..N par inscription) : `registration | amount(Long, XOF) | currency | installmentNumber/Count | dueDate | status | method | reference | declaredAt | confirmedAt/By | rejectionReason | proofObjectKey/proofUrl (MinIO, dossier payment-proofs) | publicToken (unique, 256 bits) + tokenExpiresAt | reminderCount/lastReminderAt | invoiceRef | purchaseOrderRef | notes`. `Enrollment` = accès apprenant (`learner | session (nullable) | registration (unique) | status | accessStartsAt/EndsAt` = dates de la session), créé à la **première échéance confirmée**. `Bootcamp.priceAmount/currency`, `BootcampSession.priceOverrideAmount/earlyBirdAmount` : montants numériques, **nuls tant que l'équipe ne les saisit pas** (les prix texte d'affichage restent, jamais convertis).
+Règle de prix (`RegistrationPricing`) : prix session (sinon formation) → remplacé par l'early-bird si la candidature date au plus tard de `earlyBirdDeadline` → puis `discountPercent` du code promo. L'admin peut imposer `totalAmount` à l'acceptation.
+Config : `app.payment.default-due-days` (2), `link-validity-days` (30, après l'échéance), `reminder-days` (2), `max-reminders` (3), `reminder-cron` (9h) ; `app.frontend.payment-path` (`/paiement`, lien = `{app.frontend.url}/paiement/{token}`).
 
 ### Comptes (V13 + V20)
 `AdminUser` (back-office : rôles `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `TRAINER`, `PARTNER` ; `partner` LAZY obligatoire pour `PARTNER`) et `Learner` (apprenant, rôle `LEARNER`, `passwordHash` **nul** tant que le lien d'invitation n'a pas été utilisé) sont deux tables distinctes ; une même adresse e-mail ne peut exister que dans l'une des deux (409). Constantes de rôles : `RoleNames`. Login/me/reset sont communs (`AuthService` cherche l'admin puis l'apprenant). Invitation : `authService.createPasswordResetToken(email, minutes)` + `passwordSetupLink(token, learner)` + `notificationService.sendAccountInvitationEmail(...)` (validité 72 h). Pour créer un compte à la confirmation du paiement : `LearnerService.findOrCreateInvited(...)`.
@@ -264,9 +274,10 @@ Relations: `@ManyToOne bootcamp (LAZY, nullable=false)`
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V21** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V22** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -311,6 +322,10 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | *       | `/api/v1/admin/contact-messages/**`              | JWT ADMIN  | CRUD messages (`?type=` filtre)      |
 | GET     | `/api/v1/admin/newsletter-subscriptions`         | JWT ADMIN  | Abonnés newsletter (`?status=`)      |
 | *       | `/api/v1/admin/promo-codes/**`                   | JWT ADMIN  | CRUD codes promo                     |
+| GET | `/api/v1/payments/{token}` | Jeton | Page « lien de paiement » (ApiResponse, sans donnée personnelle) |
+| POST | `/api/v1/payments/{token}/declaration`, `/proof` (multipart `file`, image ≤ 5 Mo) | Jeton | Déclaration du paiement / capture (limités par IP) |
+| POST | `/api/v1/admin/registrations/{id}/accept`, `/reject`, `/payments` | JWT ADMIN | Acceptation (calcul + échéances + lien), refus, paiement saisi à la main (ApiResponse) |
+| GET/POST | `/api/v1/admin/payments` (`?status=&registrationId=`), `/{id}/confirm`, `/{id}/reject`, `/{id}/remind`, `/api/v1/admin/enrollments` | JWT ADMIN | File « paiement à confirmer », confirmation, refus, relance, accès |
 | GET/POST/PATCH | `/api/v1/admin/learners/**` (`/{id}/activate`, `/{id}/deactivate`, `POST /{id}/resend-invitation`) | JWT ADMIN | Comptes apprenants (ApiResponse) |
 | GET/POST/PUT | `/api/v1/admin/users/**`                    | JWT SUPER_ADMIN | Comptes back-office + invitation (ApiResponse) |
 
@@ -336,6 +351,15 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 6. Backend déclenche sendRegistrationConfirmedEmail() → email candidat 🎉
       └─ Place définitivement réservée + message de motivation
 ```
+
+### Parcours avec acceptation et lien de paiement (lot enrollment-payment)
+```
+PENDING --accept--> PAYMENT_PENDING --déclaration (lien public)--> PAYMENT_TO_CONFIRM --confirm--> CONFIRMED
+   \--reject--> REJECTED              \<-- paiement refusé (reject) -----------/
+```
+`accept` calcule le total, crée les `Payment`, envoie le lien (1re échéance). `confirm` de la **première** échéance : inscription `CONFIRMED`, place comptée (peut dépasser la capacité : un paiement reçu n'est jamais refusé), `Learner` créé ou retrouvé par e-mail (+ invitation « définir mon mot de passe »), `Enrollment` ouvert, e-mail « place confirmée ». Les échéances suivantes ne rouvrent rien. Un scheduler relance J+2 (3 relances max).
+**Le flux historique `PATCH /status → CONFIRMED` reste inchangé** : il compte la place et envoie l'e-mail, mais ne crée ni compte ni accès (créer l'apprenant via `/admin/learners`). Passer à `CANCELLED`/`REJECTED` annule les échéances ouvertes.
+Les e-mails de paiement reçoivent un `PaymentNotice` (valeurs simples), jamais une entité : l'envoi est `@Async`, hors transaction.
 
 **Règle importante dans `updateStatus`** : l'email de confirmation n'est envoyé que si `oldStatus != CONFIRMED` pour éviter les doublons en cas de re-confirmation.
 

@@ -72,6 +72,13 @@ public class BootcampSession extends BaseEntity {
     @Column(name = "early_bird_price")
     private String earlyBirdPrice;
 
+    /** Montants numériques (XOF) : surcharge du prix de la formation et tarif early-bird. */
+    @Column(name = "price_override_amount")
+    private Long priceOverrideAmount;
+
+    @Column(name = "early_bird_amount")
+    private Long earlyBirdAmount;
+
     @Column(name = "early_bird_deadline")
     private LocalDate earlyBirdDeadline;
 

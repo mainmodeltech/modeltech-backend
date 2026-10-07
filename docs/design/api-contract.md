@@ -181,6 +181,47 @@ Le design (`App-Admin-Candidatures.dc.html`) montre : *Nouvelles candidatures* (
 
 Chemins publics : le README écrit `/public/...` ; la convention réelle du backend est `PublicXxxController @RequestMapping("/api/v1/<pluriel>")` **sans** préfixe `/public`. Je garde la convention existante (Q24).
 
+### 3.D bis — Lot d livré (`feature/enrollment-payment`) : contrats exacts à utiliser côté front
+
+Décisions appliquées : paiement par **déclaration manuelle + confirmation admin** (Q18) ; **early-bird puis % du code promo** (cumul) ; **échéances fixées par l'admin à l'acceptation** ; **compte et accès dès la 1re échéance confirmée**. Les réponses de ce lot utilisent `ApiResponse` (aucun appelant front existant), sauf `GET /admin/registrations` et `PATCH …/status` qui gardent leur forme historique (`Page` brute / objet) mais gagnent des champs.
+
+**Statuts d'inscription** : `PENDING` (Nouvelles candidatures) → `PAYMENT_PENDING` (Paiement en attente) → `PAYMENT_TO_CONFIRM` (Paiement à confirmer) → `CONFIRMED`/`COMPLETED` (Inscrits) ; `REJECTED` et `CANCELLED` masqués. Nouveaux champs de `RegistrationResponse` : `payerType, totalAmount, acceptedAt, rejectedReason, learnerId, paymentSummary{installmentCount, confirmedCount, paidAmount, nextDueDate, linkSentAt, lastReminderAt, declaredMethod, declaredReference, declaredHasProof}` (`paymentSummary` null tant qu'aucune échéance n'existe) — de quoi remplir les cartes : « lien envoyé il y a 2 j », « relance », « Wave · réf. », « 2ᵉ échéance le … ».
+
+**Admin candidatures** (SUPER_ADMIN/ADMIN)
+
+| Méthode | Chemin | Corps / effet |
+|---|---|---|
+| POST | `/admin/registrations/{id}/accept` | corps **optionnel** `{payerType?, totalAmount?, installments?[{amount?, dueDate*}], invoiceRef?, purchaseOrderRef?}` ; `PENDING` uniquement (409). Total absent → calculé ; **400 si la formation n'a pas de prix numérique et que `totalAmount` manque** ; échéances : montants tous absents = répartition égale (reste sur la 1re), tous présents = somme = total, dates croissantes, 12 max ; absentes = un paiement dû sous 2 jours. 409 si l'e-mail est un compte back-office. Envoie le lien de la 1re échéance. |
+| POST | `/admin/registrations/{id}/reject` | `{reason*}` ; `PENDING` → `REJECTED` |
+| POST | `/admin/registrations/{id}/payments` | paiement reçu hors site : `{installmentNumber?, method*, reference?, invoiceRef?, purchaseOrderRef?, notes?}` → 201, l'échéance passe `DECLARED` (à confirmer) ; `method` = `WAVE|ORANGE_MONEY|VIREMENT|ENTREPRISE|ESPECES` |
+| PATCH | `/admin/registrations/{id}/status` | inchangé (Q23). `CANCELLED`/`REJECTED` annulent les échéances ouvertes. **Ne crée pas de compte apprenant.** |
+
+**Admin paiements/accès**
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/admin/payments?status=&registrationId=&page&size` | `AdminPaymentResponse` (+ `paymentLink`, `proofUrl`, identité du candidat) ; la file « Paiement à confirmer » = `status=DECLARED` |
+| POST | `/admin/payments/{id}/confirm` | `DECLARED`/`PENDING` → `CONFIRMED` ; 1re échéance : inscription `CONFIRMED`, place, compte apprenant + invitation, accès, e-mail. 409 si déjà confirmé/annulé |
+| POST | `/admin/payments/{id}/reject` | `{reason*}` ; `DECLARED` → `PENDING`, e-mail au candidat ; l'inscription repasse `PAYMENT_PENDING` |
+| POST | `/admin/payments/{id}/remind` | relance manuelle (`PENDING`) ; le scheduler fait J+2 puis tous les 2 jours, 3 max |
+| GET | `/admin/enrollments` | accès apprenants (`learnerEmail`, `sessionName`, `accessStartsAt/EndsAt`…) |
+
+**Lien de paiement public** (jeton = unique secret ; `404` inconnu, **`410` expiré**) — route front à créer : `{app.frontend.url}{app.frontend.payment-path}/{token}` (défaut `/paiement/{token}`)
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/payments/{token}` | `{firstName, bootcampTitle, sessionName, sessionStartDate, amount, currency, installmentNumber/Count, dueDate, status, method, reference, hasProof, rejectionReason, totalAmount, schedule[], payTo{phone, methods[]}}` — aucun e-mail/téléphone, aucun jeton |
+| POST | `/payments/{token}/declaration` | `{method: WAVE|ORANGE_MONEY|VIREMENT, reference*}` → échéance `DECLARED`, inscription `PAYMENT_TO_CONFIRM`, équipe prévenue (Slack + e-mail). 409 si déjà déclaré/confirmé |
+| POST | `/payments/{token}/proof` | multipart champ `file` (image ≤ 5 Mo) ; remplace le justificatif précédent |
+
+**Montants numériques à saisir en back-office** (champs ajoutés aux endpoints existants, tous optionnels) : formation `priceAmount` (+ `currency`, `XOF`) ; session `priceOverrideAmount`, `earlyBirdAmount` (avec `earlyBirdDeadline` existant). Les prix texte (`price`, `priceOverride`, `earlyBirdPrice`) restent l'affichage ; **rien n'est déduit du texte** — tant que `priceAmount` est vide, l'admin doit fournir `totalAmount` à l'acceptation.
+
+**Migration V21** : additive ; statuts historiques et prix texte traversent intacts (test `V21MigrationIT`).
+
+**À faire côté front pour ce lot** : page publique `/paiement/{token}` (instructions Wave/OM, déclaration, upload de capture) ; Candidatures : 4 colonnes branchées sur les nouveaux statuts, « Accepter » → `/accept` (formulaire d'échéances), « Refuser » → `/reject`, « Confirmer »/« Voir la preuve » → `/admin/payments` ; saisie des montants numériques sur les formulaires formation/session ; `AdminInscriptions` : libellés des 3 nouveaux statuts.
+
+**Limites assumées** : pas de réservation de place avant paiement (Q20) → sur-réservation possible, signalée dans les logs ; les justificatifs sont dans le bucket MinIO public sous une clé aléatoire (pas d'URL signée) ; la relance est par e-mail seulement (WhatsApp/WATI reporté, Q21) ; aucun e-mail n'est envoyé au candidat refusé.
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

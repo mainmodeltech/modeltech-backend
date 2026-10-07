@@ -1,5 +1,12 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.training.entity.Payment;
+import com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus;
+import com.modeltech.datamasteryhub.modules.training.mapper.PaymentMapper;
+import com.modeltech.datamasteryhub.modules.training.repository.PaymentRepository;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.communication.service.RecaptchaService;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
@@ -39,6 +46,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final BootcampSessionRepository sessionRepository;
     private final PromoCodeRepository       promoCodeRepository;
     private final RegistrationMapper        registrationMapper;
+    private final PaymentRepository         paymentRepository;
+    private final PaymentMapper             paymentMapper;
     private final NotificationService       notificationService;
     private final RecaptchaService          recaptchaService;
 
@@ -86,14 +95,18 @@ public class RegistrationServiceImpl implements RegistrationService {
         Page<Registration> page = (status != null)
                 ? registrationRepository.findAllByStatusAndIsDeletedFalse(status, pageable)
                 : registrationRepository.findAllByIsDeletedFalse(pageable);
-        return page.map(registrationMapper::toResponse);
+        Page<RegistrationResponse> result = page.map(registrationMapper::toResponse);
+        attachPaymentSummaries(result.getContent());
+        return result;
     }
 
     @Override
     public RegistrationResponse findByIdForAdmin(UUID id) {
-        return registrationRepository.findByIdAndIsDeletedFalse(id)
+        RegistrationResponse response = registrationRepository.findByIdAndIsDeletedFalse(id)
                 .map(registrationMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Inscription", "id", id));
+        attachPaymentSummaries(List.of(response));
+        return response;
     }
 
     @Override
@@ -107,11 +120,17 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         updateSessionCapacity(registration, oldStatus, newStatus);
 
+        if (newStatus == RegistrationStatus.CANCELLED || newStatus == RegistrationStatus.REJECTED) {
+            cancelOpenPayments(registration.getId());
+        }
+
         Registration saved = registrationRepository.save(registration);
 
         sendConfirmationEmailIfNeeded(saved, oldStatus, newStatus);
 
-        return registrationMapper.toResponse(saved);
+        RegistrationResponse response = registrationMapper.toResponse(saved);
+        attachPaymentSummaries(List.of(response));
+        return response;
     }
 
     @Override
@@ -127,6 +146,25 @@ public class RegistrationServiceImpl implements RegistrationService {
         registration.setDeleted(true);
         registration.setDeletedAt(LocalDateTime.now());
         registrationRepository.save(registration);
+    }
+
+    /** Renseigne le résumé des échéances de chaque inscription, en une seule requête. */
+    private void attachPaymentSummaries(List<RegistrationResponse> responses) {
+        if (responses.isEmpty()) return;
+        Map<UUID, List<Payment>> byRegistration = paymentRepository
+                .findAllByRegistrationIdInAndIsDeletedFalse(responses.stream().map(RegistrationResponse::getId).toList())
+                .stream().collect(Collectors.groupingBy(p -> p.getRegistration().getId()));
+        responses.forEach(r -> r.setPaymentSummary(paymentMapper.summarize(byRegistration.getOrDefault(r.getId(), List.of()))));
+    }
+
+    /** Une inscription annulée ou refusée n'a plus d'échéance à régler. */
+    private void cancelOpenPayments(UUID registrationId) {
+        paymentRepository.findAllByRegistrationIdAndIsDeletedFalseOrderByInstallmentNumberAsc(registrationId).stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING || p.getStatus() == PaymentStatus.DECLARED)
+                .forEach(p -> {
+                    p.setStatus(PaymentStatus.CANCELLED);
+                    paymentRepository.save(p);
+                });
     }
 
     // =========================================================================

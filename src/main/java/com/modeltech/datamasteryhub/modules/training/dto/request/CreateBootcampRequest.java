@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training.dto.request;
 
+import jakarta.validation.constraints.Min;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampCertification;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampOutcome;
 import com.modeltech.datamasteryhub.modules.training.entity.content.BootcampProfile;
@@ -25,6 +26,9 @@ public class CreateBootcampRequest {
     private String audience;
     private String prerequisites;
     private String price;
+
+    @Min(value = 0, message = "Le montant doit être positif")
+    private Long priceAmount;
     private List<String> benefits;
     private String category = "data";
     private String tag;

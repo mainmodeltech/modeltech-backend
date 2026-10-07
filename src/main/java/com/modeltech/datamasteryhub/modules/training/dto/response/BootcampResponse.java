@@ -25,6 +25,8 @@ public class BootcampResponse {
     private String audience;
     private String prerequisites;
     private String price;
+    private Long priceAmount;
+    private String currency;
     private List<String> benefits;
     private String category;
     private String tag;

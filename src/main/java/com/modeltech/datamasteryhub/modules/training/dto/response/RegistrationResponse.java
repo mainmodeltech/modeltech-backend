@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training.dto.response;
 
+import com.modeltech.datamasteryhub.modules.training.enums.PayerType;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import lombok.Data;
 
@@ -24,6 +25,15 @@ public class RegistrationResponse {
     private String position;
     private String message;
     private RegistrationStatus status;
+
+    // Acceptation et paiement
+    private PayerType payerType;
+    private Long totalAmount;
+    private LocalDateTime acceptedAt;
+    private String rejectedReason;
+    private UUID learnerId;
+    /** Renseigné dans les listes et le détail admin dès que des échéances existent. */
+    private PaymentSummaryResponse paymentSummary;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -57,6 +57,13 @@ public class Bootcamp extends BaseEntity {
     // Prix affiché sur la card, ex: "450 000 FCFA"
     private String price;
 
+    /** Prix numérique (XOF entier) utilisé pour les paiements ; null tant qu'il n'est pas saisi. */
+    @Column(name = "price_amount")
+    private Long priceAmount;
+
+    @Column(nullable = false, length = 3)
+    private String currency = "XOF";
+
     // ── Contenu pédagogique ────────────────────────────────────────
     // Liste des compétences acquises (bullet points sur la card)
     @JdbcTypeCode(SqlTypes.ARRAY)

@@ -3,6 +3,7 @@ package com.modeltech.datamasteryhub.modules.notification.service.impl;
 import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessage;
 import com.modeltech.datamasteryhub.modules.notification.service.EmailNotifier;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
+import com.modeltech.datamasteryhub.modules.notification.service.PaymentNotice;
 import com.modeltech.datamasteryhub.modules.notification.service.SlackNotifier;
 import com.modeltech.datamasteryhub.modules.training.entity.Registration;
 import lombok.RequiredArgsConstructor;
@@ -74,6 +75,45 @@ public class NotificationServiceImpl implements NotificationService {
             emailNotifier.sendConfirmedToCandidate(registration);
         } catch (Exception e) {
             log.error("Erreur Email 'confirmed' candidat {} : {}", registration.getEmail(), e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    //  PAIEMENTS
+    // =========================================================================
+
+    @Override
+    @Async
+    public void sendPaymentLinkEmail(PaymentNotice notice, boolean reminder) {
+        try {
+            emailNotifier.sendPaymentLinkEmail(notice, reminder);
+        } catch (Exception e) {
+            log.error("Erreur email lien de paiement {} : {}", notice.to(), e.getMessage());
+        }
+    }
+
+    @Override
+    @Async
+    public void sendPaymentRejectedEmail(PaymentNotice notice) {
+        try {
+            emailNotifier.sendPaymentRejectedEmail(notice);
+        } catch (Exception e) {
+            log.error("Erreur email paiement refusé {} : {}", notice.to(), e.getMessage());
+        }
+    }
+
+    @Override
+    @Async
+    public void notifyPaymentDeclared(PaymentNotice notice) {
+        try {
+            slackNotifier.sendPaymentDeclared(notice);
+        } catch (Exception e) {
+            log.error("Erreur Slack (paiement déclaré) : {}", e.getMessage());
+        }
+        try {
+            emailNotifier.sendPaymentDeclaredInternal(notice);
+        } catch (Exception e) {
+            log.error("Erreur email interne (paiement déclaré) : {}", e.getMessage());
         }
     }
 

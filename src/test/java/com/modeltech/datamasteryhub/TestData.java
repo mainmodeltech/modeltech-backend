@@ -4,6 +4,7 @@ import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
 import com.modeltech.datamasteryhub.modules.training.entity.Domain;
 import com.modeltech.datamasteryhub.modules.training.entity.Partner;
+import com.modeltech.datamasteryhub.modules.training.entity.Registration;
 import com.modeltech.datamasteryhub.modules.training.enums.DeliveredBy;
 import com.modeltech.datamasteryhub.modules.training.enums.SessionStatus;
 
@@ -51,5 +52,20 @@ public final class TestData {
         s.setStatus(status);
         s.setPublished(true);
         return s;
+    }
+
+    public static Registration registration(String email, Bootcamp bootcamp, BootcampSession session, Integer discountPercent) {
+        Registration r = new Registration();
+        r.setFirstName("Awa");
+        r.setLastName("Diop");
+        r.setEmail(email);
+        r.setPhone("771234567");
+        r.setCountry("Sénégal");
+        r.setBootcamp(bootcamp);
+        r.setBootcampTitle(bootcamp.getTitle());
+        r.setSession(session);
+        r.setSessionName(session != null ? session.getSessionName() : null);
+        r.setDiscountPercent(discountPercent);
+        return r;
     }
 }

@@ -24,6 +24,17 @@ public interface NotificationService {
      */
     void sendRegistrationConfirmedEmail(Registration registration);
 
+    // ── Paiements ──────────────────────────────────────────────────────────
+
+    /** Lien de paiement envoyé au candidat (acceptation, échéance ou relance). */
+    void sendPaymentLinkEmail(PaymentNotice notice, boolean reminder);
+
+    /** Le paiement déclaré n'a pas pu être vérifié : le candidat doit le refaire. */
+    void sendPaymentRejectedEmail(PaymentNotice notice);
+
+    /** Notifie l'équipe (Slack + e-mail interne) qu'un paiement attend sa vérification. */
+    void notifyPaymentDeclared(PaymentNotice notice);
+
     // ── Contact ────────────────────────────────────────────────────────────
 
     void notifyNewContactMessage(ContactMessage contactMessage);

@@ -28,6 +28,12 @@ public class CreateBootcampSessionRequest {
 
     private String priceOverride;
     private String earlyBirdPrice;
+
+    @Min(value = 0, message = "Le montant doit être positif")
+    private Long priceOverrideAmount;
+
+    @Min(value = 0, message = "Le montant doit être positif")
+    private Long earlyBirdAmount;
     private LocalDate earlyBirdDeadline;
 
     private Boolean isFeatured = false;

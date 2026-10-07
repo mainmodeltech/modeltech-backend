@@ -1,12 +1,15 @@
 package com.modeltech.datamasteryhub.modules.training.entity;
 
 import com.modeltech.datamasteryhub.common.persistence.BaseEntity;
+import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
+import com.modeltech.datamasteryhub.modules.training.enums.PayerType;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -86,4 +89,28 @@ public class Registration extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private RegistrationStatus status = RegistrationStatus.PENDING;
+
+    // ── Acceptation et paiement (V21) ────────────────────────────────────────
+
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
+
+    @Column(name = "accepted_by")
+    private String acceptedBy;
+
+    @Column(name = "rejected_reason", columnDefinition = "TEXT")
+    private String rejectedReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payer_type", length = 20)
+    private PayerType payerType;
+
+    /** Montant total dû (XOF), figé à l'acceptation : prix, early-bird et remise promo appliqués. */
+    @Column(name = "total_amount")
+    private Long totalAmount;
+
+    /** Compte apprenant rattaché quand le premier paiement est confirmé. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "learner_id")
+    private Learner learner;
 }

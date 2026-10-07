@@ -72,7 +72,10 @@ public class SecurityConfig {
                                 "/api/v1/newsletter/subscriptions",
                                 "/api/v1/newsletter/subscriptions/confirm",
                                 "/api/v1/newsletter/subscriptions/unsubscribe",
-                                "/api/v1/registrations"
+                                "/api/v1/registrations",
+                                // Lien de paiement : le jeton (256 bits, expirant) fait office d'authentification
+                                "/api/v1/payments/*/declaration",
+                                "/api/v1/payments/*/proof"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/bootcamps",
@@ -85,6 +88,7 @@ public class SecurityConfig {
                                 "/api/v1/services/**",
                                 "/api/v1/promo-codes/validate",
                                 "/api/v1/testimonials/published",
+                                "/api/v1/payments/*",
                                 "/api/v1/sessions/**",
                                 "/api/v1/alumni",
                                 "/api/v1/projects",

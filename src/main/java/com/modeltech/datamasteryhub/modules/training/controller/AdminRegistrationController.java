@@ -1,6 +1,14 @@
 package com.modeltech.datamasteryhub.modules.training.controller;
 
+import com.modeltech.datamasteryhub.common.dto.ApiResponse;
+import com.modeltech.datamasteryhub.modules.training.dto.request.AcceptRegistrationRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.request.ManualPaymentRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.request.RejectReasonRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateRegistrationStatusRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.response.AdminPaymentResponse;
+import com.modeltech.datamasteryhub.modules.training.service.PaymentService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import com.modeltech.datamasteryhub.modules.training.dto.response.RegistrationResponse;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
 import com.modeltech.datamasteryhub.modules.training.service.RegistrationService;
@@ -20,6 +28,7 @@ import java.util.UUID;
 public class AdminRegistrationController {
 
     private final RegistrationService registrationService;
+    private final PaymentService paymentService;
 
     @GetMapping
     public Page<RegistrationResponse> getAll(
@@ -40,6 +49,33 @@ public class AdminRegistrationController {
             @Valid @RequestBody UpdateRegistrationStatusRequest request
     ) {
         return registrationService.updateStatus(id, request.getStatus());
+    }
+
+    // ── Parcours candidature → paiement (réponses ApiResponse : endpoints récents) ──
+
+    /** Accepte la candidature : calcule le montant, crée les échéances, envoie le lien de paiement. */
+    @PostMapping("/{id}/accept")
+    public ResponseEntity<ApiResponse<RegistrationResponse>> accept(
+            @PathVariable UUID id,
+            @Valid @RequestBody(required = false) AcceptRegistrationRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Candidature acceptée, lien de paiement envoyé",
+                paymentService.accept(id, request, authentication.getName())));
+    }
+
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<ApiResponse<RegistrationResponse>> reject(
+            @PathVariable UUID id, @Valid @RequestBody RejectReasonRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Candidature refusée",
+                paymentService.rejectRegistration(id, request.getReason())));
+    }
+
+    /** Enregistre un paiement reçu hors du site (virement, espèces, facture entreprise). */
+    @PostMapping("/{id}/payments")
+    public ResponseEntity<ApiResponse<AdminPaymentResponse>> recordPayment(
+            @PathVariable UUID id, @Valid @RequestBody ManualPaymentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Paiement enregistré, à confirmer",
+                paymentService.recordManualPayment(id, request)));
     }
 
     @DeleteMapping("/{id}")

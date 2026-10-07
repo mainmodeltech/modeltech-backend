@@ -263,6 +263,113 @@ public class EmailNotifier {
     }
 
     // =========================================================================
+    //  EMAILS PAIEMENT
+    // =========================================================================
+
+    public void sendPaymentLinkEmail(PaymentNotice n, boolean reminder) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(n.to());
+            String formation = n.bootcampTitle() != null ? n.bootcampTitle() : "votre formation";
+            String echeance = n.installmentCount() > 1
+                    ? "Échéance %d sur %d".formatted(n.installmentNumber(), n.installmentCount()) : "Paiement";
+            String due = n.dueDate() != null
+                    ? "À régler avant le " + n.dueDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + "."
+                    : "";
+            msg.setSubject((reminder ? "[Rappel] " : "") + "[Model Technologie] Paiement de votre inscription — " + formation);
+            msg.setText("""
+                    Bonjour %s,
+
+                    %s
+                    Formation : %s%s
+                    %s : %s %s
+                    %s
+
+                    Pour régler, ouvrez votre lien de paiement personnel :
+                    %s
+
+                    Vous y trouverez le numéro Wave / Orange Money, et vous pourrez déclarer votre paiement
+                    (référence de la transaction) et joindre la capture d'écran.
+
+                    — L'équipe Model Technologie
+                    """.formatted(
+                    n.firstName() != null ? n.firstName() : "",
+                    reminder ? "Petit rappel : votre paiement n'a pas encore été reçu."
+                             : "Bonne nouvelle : votre candidature est acceptée !",
+                    formation,
+                    n.sessionName() != null ? " (" + n.sessionName() + ")" : "",
+                    echeance, amount(n.amount()), n.currency(),
+                    due,
+                    n.link()));
+            mailSender.send(msg);
+            log.info("Email lien de paiement{} envoyé à {}", reminder ? " (rappel)" : "", n.to());
+        } catch (Exception e) {
+            log.error("Erreur email lien de paiement pour {} : {}", n.to(), e.getMessage());
+        }
+    }
+
+    public void sendPaymentRejectedEmail(PaymentNotice n) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(n.to());
+            msg.setSubject("[Model Technologie] Votre paiement n'a pas pu être vérifié");
+            msg.setText("""
+                    Bonjour %s,
+
+                    Nous n'avons pas pu vérifier votre paiement de %s %s pour %s.
+                    Motif : %s
+
+                    Merci de le déclarer à nouveau depuis votre lien de paiement :
+                    %s
+
+                    — L'équipe Model Technologie
+                    """.formatted(
+                    n.firstName() != null ? n.firstName() : "",
+                    amount(n.amount()), n.currency(),
+                    n.bootcampTitle() != null ? n.bootcampTitle() : "votre formation",
+                    n.reason() != null ? n.reason() : "—",
+                    n.link()));
+            mailSender.send(msg);
+        } catch (Exception e) {
+            log.error("Erreur email paiement refusé pour {} : {}", n.to(), e.getMessage());
+        }
+    }
+
+    public void sendPaymentDeclaredInternal(PaymentNotice n) {
+        if (isDisabled()) return;
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(internalEmail);
+            msg.setSubject("[Paiement à confirmer] " + n.fullName() + " — " + amount(n.amount()) + " " + n.currency());
+            msg.setText("""
+                    %s (%s) déclare avoir payé.
+
+                    Formation : %s
+                    Échéance : %d/%d — %s %s
+                    Moyen : %s
+                    Référence : %s
+
+                    À vérifier puis confirmer dans le back-office (Candidatures → Paiement à confirmer).
+                    """.formatted(n.fullName(), n.to(),
+                    n.bootcampTitle() != null ? n.bootcampTitle() : "—",
+                    n.installmentNumber(), n.installmentCount(), amount(n.amount()), n.currency(),
+                    n.method() != null ? n.method() : "—",
+                    n.reference() != null ? n.reference() : "—"));
+            mailSender.send(msg);
+        } catch (Exception e) {
+            log.error("Erreur email interne (paiement déclaré) : {}", e.getMessage());
+        }
+    }
+
+    /** 150000 → « 150 000 » (séparateur de milliers français). */
+    private String amount(long value) {
+        return String.format(java.util.Locale.FRANCE, "%,d", value);
+    }
+
+    // =========================================================================
     //  HTML BUILDERS
     // =========================================================================
 

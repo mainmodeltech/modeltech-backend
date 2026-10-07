@@ -11,6 +11,8 @@ public interface RegistrationMapper {
 
     @Mapping(target = "bootcampId", source = "bootcamp.id")
     @Mapping(target = "sessionId", source = "session.id")
+    @Mapping(target = "learnerId", source = "learner.id")
+    @Mapping(target = "paymentSummary", ignore = true)
     RegistrationResponse toResponse(Registration entity);
 
     // ── Champs gérés manuellement dans le service ──────────────────────────
@@ -22,6 +24,12 @@ public interface RegistrationMapper {
     @Mapping(target = "promoCodeUsed",   ignore = true)
     @Mapping(target = "discountPercent", ignore = true)
     @Mapping(target = "status",          ignore = true)
+    @Mapping(target = "acceptedAt",      ignore = true)
+    @Mapping(target = "acceptedBy",      ignore = true)
+    @Mapping(target = "rejectedReason",  ignore = true)
+    @Mapping(target = "payerType",       ignore = true)
+    @Mapping(target = "totalAmount",     ignore = true)
+    @Mapping(target = "learner",         ignore = true)
     @Mapping(target = "createdAt",       ignore = true)
     @Mapping(target = "updatedAt",       ignore = true)
     @Mapping(target = "createdBy",       ignore = true)
