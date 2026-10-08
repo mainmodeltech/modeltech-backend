@@ -131,6 +131,7 @@ public class CourseContentAssembler {
                         .maxAttempts(l.getQuizMaxAttempts())
                         .build()
                 : null;
+        VideoSource video = hideMedia ? null : VideoSource.parse(l.getVideoUrl()).orElse(null);
         return CourseContentPayload.LessonItem.builder()
                 .id(l.getId().toString())
                 .order(order)
@@ -141,6 +142,8 @@ public class CourseContentAssembler {
                 .durationSeconds(l.getDurationSeconds())
                 .videoProviderId(hideMedia ? null : l.getVideoProviderId())
                 .videoUrl(hideMedia ? null : l.getVideoUrl())
+                .videoProvider(video != null ? video.provider().name() : null)
+                .videoEmbedUrl(video != null ? video.embedUrl() : null)
                 .description(l.getDescription())
                 .liveAt(l.getLiveAt() != null ? DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(l.getLiveAt()) : null)
                 .liveUrl(keepLiveLink ? l.getLiveUrl() : null)

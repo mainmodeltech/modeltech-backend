@@ -241,6 +241,8 @@ class CourseContentIT extends AbstractIntegrationTest {
         assertThat(lessons.get(0).at("/resources/1/url").isMissingNode() || lessons.get(0).at("/resources/1/url").isNull())
                 .as("ressource verrouillée par quiz").isTrue();
         assertThat(lessons.get(1).get("videoUrl").isNull()).as("leçon programmée : vidéo non livrée").isTrue();
+        assertThat(lessons.get(1).get("videoEmbedUrl").isNull()).as("leçon programmée : intégration non livrée").isTrue();
+        assertThat(lessons.get(0).get("videoEmbedUrl").isNull()).as("lien direct : pas d'intégration").isTrue();
         assertThat(lessons.get(3).get("liveUrl").asText()).isEqualTo("https://meet.example.com/live");
         assertThat(course.get("progress").size()).isZero();
     }
@@ -357,7 +359,7 @@ class CourseContentIT extends AbstractIntegrationTest {
                     {"title":"1.1 Intro","type":"VIDEO","status":"PUBLISHED","durationSeconds":600,"videoUrl":"https://video.example.com/intro",
                      "resources":[{"name":"Support","fileType":"pdf","url":"https://files.example.com/open.pdf"},
                                   {"name":"Corrigé","fileType":"pbix","url":"https://files.example.com/secret.pbix","lockedUntilQuiz":true}]},
-                    {"title":"1.2 Bientôt","type":"VIDEO","status":"SCHEDULED","videoUrl":"https://video.example.com/later"},
+                    {"title":"1.2 Bientôt","type":"VIDEO","status":"SCHEDULED","videoUrl":"https://vimeo.com/123456789/abcdef1234"},
                     {"title":"1.3 Quiz","type":"QUIZ","status":"PUBLISHED","quiz":{"questionCount":5,"passThreshold":70,"maxAttempts":2}},
                     {"title":"1.5 Brouillon","type":"VIDEO","status":"DRAFT"},
                     {"title":"1.4 Live","type":"LIVE","status":"PUBLISHED","liveAt":"%s","liveUrl":"https://meet.example.com/live"}]},

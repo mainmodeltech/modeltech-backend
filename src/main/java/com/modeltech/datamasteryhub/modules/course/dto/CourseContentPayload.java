@@ -75,6 +75,9 @@ public class CourseContentPayload {
         private Integer durationSeconds;
         private String videoProviderId;
         private String videoUrl;
+        /** Derives de videoUrl par le serveur (ignores en ecriture) : VIMEO/YOUTUBE et adresse d'integration prete pour une iframe. Nuls pour tout autre lien. */
+        private String videoProvider;
+        private String videoEmbedUrl;
         private String description;
         /** Heure locale ISO (ex. {@code 2026-11-14T18:00:00}) ; un décalage horaire est accepté en entrée. */
         private String liveAt;

@@ -364,6 +364,12 @@ Réservé SUPER_ADMIN / ADMIN, enveloppe `ApiResponse`, aucune migration.
 `overview` : `{from, to, currency:"XOF", registrations{total, byStatus}, funnel{submitted, accepted, paid, acceptanceRate, paymentRate, conversionRate (% ou null)}, revenue{collected, refunded, net, outstanding, overdue, averagePayment, collectedByMethod}, monthly[{month:"yyyy-MM", registrations, collected}], sessions[{sessionId, sessionName, formationTitle, startDate, status, capacity, confirmed, pending, fillRate}], topFormations[{formationId, title, registrations, paid, collected}], breakdowns{bySource, byProfile, byCountry, byPromoCode}, learners{total, newInPeriod, activeEnrollments, certificatesIssued, certificatesTotal}, audience{newsletterSubscribers, newsletterNewInPeriod, contactMessagesByType}}`. Les montants sont en XOF, non arrondis ; « reste à encaisser » et « en retard » ne dépendent pas de la période.
 **Front à faire** : page « Tableau de bord » (cartes, entonnoir, courbe mensuelle, remplissage des sessions, sélecteur de période) et pastilles du menu alimentées par `/actions` (interrogation toutes les 60 s).
 
+### 3.D decies — Lot G livré (`feature/video`) : vidéos Vimeo / YouTube
+
+Additif, aucune migration. Chaque leçon du programme (`/admin/formations/{id}/content`, `/learner/formations/{id}/course`) porte deux champs **en lecture seule** : `videoProvider` (`VIMEO` | `YOUTUBE` | null) et `videoEmbedUrl` (adresse d'iframe construite par le serveur | null). `videoUrl` reste le lien saisi. Les deux champs sont ignorés en écriture.
+**Front à faire** : dans `CoursePlayer`, si `videoEmbedUrl` est présent, afficher `<iframe src={videoEmbedUrl} allow="fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin">` ; sinon `<video src={videoUrl}>` comme aujourd'hui. Éditeur : un seul champ « Lien de la vidéo » (Vimeo ou YouTube) avec aperçu ; `videoProviderId` devient facultatif.
+**Hébergeur** : abonnement Vimeo Standard ; dans chaque vidéo, confidentialité « Masquée sur Vimeo » + intégration limitée au domaine du site + téléchargement désactivé.
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |
