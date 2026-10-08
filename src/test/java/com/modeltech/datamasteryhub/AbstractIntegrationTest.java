@@ -44,6 +44,7 @@ public abstract class AbstractIntegrationTest {
         // Tous les tests partagent la même IP (127.0.0.1) : la limite des formulaires est relevée.
         // Le comportement de la limite est couvert par IpRateLimiterTest et RateLimitedFormsIT.
         registry.add("app.rate-limit.forms.per-hour", () -> "1000");
+        registry.add("app.rate-limit.login.per-hour", () -> "1000");
     }
 
     @Autowired

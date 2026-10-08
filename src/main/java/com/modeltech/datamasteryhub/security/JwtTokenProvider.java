@@ -39,6 +39,16 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
 
+    @jakarta.annotation.PostConstruct
+    void checkSecretStrength() {
+        int bytes = jwtSecret == null ? 0 : jwtSecret.getBytes(StandardCharsets.UTF_8).length;
+        if (bytes < 64) {
+            // Pas d'arret du demarrage (le site public doit rester servi) : mais aucune connexion ne fonctionnera
+            org.slf4j.LoggerFactory.getLogger(JwtTokenProvider.class).error(
+                    "JWT_SECRET trop court ({} octets, 64 minimum) : toute connexion échouera. Générer un secret avec `openssl rand -base64 64`.", bytes);
+        }
+    }
+
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }

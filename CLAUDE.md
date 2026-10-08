@@ -78,6 +78,10 @@ public interface SoftDeleteRepository<T extends BaseEntity, ID> extends JpaRepos
 - **Contrôle de rôle sur `/api/v1/admin/**`** (lot learner-accounts, ordre des règles = ordre dans le fichier) : `/admin/users/**` → `SUPER_ADMIN` ; `/admin/formations/*/content` → + `PARTNER` (propriété vérifiée par le service) ; `/learner/**` → `LEARNER` ; `/admin/sessions/**` → `SUPER_ADMIN`/`ADMIN`/`TRAINER` ; `/admin/lessons/*/quiz` et `/admin/formations/*/project` comme le programme ; `/admin/registrations|promo-codes|learners|payments|enrollments/**` → `SUPER_ADMIN`/`ADMIN` ; le reste de `/admin/**` → `SUPER_ADMIN`/`ADMIN`/`EDITOR`. Un compte apprenant (`ROLE_LEARNER`) n'entre jamais dans `/admin/**`. Nouvelle zone admin sensible : ajouter sa règle **avant** `/admin/**`.
 - Le filtre JWT recharge le compte (admin ou apprenant) à chaque requête : rôles et statut `active` viennent toujours de la base, pas du jeton (un compte désactivé est refusé immédiatement). Le jeton porte aussi `roles` et `uty` (`ADMIN`/`LEARNER`) pour le front.
 - **Formulaires publics** : toujours via `IpRateLimiter.check(request, "<scope>")` (429 au-delà de `app.rate-limit.forms.per-hour`, 10 par défaut). L'IP est la **dernière** entrée de `X-Forwarded-For` (celle du reverse proxy), jamais la première (falsifiable).
+- **Connexion** : `POST /auth/login` est limité par IP (`app.rate-limit.login.per-hour`, 30 par heure) ; formulaires publics : `app.rate-limit.forms.per-hour`.
+- **reCAPTCHA** : `recaptchaService.verify()` retourne un booléen qu'il faut **toujours tester** (inscription et masterclass → 403). Désactivé par le profil `dev` seulement.
+- **Erreurs 500** : le client ne reçoit jamais le message technique, seulement « Référence : xxxxxxxx » ; la trace complète est dans les logs avec la même référence.
+- Mise en production : voir `docs/deploiement.md` (ordre de fusion, variables d'environnement, contrôles SQL, retour arrière).
 - Les erreurs métier se lèvent avec `ResponseStatusException` (gérée par `GlobalExceptionHandler` → statut conservé) ou `ResourceNotFoundException` (404).
 
 ---
@@ -160,7 +164,7 @@ throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le profil est obligat
 | `ResourceNotFoundException`      | 404  | Message de l'exception                      |
 | `BadCredentialsException`        | 401  | "Email ou mot de passe incorrect"           |
 | `DisabledException`              | 401  | "Compte désactivé, contactez un admin"      |
-| `Exception` (catch-all)          | 500  | Message de l'exception                      |
+| `Exception` (catch-all)          | 500  | « Une erreur est survenue. Référence : … »  |
 
 ### ErrorResponse — record exact
 ```java

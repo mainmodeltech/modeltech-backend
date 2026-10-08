@@ -37,7 +37,8 @@ public class AuthController {
     @Operation(summary = "Connexion (back-office ou apprenant)", description = "Retourne un JWT valide 24h ; le jeton porte les claims roles et uty")
     @ApiResponse(responseCode = "200", description = "Connexion réussie")
     @ApiResponse(responseCode = "401", description = "Identifiants invalides")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);   // freine la force brute
         return ResponseEntity.ok(authService.login(request));
     }
 

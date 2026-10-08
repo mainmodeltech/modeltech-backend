@@ -63,7 +63,9 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public RegistrationResponse register(CreateRegistrationRequest request) {
-        recaptchaService.verify(request.getRecaptchaToken());
+        if (!recaptchaService.verify(request.getRecaptchaToken())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vérification anti-robot échouée. Veuillez réessayer.");
+        }
         validateProfileFields(request);
 
         Registration registration = registrationMapper.toEntity(request);

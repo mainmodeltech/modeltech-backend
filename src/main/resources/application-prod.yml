@@ -9,10 +9,10 @@ spring:
 logging:
   level:
     ROOT: INFO
-    com.modeltech.datamasteryhub: DEBUG
+    com.modeltech.datamasteryhub: INFO
     org.springframework.security: INFO
     org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: OFF
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -24,3 +24,10 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/vbh-nodg-qwe}
+
+# Documentation de l'API : fermee en production
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

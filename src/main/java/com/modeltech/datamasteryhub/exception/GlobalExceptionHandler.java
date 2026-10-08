@@ -148,11 +148,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(
             Exception ex, HttpServletRequest request) {
+        // Le détail technique (SQL, chemins, classes) reste dans les logs ; le client reçoit une référence
+        String reference = java.util.UUID.randomUUID().toString().substring(0, 8);
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+                .error("Erreur interne [{}] sur {} {}", reference, request.getMethod(), request.getRequestURI(), ex);
         return ResponseEntity.internalServerError().body(new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
-                ex.getMessage(),
+                "Une erreur est survenue. Référence : " + reference,
                 request.getRequestURI(),
                 null
         ));

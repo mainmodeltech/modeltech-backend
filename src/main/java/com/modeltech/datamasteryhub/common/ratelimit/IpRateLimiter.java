@@ -5,6 +5,7 @@ import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -35,11 +36,22 @@ public class IpRateLimiter {
     private static final Duration WINDOW = Duration.ofHours(1);
     private static final int CLEANUP_THRESHOLD = 5_000;
 
+    /** Scope de la connexion : budget propre (plus large que les formulaires, mais borné contre la force brute). */
+    public static final String LOGIN_SCOPE = "login";
+
     private final int perHour;
+    private final int loginPerHour;
     private final Map<String, Entry> buckets = new ConcurrentHashMap<>();
 
-    public IpRateLimiter(@Value("${app.rate-limit.forms.per-hour:10}") int perHour) {
+    @Autowired
+    public IpRateLimiter(@Value("${app.rate-limit.forms.per-hour:10}") int perHour,
+                         @Value("${app.rate-limit.login.per-hour:30}") int loginPerHour) {
         this.perHour = perHour;
+        this.loginPerHour = loginPerHour;
+    }
+
+    IpRateLimiter(int perHour) {
+        this(perHour, perHour);
     }
 
     /** Consomme une tentative pour l'IP de la requête ; lève 429 si la limite est atteinte. */
@@ -55,7 +67,7 @@ public class IpRateLimiter {
     /** @return false si l'IP a épuisé ses tentatives pour ce scope. */
     boolean tryAcquire(String scope, String ip) {
         if (buckets.size() > CLEANUP_THRESHOLD) evictStaleEntries();
-        Entry entry = buckets.computeIfAbsent(scope + ":" + ip, key -> new Entry(newBucket()));
+        Entry entry = buckets.computeIfAbsent(scope + ":" + ip, key -> new Entry(newBucket(scope)));
         entry.lastAccessMillis.set(System.currentTimeMillis());
         return entry.bucket.tryConsume(1);
     }
@@ -69,9 +81,10 @@ public class IpRateLimiter {
         return request.getRemoteAddr();
     }
 
-    private Bucket newBucket() {
+    private Bucket newBucket(String scope) {
+        int limit = LOGIN_SCOPE.equals(scope) ? loginPerHour : perHour;
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(perHour, Refill.intervally(perHour, WINDOW)))
+                .addLimit(Bandwidth.classic(limit, Refill.intervally(limit, WINDOW)))
                 .build();
     }
 

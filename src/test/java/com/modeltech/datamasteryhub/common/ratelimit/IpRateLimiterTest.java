@@ -67,4 +67,19 @@ class IpRateLimiterTest {
         request.setRemoteAddr(remoteAddr);
         return request;
     }
+
+    @Test
+    void loginHasItsOwnBudget_independentFromTheForms() {
+        IpRateLimiter limiter = new IpRateLimiter(10, 2);
+        MockHttpServletRequest request = requestFrom("10.0.0.9");
+
+        assertThatCode(() -> limiter.check(request, IpRateLimiter.LOGIN_SCOPE)).doesNotThrowAnyException();
+        assertThatCode(() -> limiter.check(request, IpRateLimiter.LOGIN_SCOPE)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> limiter.check(request, IpRateLimiter.LOGIN_SCOPE))
+                .isInstanceOfSatisfying(ResponseStatusException.class, e -> assertThat(e.getStatusCode().value()).isEqualTo(429));
+
+        for (int i = 0; i < 10; i++) {
+            assertThatCode(() -> limiter.check(request, "contact")).doesNotThrowAnyException();
+        }
+    }
 }
