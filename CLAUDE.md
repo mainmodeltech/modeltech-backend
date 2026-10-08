@@ -262,6 +262,14 @@ Conditions du certificat (`EvaluationServiceImpl`) : leçons ≥ `lessonsComplet
 `StorageService.uploadDocument(file, folder, extensions, maxBytes)` : documents hors images, stockés en `application/octet-stream`. `StorageException` → 400 (handler ajouté ; auparavant 500).
 Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel), `CourseAccessPolicy` (qui édite le contenu : personnel + partenaire propriétaire).
 
+### Certificats (V26, module `course`)
+`Certificate` : numéro public `MT-{année}-{CODE}-{n°:05d}-{4 car. aléatoires}` (le suffixe aléatoire empêche d'énumérer les certificats via la page publique), **photographie figée à la délivrance** (nom, formation, durée, compétences = `benefits`, signataire, `includesProject`) ; statuts `VALID`/`REVOKED` ; un seul VALID par (apprenant, formation) (index unique partiel). `CODE` = `Bootcamp.certificateCode`, sinon un mot en majuscules du titre (VBA), sinon les initiales.
+- **Délivrance automatique** (`CertificateService.issueIfEligible`) déclenchée par : leçon terminée, quiz réussi, projet validé, appel d'un live ; + balayage nocturne (`app.certificate.sweep-cron`). Conditions = `CertificateConditions` (source unique, partagée avec l'écran d'évaluations et le suivi de session) ; une formation **sans programme** ne délivre jamais. **Jamais de redélivrance automatique** après une révocation.
+- **Manuelle** : `POST /admin/sessions/{sid}/learners/{lid}/certificate` ; non éligible ⇒ 409 avec les conditions manquantes ; `force` = dérogation réservée ADMIN/SUPER_ADMIN, motif obligatoire, tracée (`forced`, `forceReason`).
+- **PDF** : généré à la demande (`CertificatePdfGenerator`, OpenPDF + QR ZXing, A4 paysage, logo `src/main/resources/certificates/logo.png`), jamais stocké. Aperçu : `docs/design/certificat-apercu.png`.
+- **E-mail** « certificat prêt » (PDF en pièce jointe + lien de vérification + lien LinkedIn) envoyé **après commit** (`CertificateIssuedListener`).
+- Config : `app.certificate.signatory-name` / `signatory-title` (Patrick Lionnel DOOKO, Gérant), `linkedin-organization-id` (103600105), `id-prefix` (MT), `issuer`, `app.frontend.certificate-path` (`/certificats`).
+
 ### SiteSetting (V22, cms)
 `id | key (unique, ^[a-z0-9][a-z0-9._-]*$, ≤100) | value (jsonb libre, ≤20 Ko)` — contenus **publics** du site (tarifs du coaching, coach, prochain atelier, étude de cas, accroches…). Aucun secret ici. Clé absente = le site masque le bloc. Aucune donnée n'est semée. Supprimer = soft delete ; la clé peut être recréée.
 
@@ -294,6 +302,7 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V26 | certificates + séquence de numérotation + bootcamps.certificate_code |
 | V25 | email_logs : journal des e-mails sortants (métadonnées seulement) |
 | V24 | évaluations : banque de questions, tentatives de quiz, projet final (consigne, rendus, retours), appel des lives |
 | V23 | programme des formations (course_configs, course_modules, course_lessons, lesson_resources) + lesson_progress |
@@ -301,7 +310,7 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V26** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V27** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -350,6 +359,9 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | POST | `/api/v1/payments/{token}/declaration`, `/proof` (multipart `file`, image ≤ 5 Mo) | Jeton | Déclaration du paiement / capture (limités par IP) |
 | POST | `/api/v1/admin/registrations/{id}/accept`, `/reject`, `/payments` | JWT ADMIN | Acceptation (calcul + échéances + lien), refus, paiement saisi à la main (ApiResponse) |
 | GET/POST | `/api/v1/admin/payments` (`?status=&registrationId=`), `/{id}/confirm`, `/{id}/reject`, `/{id}/remind`, `/api/v1/admin/enrollments` | JWT ADMIN | File « paiement à confirmer », confirmation, refus, relance, accès |
+| GET | `/api/v1/certificates/{publicId}` et `/pdf` | Non | Vérification publique et PDF (limités par IP ; PDF 410 si révoqué) |
+| GET | `/api/v1/learner/certificates` | JWT LEARNER | Mes certificats (+ lien de vérification, PDF, LinkedIn) |
+| GET/POST | `/api/v1/admin/certificates` (`/{publicId}/revoke`, `/{publicId}/resend`), `POST /admin/sessions/{sid}/learners/{lid}/certificate` | JWT ADMIN (délivrer : + TRAINER) | Certificats (ApiResponse) |
 | GET/PUT | `/api/v1/admin/formations/{id}/content` | JWT EDITOR+ / PARTNER (ses formations) | Programme de la formation (JSON brut) |
 | GET/PUT | `/api/v1/admin/lessons/{id}/quiz` ; GET/PUT/DELETE `/admin/formations/{id}/project` | JWT EDITOR+ / PARTNER (ses formations) | Banque de questions, consigne du projet final (JSON brut) |
 | GET/PUT/POST | `/api/v1/admin/sessions/{id}/tracking`, `/lives/{liveId}/attendance`, `/learners/{lid}/project/files`, `/project/review` | JWT ADMIN / TRAINER | Suivi de session, appel, correction du projet (JSON brut) |

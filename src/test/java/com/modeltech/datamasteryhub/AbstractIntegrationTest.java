@@ -45,6 +45,7 @@ public abstract class AbstractIntegrationTest {
         // Le comportement de la limite est couvert par IpRateLimiterTest et RateLimitedFormsIT.
         registry.add("app.rate-limit.forms.per-hour", () -> "1000");
         registry.add("app.rate-limit.login.per-hour", () -> "1000");
+        registry.add("app.rate-limit.verify.per-hour", () -> "1000");
     }
 
     @Autowired

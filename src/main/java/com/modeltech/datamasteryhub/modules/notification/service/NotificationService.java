@@ -35,6 +35,11 @@ public interface NotificationService {
     /** Notifie l'équipe (Slack + e-mail interne) qu'un paiement attend sa vérification. */
     void notifyPaymentDeclared(PaymentNotice notice);
 
+    // ── Certificats ────────────────────────────────────────────────────────
+
+    /** « Votre certificat est prêt » : lien de vérification, lien LinkedIn et PDF en pièce jointe. */
+    void sendCertificateReadyEmail(CertificateNotice notice);
+
     // ── Contact ────────────────────────────────────────────────────────────
 
     void notifyNewContactMessage(ContactMessage contactMessage);

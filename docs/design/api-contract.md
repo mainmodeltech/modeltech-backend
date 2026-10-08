@@ -297,6 +297,25 @@ Contrats **exactement ceux de `src/types/evaluation.type.ts`** (JSON brut). Les 
 
 **Correctif transverse** : `StorageException` (type/taille de fichier refusés) renvoyait un 500 ; c'est maintenant un 400 avec le message (alumni/projets/partenaires y gagnent aussi).
 
+### 3.D sexies — Lot B livré (`feature/certificates`) : certificats
+
+Maquette : `docs/design/certificat-apercu.png` (logo Model Technologie, nom du lauréat, signataire Patrick Lionnel DOOKO, QR de vérification).
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/certificates/{publicId}` (**public**) | `ApiResponse<{publicId, status VALID|REVOKED, recipientName, formationTitle, durationLabel, skills[], includesProject, issuedAt, issuer, signatoryName, signatoryTitle, revokedAt}>` ; 404 si inconnu. Aucune donnée de contact. Page front à créer : `/certificats/:publicId` (le QR et l'e-mail y renvoient) |
+| GET | `/certificates/{publicId}/pdf` (**public**) | PDF ; 410 si révoqué |
+| GET | `/learner/certificates` | `[{publicId, formationId, formationTitle, issuedAt, status, verifyUrl, pdfPath, linkedInUrl}]` (JSON brut) |
+| GET | `/admin/certificates?status=` | liste paginée (`ApiResponse`) |
+| POST | `/admin/sessions/{sid}/learners/{lid}/certificate` | `{force?, reason?}` → 201 ; 409 conditions manquantes ou déjà délivré ; 403 `force` sans rôle ADMIN ; 400 `force` sans motif |
+| POST | `/admin/certificates/{publicId}/revoke` | `{reason*}` ; 409 si déjà révoqué |
+| POST | `/admin/certificates/{publicId}/resend` | renvoie l'e-mail avec le PDF |
+
+**Numéro** : `MT-2026-VBA-00042-K7QX` — la maquette montrait `MT-2026-VBA-00042` ; un suffixe aléatoire de 4 caractères est ajouté pour que la page publique ne permette pas de parcourir les certificats numéro par numéro. Retirable si vous préférez le format court (au prix de l'énumération).
+**Tableau de bord apprenant** : `stats.certificates`, `certificateReady`, `courses[].status = CERTIFIED` sont désormais renseignés. **Suivi de session** : `certificate` vaut `ISSUED` une fois délivré.
+**Front à faire** : page publique de vérification, espace « Mes certificats » (`/espace/certificats`), bouton « Délivrer » et « Révoquer » côté admin, champ `certificateCode` sur la fiche formation (facultatif).
+**À fournir plus tard** : le nom du formateur n'apparaîtra sur le certificat qu'avec le lot « formateurs » (lien session ↔ formateur).
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

@@ -57,6 +57,7 @@ public class FinalProjectServiceImpl implements FinalProjectService {
     private final StorageService storageService;
     private final LearnerAccess access;
     private final CourseAccessPolicy accessPolicy;
+    private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
 
     // =========================================================================
     //  APPRENANT
@@ -225,6 +226,9 @@ public class FinalProjectServiceImpl implements FinalProjectService {
             feedbackRepository.save(feedback);
         }
         log.info("Projet final de l'apprenant {} : {} par {}", learnerId, review.getStatus(), actorEmail);
+        if (review.getStatus() == ProjectStatus.VALIDATED) {
+            certificateService.issueIfEligible(learnerId, enrolled.bootcamp().getId());
+        }
         return overview(project, submission);
     }
 

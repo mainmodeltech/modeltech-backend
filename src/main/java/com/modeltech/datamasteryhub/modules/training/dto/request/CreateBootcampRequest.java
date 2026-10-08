@@ -29,6 +29,9 @@ public class CreateBootcampRequest {
 
     @Min(value = 0, message = "Le montant doit être positif")
     private Long priceAmount;
+
+    @jakarta.validation.constraints.Pattern(regexp = "^[A-Z0-9]{2,6}$", message = "2 à 6 lettres majuscules ou chiffres")
+    private String certificateCode;
     private List<String> benefits;
     private String category = "data";
     private String tag;

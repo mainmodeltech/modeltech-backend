@@ -61,6 +61,10 @@ public class Bootcamp extends BaseEntity {
     @Column(name = "price_amount")
     private Long priceAmount;
 
+    /** Code court du numéro de certificat (ex. VBA) ; vide = initiales du titre. */
+    @Column(name = "certificate_code", length = 6)
+    private String certificateCode;
+
     @Column(nullable = false, length = 3)
     private String currency = "XOF";
 

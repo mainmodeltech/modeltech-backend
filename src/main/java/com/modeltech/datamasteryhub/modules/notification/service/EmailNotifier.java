@@ -360,6 +360,42 @@ public class EmailNotifier {
         }
     }
 
+    // =========================================================================
+    //  EMAIL CERTIFICAT
+    // =========================================================================
+
+    public void sendCertificateReadyEmail(CertificateNotice n) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(msg, true, "UTF-8");
+            h.setFrom(mailSender.fromAddress());
+            h.setTo(n.to());
+            h.setSubject("🎓 Votre certificat est prêt — " + n.formationTitle());
+            h.setText("""
+                    Bonjour %s,
+
+                    Félicitations ! Vous avez rempli toutes les conditions de la formation « %s » :
+                    votre certificat de réussite est en pièce jointe.
+
+                    N° du certificat : %s
+                    Page de vérification (à partager avec un employeur) : %s
+
+                    Ajoutez-le à votre profil LinkedIn en un clic :
+                    %s
+
+                    Bravo, et à très bientôt !
+                    — L'équipe Model Technologie
+                    """.formatted(
+                    n.firstName() != null ? n.firstName() : "", n.formationTitle(), n.publicId(),
+                    n.verifyUrl(), n.linkedInUrl()));
+            h.addAttachment("Certificat-" + n.publicId() + ".pdf",
+                    new org.springframework.core.io.ByteArrayResource(n.pdf()), "application/pdf");
+            mailSender.send(msg, "CERTIFICATE_READY");
+        } catch (MessagingException e) {
+            log.error("Erreur email certificat pour {} : {}", n.to(), e.getMessage());
+        }
+    }
+
     /** 150000 → « 150 000 » (séparateur de milliers français). */
     private String amount(long value) {
         return String.format(java.util.Locale.FRANCE, "%,d", value);

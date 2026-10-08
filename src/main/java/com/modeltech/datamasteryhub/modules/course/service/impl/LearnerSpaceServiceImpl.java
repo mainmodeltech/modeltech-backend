@@ -51,6 +51,8 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
     private final LessonProgressRepository progressRepository;
     private final CourseContentAssembler assembler;
     private final LearnerAccess access;
+    private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
+    private final com.modeltech.datamasteryhub.modules.course.repository.CertificateRepository certificateRepository;
 
     @Value("${app.timezone:Africa/Dakar}")
     private String timezone;
@@ -77,6 +79,11 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         Map<UUID, List<CourseLesson>> lessonsByFormation = lessons.stream()
                 .collect(Collectors.groupingBy(l -> l.getModule().getBootcamp().getId(), LinkedHashMap::new, Collectors.toList()));
 
+        List<com.modeltech.datamasteryhub.modules.course.entity.Certificate> certificates = certificateRepository
+                .findAllByLearnerIdAndIsDeletedFalseOrderByIssuedAtDesc(learner.getId()).stream()
+                .filter(com.modeltech.datamasteryhub.modules.course.entity.Certificate::isValid).toList();
+        Set<UUID> certifiedFormations = certificates.stream().map(c -> c.getBootcamp().getId()).collect(Collectors.toSet());
+
         List<LearnerPayloads.EnrollmentSummary> courses = new ArrayList<>();
         for (Enrollment e : enrollments) {
             Bootcamp b = e.getRegistration().getBootcamp();
@@ -88,8 +95,9 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
                     .title(b.getTitle())
                     .providerLabel(providerLabel(e))
                     .progressPercent(percent)
-                    .statusNote(upcoming ? "Démarre le " + DAY.format(e.getAccessStartsAt()) : percent + " %")
-                    .status(upcoming ? "UPCOMING" : "IN_PROGRESS")
+                    .statusNote(certifiedFormations.contains(b.getId()) ? percent + " % · certificat disponible"
+                            : upcoming ? "Démarre le " + DAY.format(e.getAccessStartsAt()) : percent + " %")
+                    .status(certifiedFormations.contains(b.getId()) ? "CERTIFIED" : upcoming ? "UPCOMING" : "IN_PROGRESS")
                     .build());
         }
 
@@ -106,12 +114,15 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
                         .lessonsDone(done)
                         .lessonsTotal(lessons.size())
                         .averageQuizScore(null)
-                        .certificates(0)
+                        .certificates(certificates.size())
                         .build())
                 .resume(resume(enrollments, lessonsByFormation, progress))
                 .courses(courses)
                 .todos(List.of())
-                .certificateReady(null)
+                .certificateReady(certificates.stream()
+                        .filter(c -> c.getIssuedAt().isAfter(LocalDateTime.now().minusDays(14))).findFirst()
+                        .map(c -> LearnerPayloads.CertificateReady.builder().title(c.getFormationTitle()).build())
+                        .orElse(null))
                 .lives(upcomingLives(lessons))
                 .build();
     }
@@ -188,6 +199,9 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         progress.setCompleted(completed);
         progress.setPositionSeconds(request.getPositionSeconds());
         progressRepository.save(progress);
+        if (completed) {
+            certificateService.issueIfEligible(learner.getId(), bootcamp.getId());
+        }
     }
 
     // =========================================================================

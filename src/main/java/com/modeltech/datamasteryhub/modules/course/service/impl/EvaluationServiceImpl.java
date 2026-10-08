@@ -8,6 +8,7 @@ import com.modeltech.datamasteryhub.modules.course.enums.LessonStatus;
 import com.modeltech.datamasteryhub.modules.course.enums.LessonType;
 import com.modeltech.datamasteryhub.modules.course.enums.ProjectStatus;
 import com.modeltech.datamasteryhub.modules.course.repository.*;
+import com.modeltech.datamasteryhub.modules.course.service.CertificateConditions;
 import com.modeltech.datamasteryhub.modules.course.service.CourseContentAssembler;
 import com.modeltech.datamasteryhub.modules.course.service.EvaluationService;
 import com.modeltech.datamasteryhub.modules.course.service.LearnerAccess;
@@ -53,6 +54,8 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final FinalProjectService finalProjectService;
     private final CourseContentAssembler assembler;
     private final LearnerAccess access;
+    private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
+    private final com.modeltech.datamasteryhub.modules.course.repository.CertificateRepository certificateRepository;
 
     @Value("${app.brand.name:Model Technologie}")
     private String brandName;
@@ -88,7 +91,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         EvaluationPayloads.ProjectOverview project = finalProjectService.getLearnerProject(learnerEmail, formationId);
         Live live = livesOf(enrollment.getSession(), lessons, Set.of(learner.getId()));
-        Facts facts = new Facts(lessons, completed,
+        CertificateConditions.Facts facts = new CertificateConditions.Facts(lessons, completed,
                 attempts.entrySet().stream().filter(e -> e.getValue().stream().anyMatch(a -> Boolean.TRUE.equals(a.getPassed())))
                         .map(Map.Entry::getKey).collect(Collectors.toSet()),
                 live.total(), live.presentCount(learner.getId()),
@@ -101,7 +104,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .passThreshold(config.getQuizPassPercent())
                 .quizzes(quizzes)
                 .project(project)
-                .conditions(conditions(config, facts))
+                .conditions(CertificateConditions.evaluate(config, facts))
                 .build();
     }
 
@@ -128,57 +131,6 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .dueLabel(null)
                 .optional(false)
                 .build();
-    }
-
-    // =========================================================================
-    //  CONDITIONS DU CERTIFICAT
-    // =========================================================================
-
-    private record Facts(List<CourseLesson> lessons, Set<UUID> completedLessons, Set<UUID> passedQuizLessons,
-                         int livesTotal, int livesPresent, ProjectStatus requiredProject) {}
-
-    private List<EvaluationPayloads.CertificateCondition> conditions(CourseConfig config, Facts f) {
-        List<EvaluationPayloads.CertificateCondition> out = new ArrayList<>();
-
-        int lessonsTotal = f.lessons().size();
-        int lessonsDone = (int) f.lessons().stream().filter(l -> f.completedLessons().contains(l.getId())).count();
-        int lessonsPercent = percent(lessonsDone, lessonsTotal);
-        out.add(condition("LESSONS", "Leçons terminées", lessonsDone + " / " + lessonsTotal, lessonsPercent,
-                lessonsTotal == 0 || lessonsPercent >= config.getLessonsCompletedPercent()));
-
-        int quizTotal = (int) f.lessons().stream().filter(l -> l.getType() == LessonType.QUIZ).count();
-        int quizPassed = (int) f.lessons().stream()
-                .filter(l -> l.getType() == LessonType.QUIZ && f.passedQuizLessons().contains(l.getId())).count();
-        out.add(condition("QUIZZES", "Quiz réussis", quizPassed + " / " + quizTotal, percent(quizPassed, quizTotal),
-                quizPassed == quizTotal));
-
-        int livePercent = percent(f.livesPresent(), f.livesTotal());
-        out.add(condition("LIVES", "Présence aux lives", f.livesPresent() + " / " + f.livesTotal(), livePercent,
-                f.livesTotal() == 0 || livePercent >= config.getLivePresencePercent()));
-
-        if (f.requiredProject() != null) {
-            boolean validated = f.requiredProject() == ProjectStatus.VALIDATED;
-            out.add(condition("PROJECT", "Projet final", projectLabel(f.requiredProject()), validated ? 100 : 0, validated));
-        }
-        return out;
-    }
-
-    private EvaluationPayloads.CertificateCondition condition(String key, String label, String value, int percent, boolean met) {
-        return EvaluationPayloads.CertificateCondition.builder()
-                .key(key).label(label).valueLabel(value).percent(percent).met(met).build();
-    }
-
-    private String projectLabel(ProjectStatus s) {
-        return switch (s) {
-            case NOT_STARTED -> "Non rendu";
-            case SUBMITTED -> "En correction";
-            case CHANGES_REQUESTED -> "Corrections demandées";
-            case VALIDATED -> "Validé";
-        };
-    }
-
-    private int percent(int part, int total) {
-        return total == 0 ? 100 : (int) Math.round(part * 100.0 / total);
     }
 
     // =========================================================================
@@ -211,6 +163,10 @@ public class EvaluationServiceImpl implements EvaluationService {
                     .forEach(s -> projectBy.put(s.getLearner().getId(), s.getStatus()));
         }
         Live live = livesOf(session, lessons, new HashSet<>(learnerIds));
+        Set<UUID> certified = learnerIds.isEmpty() ? Set.of()
+                : certificateRepository.findAllByBootcampIdAndLearnerIdInAndStatusAndIsDeletedFalse(
+                        bootcamp.getId(), learnerIds, com.modeltech.datamasteryhub.modules.course.entity.Certificate.VALID)
+                .stream().map(c -> c.getLearner().getId()).collect(Collectors.toSet());
 
         LocalDate today = access.today();
         boolean endingSoon = session.getEndDate() != null && !today.isBefore(session.getEndDate().minusDays(AT_RISK_DAYS));
@@ -220,9 +176,9 @@ public class EvaluationServiceImpl implements EvaluationService {
             Set<UUID> completed = completedBy.getOrDefault(id, Set.of());
             Set<UUID> passed = passedQuizBy.getOrDefault(id, Set.of());
             ProjectStatus project = projectBy.getOrDefault(id, ProjectStatus.NOT_STARTED);
-            Facts facts = new Facts(lessons, completed, passed, live.total(), live.presentCount(id),
+            CertificateConditions.Facts facts = new CertificateConditions.Facts(lessons, completed, passed, live.total(), live.presentCount(id),
                     hasProject && config.isFinalProjectValidated() ? project : null);
-            boolean ready = conditions(config, facts).stream().allMatch(EvaluationPayloads.CertificateCondition::isMet);
+            boolean ready = CertificateConditions.allMet(CertificateConditions.evaluate(config, facts));
 
             int quizTotal = (int) lessons.stream().filter(l -> l.getType() == LessonType.QUIZ).count();
             learners.add(EvaluationPayloads.TrackedLearner.builder()
@@ -235,7 +191,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                     .quizPassed((int) lessons.stream().filter(l -> l.getType() == LessonType.QUIZ && passed.contains(l.getId())).count())
                     .quizTotal(quizTotal)
                     .project(project)
-                    .certificate(ready ? "READY" : endingSoon ? "AT_RISK" : "PENDING")
+                    .certificate(certified.contains(id) ? "ISSUED" : ready ? "READY" : endingSoon ? "AT_RISK" : "PENDING")
                     .build());
         }
 
@@ -325,6 +281,8 @@ public class EvaluationServiceImpl implements EvaluationService {
         }
         log.info("Appel du live {} (session {}) enregistré par {} : {}/{} présents",
                 liveId, sessionId, actorEmail, present.size(), enrolled.size());
+        // La présence peut être la dernière condition manquante du certificat
+        present.forEach(learnerId -> certificateService.issueIfEligible(learnerId, session.getBootcamp().getId()));
 
         return EvaluationPayloads.SessionLive.builder()
                 .id(lesson.getId().toString())

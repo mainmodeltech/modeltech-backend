@@ -89,6 +89,8 @@ public class SecurityConfig {
                                 "/api/v1/promo-codes/validate",
                                 "/api/v1/testimonials/published",
                                 "/api/v1/payments/*",
+                                "/api/v1/certificates/*",
+                                "/api/v1/certificates/*/pdf",
                                 "/api/v1/site-settings",
                                 "/api/v1/sessions/**",
                                 "/api/v1/alumni",
@@ -110,6 +112,7 @@ public class SecurityConfig {
                                 "/api/v1/admin/learners/**",
                                 "/api/v1/admin/payments/**",
                                 "/api/v1/admin/email-logs/**",
+                                "/api/v1/admin/certificates/**",
                                 "/api/v1/admin/enrollments/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")
                         // Programme d'une formation : le personnel, et un partenaire pour SES formations (vérifié par le service)

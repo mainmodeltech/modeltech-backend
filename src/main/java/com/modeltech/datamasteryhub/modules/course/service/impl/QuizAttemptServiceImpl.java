@@ -43,6 +43,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final QuizAttemptRepository attemptRepository;
     private final LessonProgressRepository progressRepository;
     private final LearnerAccess access;
+    private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
 
     // =========================================================================
     //  DÉMARRER
@@ -178,7 +179,10 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         attempt.setPassed(passed);
         attemptRepository.save(attempt);
 
-        if (passed) markLessonCompleted(learner, lesson);
+        if (passed) {
+            markLessonCompleted(learner, lesson);
+            certificateService.issueIfEligible(learner.getId(), lesson.getModule().getBootcamp().getId());
+        }
 
         Integer max = lesson.getQuizMaxAttempts();
         Integer remaining = max == null ? null : Math.max(0, max - attempt.getAttemptNumber());

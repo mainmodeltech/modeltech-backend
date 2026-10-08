@@ -426,7 +426,7 @@ class EvaluationFlowIT extends AbstractIntegrationTest {
         mockMvc.perform(post(base + "/learners/" + awaId + "/project/review").with(staff("TRAINER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"VALIDATED\"}")).andExpect(status().isOk());
         tracking = json(mockMvc.perform(get(base + "/tracking").with(staff("ADMIN"))).andExpect(status().isOk()));
-        assertThat(tracking.at("/learners/0/certificate").asText()).isEqualTo("READY");
+        assertThat(tracking.at("/learners/0/certificate").asText()).isEqualTo("ISSUED");   // délivré automatiquement à la validation
     }
 
     // ── Données de test ──────────────────────────────────────────────

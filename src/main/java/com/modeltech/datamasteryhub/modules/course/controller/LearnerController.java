@@ -32,6 +32,7 @@ public class LearnerController {
     private final EvaluationService evaluationService;
     private final QuizAttemptService quizAttemptService;
     private final FinalProjectService finalProjectService;
+    private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
 
     @GetMapping("/dashboard")
     public LearnerPayloads.Dashboard dashboard(Authentication authentication) {
@@ -49,6 +50,14 @@ public class LearnerController {
                                             Authentication authentication) {
         learnerSpaceService.setLessonProgress(authentication.getName(), lessonId, request);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Certificats ──────────────────────────────────────────────────
+
+    @GetMapping("/certificates")
+    public java.util.List<com.modeltech.datamasteryhub.modules.course.dto.CertificatePayloads.LearnerCertificate> certificates(
+            Authentication authentication) {
+        return certificateService.findForLearner(authentication.getName());
     }
 
     // ── Évaluations ──────────────────────────────────────────────────

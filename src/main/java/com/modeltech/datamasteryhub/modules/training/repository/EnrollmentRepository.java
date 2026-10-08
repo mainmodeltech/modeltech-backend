@@ -41,4 +41,19 @@ public interface EnrollmentRepository extends SoftDeleteRepository<Enrollment, U
             ORDER BY e.createdAt DESC
             """)
     List<Enrollment> findAccessibleByLearner(@Param("learnerId") UUID learnerId);
+
+    /** Accès à passer en revue pour la délivrance des certificats : sessions commencées (ou sans session). */
+    @Query("""
+            SELECT e FROM Enrollment e
+            JOIN FETCH e.learner
+            JOIN FETCH e.registration r
+            JOIN FETCH r.bootcamp
+            LEFT JOIN e.session s
+            WHERE e.isDeleted = false
+              AND e.status IN (com.modeltech.datamasteryhub.modules.training.enums.EnrollmentStatus.ACTIVE,
+                               com.modeltech.datamasteryhub.modules.training.enums.EnrollmentStatus.COMPLETED)
+              AND (s IS NULL OR s.status IN (com.modeltech.datamasteryhub.modules.training.enums.SessionStatus.IN_PROGRESS,
+                                             com.modeltech.datamasteryhub.modules.training.enums.SessionStatus.COMPLETED))
+            """)
+    List<Enrollment> findAllForCertificateSweep();
 }
