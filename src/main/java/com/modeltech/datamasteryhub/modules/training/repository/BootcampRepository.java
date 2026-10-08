@@ -22,6 +22,8 @@ public interface BootcampRepository extends JpaRepository<Bootcamp, UUID> {
     // Détail public
     Optional<Bootcamp> findByIdAndPublishedTrueAndIsDeletedFalse(UUID id);
 
+    Optional<Bootcamp> findByIdAndIsDeletedFalse(UUID id);
+
     // ── Catalogue par domaines ───────────────────────────────────────
     // Formations publiées, rattachées à un domaine visible (le front exige `domain`)
     @Query("""

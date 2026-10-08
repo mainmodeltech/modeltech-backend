@@ -111,8 +111,14 @@ public class SecurityConfig {
                                 "/api/v1/admin/payments/**",
                                 "/api/v1/admin/enrollments/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        // Programme d'une formation : le personnel, et un partenaire pour SES formations (vérifié par le service)
+                        .requestMatchers("/api/v1/admin/formations/*/content")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR", "PARTNER")
                         .requestMatchers("/api/v1/admin/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR")
+                        // ── Espace apprenant ──────────────────────────────────────
+                        .requestMatchers("/api/v1/learner/**")
+                                .hasRole("LEARNER")
                         // ── Toutes les autres routes → authentification requise ─────
                         .anyRequest().authenticated()
                 )

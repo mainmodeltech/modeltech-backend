@@ -241,6 +241,28 @@ Toute nouvelle clé est créée par simple `PUT` : aucune migration ni livraison
 
 **À faire côté front** : lire `/site-settings` (un seul appel, à mettre en cache) à la place de `siteContent.ts` ; page admin « Paramètres du site » (formulaires par clé). `references`/`gallery` : les services front `referenceService`/`galleryService` n'ont aucun consommateur, **non implémentés côté back** (à retirer du front ou à rebrancher explicitement).
 
+### 3.D quater — Lot f livré (`feature/course-content`) : programme des formations et espace apprenant
+
+Contrats **exactement ceux de `src/types/course.type.ts`** (JSON brut, sans enveloppe). Remplacent `demoCourse.ts` pour ces appels.
+
+| Méthode | Chemin | Rôle | Effet |
+|---|---|---|---|
+| GET | `/admin/formations/{formationId}/content` | SUPER_ADMIN, ADMIN, EDITOR ; PARTNER pour **ses** formations | `CourseContent` ; formation sans programme : `modules: []`, réglages par défaut (`updatedAt` null) |
+| PUT | `/admin/formations/{formationId}/content` | idem | corps `CourseContent` (arbre complet) → renvoie l'arbre enregistré avec les **identifiants définitifs** (le front doit remplacer ses id temporaires) |
+| GET | `/learner/dashboard` | LEARNER | `DashboardData` |
+| GET | `/learner/formations/{formationId}/course` | LEARNER inscrit | `LearnerCourse` ; 403 sans accès / pas encore ouvert / expiré (message affichable) |
+| PUT | `/learner/lessons/{lessonId}/progress` | LEARNER inscrit | corps `{completed, positionSeconds}` → 204 |
+
+**Règles côté serveur** : `title` du PUT est ignoré (se modifie dans la fiche formation) ; titres obligatoires ≤ 255 ; 50 modules, 100 leçons/module, 30 ressources/leçon ; leçon QUIZ ⇒ `quiz{questionCount≥1, passThreshold 1–100, maxAttempts≥1 ou null=illimité}` ; liens `http(s)://` ; `liveAt` accepté avec ou sans décalage, renvoyé en heure locale `YYYY-MM-DDTHH:mm:ss` ; `accessDuration` ∈ `12_MONTHS|LIFETIME` ; pourcentages 0–100. Éléments retirés du PUT = supprimés (soft delete, la progression reste).
+
+**Vue apprenant** : leçons `DRAFT` absentes ; leçons `SCHEDULED` sans vidéo ; ressources `lockedUntilQuiz` sans `url` (livrée par le lot évaluations après réussite du quiz) ; déblocage séquentiel **imposé** (403 « Terminez d'abord… ») ; une leçon `QUIZ` ne peut pas être marquée terminée par le client (403) ; `LIVE`/`VIDEO`/`RESOURCE` oui.
+
+**Tableau de bord** : `streakDays` = jours consécutifs d'activité (null si aucun) ; `hoursWatched` = durée des vidéos terminées ; `lives` = lives à venir (14 jours, 5 max) ; `resume` = dernière leçon commencée, sinon première leçon publiée à faire ; `courses[].status` = `UPCOMING` avant la date de début sinon `IN_PROGRESS`. **Renseignés par le lot évaluations** : `todos`, `averageQuizScore`, `certificates`, `certificateReady`, statut `CERTIFIED` (aujourd'hui `[]` / null / 0).
+
+**Écarts à connaître** : `trainerName` toujours null (aucun lien formateur ↔ session n'existe encore) ; `timeLabel` = heure de début seule (pas d'heure de fin stockée) ; `place` = « En ligne » ; défauts du certificat configurables par `app.course.default-*` (80 / 70 / 75 / projet requis / « Standard »). Les comptes TRAINER n'ont pas encore accès à l'éditeur.
+
+**Migration V23** : additive, aucune donnée semée.
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

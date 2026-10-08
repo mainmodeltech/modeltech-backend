@@ -75,7 +75,7 @@ public interface SoftDeleteRepository<T extends BaseEntity, ID> extends JpaRepos
 ## SecurityConfig — principe (les listes de chemins évoluent : lire le fichier avant de la modifier)
 - Liste blanche **explicite** : `OPTIONS /**`, `GET /actuator/health`, quelques `POST` publics (auth login/forgot/reset, registrations, contact-messages, masterclass/register) et des `GET` publics (bootcamps, formations, domains, partners, services, témoignages publiés, alumni, projets, sessions, promo-codes/validate), Swagger.
 - **`.anyRequest().authenticated()`** : tout le reste exige un JWT. Un nouveau `GET` public doit être ajouté à la liste (avec son `/**` si le détail `/{id}` est public aussi — oubli déjà vu sur `/bootcamps/{id}`).
-- **Contrôle de rôle sur `/api/v1/admin/**`** (lot learner-accounts, ordre des règles = ordre dans le fichier) : `/admin/users/**` → `SUPER_ADMIN` ; `/admin/registrations|promo-codes|learners|payments|enrollments/**` → `SUPER_ADMIN`/`ADMIN` ; le reste de `/admin/**` → `SUPER_ADMIN`/`ADMIN`/`EDITOR`. Un compte apprenant (`ROLE_LEARNER`) n'entre jamais dans `/admin/**`. Nouvelle zone admin sensible : ajouter sa règle **avant** `/admin/**`.
+- **Contrôle de rôle sur `/api/v1/admin/**`** (lot learner-accounts, ordre des règles = ordre dans le fichier) : `/admin/users/**` → `SUPER_ADMIN` ; `/admin/formations/*/content` → + `PARTNER` (propriété vérifiée par le service) ; `/learner/**` → `LEARNER` ; `/admin/registrations|promo-codes|learners|payments|enrollments/**` → `SUPER_ADMIN`/`ADMIN` ; le reste de `/admin/**` → `SUPER_ADMIN`/`ADMIN`/`EDITOR`. Un compte apprenant (`ROLE_LEARNER`) n'entre jamais dans `/admin/**`. Nouvelle zone admin sensible : ajouter sa règle **avant** `/admin/**`.
 - Le filtre JWT recharge le compte (admin ou apprenant) à chaque requête : rôles et statut `active` viennent toujours de la base, pas du jeton (un compte désactivé est refusé immédiatement). Le jeton porte aussi `roles` et `uty` (`ADMIN`/`LEARNER`) pour le front.
 - **Formulaires publics** : toujours via `IpRateLimiter.check(request, "<scope>")` (429 au-delà de `app.rate-limit.forms.per-hour`, 10 par défaut). L'IP est la **dernière** entrée de `X-Forwarded-For` (celle du reverse proxy), jamais la première (falsifiable).
 - Les erreurs métier se lèvent avec `ResponseStatusException` (gérée par `GlobalExceptionHandler` → statut conservé) ou `ResourceNotFoundException` (404).
@@ -245,6 +245,12 @@ Config : `app.payment.default-due-days` (2), `link-validity-days` (30, après l'
 ### NewsletterSubscription (V19)
 `id | email(unique, minuscules) | status(PENDING/CONFIRMED/UNSUBSCRIBED) | source | confirmationToken | confirmationExpiresAt | unsubscribeToken | confirmedAt | unsubscribedAt` — double opt-in ; **les jetons ne sortent jamais** dans l'API admin.
 
+### Programme des formations (V23, module `course`)
+`CourseConfig` (1 par formation : `sequentialUnlock | accessDuration (12_MONTHS|LIFETIME) | règles du certificat | contentUpdatedAt`, créé à la 1re sauvegarde ; valeurs par défaut `app.course.default-*`) → `CourseModule` → `CourseLesson` (`type VIDEO|RESOURCE|LIVE|QUIZ`, `status PUBLISHED|SCHEDULED|DRAFT`, réglages de quiz, `liveAt` = heure locale du site, fuseau `app.timezone` = Africa/Dakar) → `LessonResource`. `LessonProgress` = (apprenant, leçon, completed, positionSeconds).
+Édition = **remplacement de l'arbre complet** (`PUT /admin/formations/{id}/content`) : les identifiants inconnus (temporaires de l'éditeur) créent, les connus mettent à jour, les absents sont **soft-deleted** ; l'ordre du tableau fait foi ; tout est validé avant la moindre écriture. Liens vidéo/live/ressources : `http(s)://` uniquement (jamais `javascript:`).
+Vue apprenant (`CourseContentAssembler.assemble(b, true)`) : brouillons masqués ; vidéo des leçons non publiées et lien des ressources `lockedUntilQuiz` **jamais livrés**. Le serveur impose : accès (inscription ACTIVE/COMPLETED, ouverte à la date de début, 12 mois après la fin sauf LIFETIME), déblocage séquentiel des modules, un quiz ne se valide qu'en le réussissant.
+Les endpoints `/learner/**` et `/admin/formations/*/content` renvoient du **JSON brut** (contrat front `course.type.ts`), pas d'enveloppe `ApiResponse`.
+
 ### SiteSetting (V22, cms)
 `id | key (unique, ^[a-z0-9][a-z0-9._-]*$, ≤100) | value (jsonb libre, ≤20 Ko)` — contenus **publics** du site (tarifs du coaching, coach, prochain atelier, étude de cas, accroches…). Aucun secret ici. Clé absente = le site masque le bloc. Aucune donnée n'est semée. Supprimer = soft delete ; la clé peut être recréée.
 
@@ -277,11 +283,12 @@ Config : `app.payment.default-due-days` (2), `link-validity-days` (30, après l'
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V23 | programme des formations (course_configs, course_modules, course_lessons, lesson_resources) + lesson_progress |
 | V22 | site_settings : contenus du site éditables (clé → JSON) |
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V23** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V24** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -330,6 +337,8 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | POST | `/api/v1/payments/{token}/declaration`, `/proof` (multipart `file`, image ≤ 5 Mo) | Jeton | Déclaration du paiement / capture (limités par IP) |
 | POST | `/api/v1/admin/registrations/{id}/accept`, `/reject`, `/payments` | JWT ADMIN | Acceptation (calcul + échéances + lien), refus, paiement saisi à la main (ApiResponse) |
 | GET/POST | `/api/v1/admin/payments` (`?status=&registrationId=`), `/{id}/confirm`, `/{id}/reject`, `/{id}/remind`, `/api/v1/admin/enrollments` | JWT ADMIN | File « paiement à confirmer », confirmation, refus, relance, accès |
+| GET/PUT | `/api/v1/admin/formations/{id}/content` | JWT EDITOR+ / PARTNER (ses formations) | Programme de la formation (JSON brut) |
+| GET | `/api/v1/learner/dashboard`, `/formations/{id}/course` ; PUT `/lessons/{id}/progress` | JWT LEARNER | Espace apprenant (JSON brut) |
 | GET | `/api/v1/site-settings` | Non | Tous les contenus du site `{clé: valeur}` (ApiResponse) |
 | GET/PUT/DELETE | `/api/v1/admin/site-settings` (`/{key}`) | JWT EDITOR+ | Lire / créer-remplacer / retirer un contenu du site (ApiResponse) |
 | GET/POST/PATCH | `/api/v1/admin/learners/**` (`/{id}/activate`, `/{id}/deactivate`, `POST /{id}/resend-invitation`) | JWT ADMIN | Comptes apprenants (ApiResponse) |
