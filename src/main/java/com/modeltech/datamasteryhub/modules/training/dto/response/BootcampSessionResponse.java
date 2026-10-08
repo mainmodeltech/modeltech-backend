@@ -33,5 +33,7 @@ public class BootcampSessionResponse {
     private Boolean isFeatured;
     private Boolean published;
     private Integer spotsRemaining;  // calculé : maxParticipants - currentParticipants
+    private UUID trainerId;
+    private String trainerName;
     private String schedule;         // ex: "Soirs & week-ends"
 }

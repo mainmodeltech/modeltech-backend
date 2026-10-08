@@ -155,7 +155,8 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         return LearnerPayloads.LearnerCourse.builder()
                 .content(content)
                 .cohortLabel(cohort)
-                .trainerName(null)
+                .trainerName(enrollment.getSession() != null && enrollment.getSession().getTrainer() != null
+                        ? enrollment.getSession().getTrainer().getFullName() : null)
                 .progress(progress)
                 .build();
     }

@@ -82,6 +82,11 @@ public class BootcampSession extends BaseEntity {
     @Column(name = "early_bird_deadline")
     private LocalDate earlyBirdDeadline;
 
+    /** Formateur de la session (compte du back-office avec le rôle TRAINER). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trainer_id")
+    private com.modeltech.datamasteryhub.modules.auth.entity.AdminUser trainer;
+
     // Visibilité
     @Column(name = "is_featured")
     private Boolean isFeatured = false;

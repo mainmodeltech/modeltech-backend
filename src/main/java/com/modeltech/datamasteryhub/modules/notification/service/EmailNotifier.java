@@ -396,6 +396,32 @@ public class EmailNotifier {
         }
     }
 
+    public void sendInvoiceEmail(InvoiceNotice n) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(msg, true, "UTF-8");
+            h.setFrom(mailSender.fromAddress());
+            h.setTo(n.to());
+            h.setSubject("[Model Technologie] Facture " + n.number());
+            h.setText("""
+                    Bonjour %s,
+
+                    Veuillez trouver ci-joint la facture %s d'un montant de %s %s%s.
+
+                    Pour toute question, répondez simplement à ce message.
+
+                    — L'équipe Model Technologie
+                    """.formatted(n.recipientName() != null ? n.recipientName() : "", n.number(), amount(n.total()),
+                    "XOF".equals(n.currency()) ? "FCFA" : n.currency(),
+                    n.dueDate() != null ? ", à régler avant le " + n.dueDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : ""));
+            h.addAttachment("Facture-" + n.number() + ".pdf",
+                    new org.springframework.core.io.ByteArrayResource(n.pdf()), "application/pdf");
+            mailSender.send(msg, "INVOICE");
+        } catch (MessagingException e) {
+            log.error("Erreur email facture pour {} : {}", n.to(), e.getMessage());
+        }
+    }
+
     /** 150000 → « 150 000 » (séparateur de milliers français). */
     private String amount(long value) {
         return String.format(java.util.Locale.FRANCE, "%,d", value);

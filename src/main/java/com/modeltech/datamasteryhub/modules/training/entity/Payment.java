@@ -96,4 +96,13 @@ public class Payment extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+
+    @Column(name = "refunded_by")
+    private String refundedBy;
+
+    @Column(name = "refund_reason", columnDefinition = "TEXT")
+    private String refundReason;
 }

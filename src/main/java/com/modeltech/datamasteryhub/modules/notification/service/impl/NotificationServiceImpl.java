@@ -3,6 +3,7 @@ package com.modeltech.datamasteryhub.modules.notification.service.impl;
 import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessage;
 import com.modeltech.datamasteryhub.modules.notification.service.EmailNotifier;
 import com.modeltech.datamasteryhub.modules.notification.service.CertificateNotice;
+import com.modeltech.datamasteryhub.modules.notification.service.InvoiceNotice;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import com.modeltech.datamasteryhub.modules.notification.service.PaymentNotice;
 import com.modeltech.datamasteryhub.modules.notification.service.SlackNotifier;
@@ -129,6 +130,20 @@ public class NotificationServiceImpl implements NotificationService {
             emailNotifier.sendCertificateReadyEmail(notice);
         } catch (Exception e) {
             log.error("Erreur email certificat {} : {}", notice.to(), e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    //  FACTURES
+    // =========================================================================
+
+    @Override
+    @Async
+    public void sendInvoiceEmail(InvoiceNotice notice) {
+        try {
+            emailNotifier.sendInvoiceEmail(notice);
+        } catch (Exception e) {
+            log.error("Erreur email facture {} : {}", notice.to(), e.getMessage());
         }
     }
 

@@ -262,6 +262,12 @@ Conditions du certificat (`EvaluationServiceImpl`) : leçons ≥ `lessonsComplet
 `StorageService.uploadDocument(file, folder, extensions, maxBytes)` : documents hors images, stockés en `application/octet-stream`. `StorageException` → 400 (handler ajouté ; auparavant 500).
 Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel), `CourseAccessPolicy` (qui édite le contenu : personnel + partenaire propriétaire).
 
+### Formateurs, factures, annulations (V27)
+- **Formateur de session** : `BootcampSession.trainer` (compte `AdminUser` actif avec `ROLE_TRAINER`), affecté par `PUT /admin/bootcamps/sessions/{id}/trainer` (ADMIN) ; liste : `GET /admin/trainers`. `SessionAccessPolicy` : l'administration voit toutes les sessions, **un formateur uniquement les siennes** (suivi, appel, rendus de projet, délivrance de certificats). Son nom alimente le suivi de session, le cours apprenant et le certificat.
+- **Inscription manuelle** : `POST /admin/registrations` (`source = ADMIN`, sans reCAPTCHA ni e-mail automatique), puis acceptation normale.
+- **Annulation** `POST /admin/registrations/{id}/cancel {reason}` : échéances ouvertes annulées, place libérée et accès fermé si elle était confirmée ; **remboursement** `POST /admin/payments/{id}/refund {reason}` : consigne un remboursement fait hors plateforme (statut `REFUNDED`) ; plus rien de payé ⇒ inscription annulée.
+- **Factures** (`Invoice`, document figé à l'émission) : numéro `FAC-{année}-{n°:05d}` **continu** (compteur `invoice_counters` verrouillé, pas de séquence à trous), une seule facture `ISSUED` par inscription (une annulée se refait), total = montant à payer de l'inscription (TVA **incluse** : `app.invoice.vat-percent`, 0 par défaut), détail early-bird / remise promo reconstitué quand le montant n'a pas été négocié. PDF : `InvoicePdfGenerator`. Mentions légales par `app.invoice.seller.*` (nom, adresse, téléphone, e-mail, `tax-id` NINEA, `register-number` RCCM, `payment-details`, `footer`) : **rien n'est inventé**, ce qui est vide n'est pas imprimé.
+
 ### Certificats (V26, module `course`)
 `Certificate` : numéro public `MT-{année}-{CODE}-{n°:05d}-{4 car. aléatoires}` (le suffixe aléatoire empêche d'énumérer les certificats via la page publique), **photographie figée à la délivrance** (nom, formation, durée, compétences = `benefits`, signataire, `includesProject`) ; statuts `VALID`/`REVOKED` ; un seul VALID par (apprenant, formation) (index unique partiel). `CODE` = `Bootcamp.certificateCode`, sinon un mot en majuscules du titre (VBA), sinon les initiales.
 - **Délivrance automatique** (`CertificateService.issueIfEligible`) déclenchée par : leçon terminée, quiz réussi, projet validé, appel d'un live ; + balayage nocturne (`app.certificate.sweep-cron`). Conditions = `CertificateConditions` (source unique, partagée avec l'écran d'évaluations et le suivi de session) ; une formation **sans programme** ne délivre jamais. **Jamais de redélivrance automatique** après une révocation.
@@ -302,6 +308,7 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V27 | formateur de session, origine/annulation des inscriptions, remboursement d'échéance, factures (invoices + compteur continu) |
 | V26 | certificates + séquence de numérotation + bootcamps.certificate_code |
 | V25 | email_logs : journal des e-mails sortants (métadonnées seulement) |
 | V24 | évaluations : banque de questions, tentatives de quiz, projet final (consigne, rendus, retours), appel des lives |
@@ -310,7 +317,7 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V27** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V28** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -361,6 +368,10 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET/POST | `/api/v1/admin/payments` (`?status=&registrationId=`), `/{id}/confirm`, `/{id}/reject`, `/{id}/remind`, `/api/v1/admin/enrollments` | JWT ADMIN | File « paiement à confirmer », confirmation, refus, relance, accès |
 | GET | `/api/v1/certificates/{publicId}` et `/pdf` | Non | Vérification publique et PDF (limités par IP ; PDF 410 si révoqué) |
 | GET | `/api/v1/learner/certificates` | JWT LEARNER | Mes certificats (+ lien de vérification, PDF, LinkedIn) |
+| POST | `/api/v1/admin/registrations` (manuelle), `/{id}/cancel`, `/{id}/invoice` ; `POST /admin/payments/{id}/refund` | JWT ADMIN | Inscription manuelle, annulation, facture, remboursement (ApiResponse) |
+| GET/POST | `/api/v1/admin/invoices` (`/{number}/pdf`, `/{number}/cancel`, `/{number}/send`), `GET /admin/registrations/{id}/invoices` | JWT ADMIN | Factures PDF des entreprises |
+| GET | `/api/v1/payments/{token}/invoice` | Jeton | Facture téléchargeable depuis le lien de paiement |
+| PUT/GET | `/api/v1/admin/bootcamps/sessions/{id}/trainer`, `/api/v1/admin/trainers` | JWT ADMIN / EDITOR | Affecter un formateur ; liste des formateurs |
 | GET/POST | `/api/v1/admin/certificates` (`/{publicId}/revoke`, `/{publicId}/resend`), `POST /admin/sessions/{sid}/learners/{lid}/certificate` | JWT ADMIN (délivrer : + TRAINER) | Certificats (ApiResponse) |
 | GET/PUT | `/api/v1/admin/formations/{id}/content` | JWT EDITOR+ / PARTNER (ses formations) | Programme de la formation (JSON brut) |
 | GET/PUT | `/api/v1/admin/lessons/{id}/quiz` ; GET/PUT/DELETE `/admin/formations/{id}/project` | JWT EDITOR+ / PARTNER (ses formations) | Banque de questions, consigne du projet final (JSON brut) |

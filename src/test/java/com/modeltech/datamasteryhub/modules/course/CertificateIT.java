@@ -53,6 +53,8 @@ class CertificateIT extends AbstractIntegrationTest {
     @Autowired private RegistrationRepository registrationRepository;
     @Autowired private EnrollmentRepository enrollmentRepository;
     @Autowired private LearnerRepository learnerRepository;
+    @Autowired private com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository adminUserRepository;
+    @Autowired private com.modeltech.datamasteryhub.modules.auth.repository.RoleRepository roleRepository;
     @Autowired private CertificateRepository certificateRepository;
     @Autowired private CertificateService certificateService;
 
@@ -71,6 +73,7 @@ class CertificateIT extends AbstractIntegrationTest {
         session = TestData.session(bootcamp, "Cohorte 1", LocalDate.now().minusDays(7), SessionStatus.IN_PROGRESS);
         session.setEndDate(LocalDate.now().plusDays(60));
         session = sessionRepository.save(session);
+        assignTrainer("staff@test.local");
 
         JsonNode programme = json(mockMvc.perform(put("/api/v1/admin/formations/" + bootcamp.getId() + "/content").with(staff("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,6 +103,7 @@ class CertificateIT extends AbstractIntegrationTest {
         assertThat(c.getSignatoryName()).isEqualTo("Patrick Lionnel DOOKO");
         assertThat(c.getSignatoryTitle()).isEqualTo("Gérant, Model Technologie");
         assertThat(c.getIssuedBy()).isEqualTo("système");
+        assertThat(c.getTrainerName()).isEqualTo("Moussa Fall");   // formateur de la session, figé sur le certificat
         assertThat(c.isForced()).isFalse();
         assertThat(c.isIncludesProject()).isFalse();
 
@@ -283,6 +287,18 @@ class CertificateIT extends AbstractIntegrationTest {
 
         mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/resend").with(staff("ADMIN"))).andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/admin/certificates/INCONNU/resend").with(staff("ADMIN"))).andExpect(status().isNotFound());
+    }
+
+
+    /** Le formateur « staff@test.local » (rôle TRAINER) est celui de la session. */
+    private void assignTrainer(String email) {
+        com.modeltech.datamasteryhub.modules.auth.entity.AdminUser trainer = new com.modeltech.datamasteryhub.modules.auth.entity.AdminUser();
+        trainer.setEmail(email);
+        trainer.setFullName("Moussa Fall");
+        trainer.setPasswordHash("x");
+        trainer.setRoles(new java.util.HashSet<>(List.of(roleRepository.findByName("ROLE_TRAINER").orElseThrow())));
+        session.setTrainer(adminUserRepository.save(trainer));
+        session = sessionRepository.save(session);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

@@ -316,6 +316,28 @@ Maquette : `docs/design/certificat-apercu.png` (logo Model Technologie, nom du l
 **Front à faire** : page publique de vérification, espace « Mes certificats » (`/espace/certificats`), bouton « Délivrer » et « Révoquer » côté admin, champ `certificateCode` sur la fiche formation (facultatif).
 **À fournir plus tard** : le nom du formateur n'apparaîtra sur le certificat qu'avec le lot « formateurs » (lien session ↔ formateur).
 
+### 3.D septies — Lot C livré (`feature/trainers-invoices`) : formateurs, inscriptions manuelles, factures
+
+Aperçu de la facture : `docs/design/facture-apercu.png`.
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| PUT | `/admin/bootcamps/sessions/{sessionId}/trainer` | `{trainerId}` (null = retirer) → session (`trainerId`, `trainerName`) ; 400 si le compte n'est pas un formateur actif ; **ADMIN seulement** |
+| GET | `/admin/trainers` | formateurs actifs `[{id, fullName, email}]` (`ApiResponse`) |
+| POST | `/admin/registrations` | inscription manuelle : `{firstName*, lastName*, email*, country*, profile*, sessionId/bootcampId, company, position, school, phone, promoCode, message}` → 201, `status = PENDING`, `source = ADMIN` (même validations de profil que le site ; aucun e-mail) |
+| POST | `/admin/registrations/{id}/cancel` | `{reason*}` ; 409 si déjà annulée/refusée/terminée |
+| POST | `/admin/payments/{id}/refund` | `{reason*}` ; échéance `CONFIRMED` uniquement → `REFUNDED` |
+| POST | `/admin/registrations/{id}/invoice` | corps facultatif `{buyerName, buyerContact, buyerEmail, buyerAddress, purchaseOrderRef, dueDate, notes}` → 201 ; 409 si non acceptée ou facture déjà en vigueur |
+| GET | `/admin/registrations/{id}/invoices` · `/admin/invoices?status=` | historique · liste paginée |
+| GET | `/admin/invoices/{number}/pdf` | PDF (filigrane « ANNULÉE » si annulée) |
+| POST | `/admin/invoices/{number}/cancel` · `/send` | `{reason*}` · `{to?}` (envoie le PDF par e-mail) |
+| GET | `/payments/{token}/invoice` (**public**) | facture de l'inscription ; 404 sans facture en vigueur. `GET /payments/{token}` renvoie `invoiceAvailable` |
+
+**Champs ajoutés** : `RegistrationResponse.source`, `.cancelledReason` ; `AdminPaymentResponse.refundedAt`, `.refundReason` ; `BootcampSessionResponse.trainerId`, `.trainerName` ; statut de paiement `REFUNDED`.
+**Règle formateur** : un compte TRAINER ne voit que le suivi, l'appel, les rendus de projet et les certificats **des sessions qui lui sont confiées** (403 sinon) ; le suivi de session affiche son nom, ainsi que le cours apprenant et le certificat.
+**À fournir pour des factures conformes** : NINEA, RCCM, adresse, coordonnées bancaires / Wave, mentions de pied de page, et le taux de TVA applicable (variables `APP_INVOICE_SELLER_*`, `APP_INVOICE_VAT_PERCENT`) — rien n'est imprimé tant que ce n'est pas renseigné.
+**Front à faire** : « Inscription manuelle » (formulaire), « Annuler » et « Rembourser », sélecteur de formateur sur les sessions, bouton « Facture » (candidatures d'entreprise), lien de téléchargement sur la page de paiement.
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

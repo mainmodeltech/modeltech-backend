@@ -35,20 +35,21 @@ public class AdminEvaluationController {
     // ── Suivi de session ─────────────────────────────────────────────
 
     @GetMapping("/sessions/{sessionId}/tracking")
-    public EvaluationPayloads.SessionTracking tracking(@PathVariable UUID sessionId) {
-        return evaluationService.getSessionTracking(sessionId);
+    public EvaluationPayloads.SessionTracking tracking(@PathVariable UUID sessionId, Authentication authentication) {
+        return evaluationService.getSessionTracking(sessionId, authentication.getName(), roles(authentication));
     }
 
     @PutMapping("/sessions/{sessionId}/lives/{liveId}/attendance")
     public EvaluationPayloads.SessionLive attendance(@PathVariable UUID sessionId, @PathVariable UUID liveId,
                                                      @RequestBody EvaluationPayloads.AttendanceUpdate update,
                                                      Authentication authentication) {
-        return evaluationService.saveAttendance(sessionId, liveId, update, authentication.getName());
+        return evaluationService.saveAttendance(sessionId, liveId, update, authentication.getName(), roles(authentication));
     }
 
     @GetMapping("/sessions/{sessionId}/learners/{learnerId}/project/files")
-    public List<EvaluationPayloads.ProjectFileLink> projectFiles(@PathVariable UUID sessionId, @PathVariable UUID learnerId) {
-        return finalProjectService.files(sessionId, learnerId);
+    public List<EvaluationPayloads.ProjectFileLink> projectFiles(@PathVariable UUID sessionId, @PathVariable UUID learnerId,
+                                                                 Authentication authentication) {
+        return finalProjectService.files(sessionId, learnerId, authentication.getName(), roles(authentication));
     }
 
     @PostMapping("/sessions/{sessionId}/learners/{learnerId}/project/review")

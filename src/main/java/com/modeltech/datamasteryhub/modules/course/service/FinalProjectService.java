@@ -37,5 +37,5 @@ public interface FinalProjectService {
                                               String actorEmail, Collection<String> actorRoles);
 
     /** Fichiers rendus par l'apprenant, avec des liens de téléchargement temporaires. */
-    List<EvaluationPayloads.ProjectFileLink> files(UUID sessionId, UUID learnerId);
+    List<EvaluationPayloads.ProjectFileLink> files(UUID sessionId, UUID learnerId, String actorEmail, Collection<String> actorRoles);
 }

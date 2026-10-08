@@ -109,6 +109,16 @@ public class Registration extends BaseEntity {
     @Column(name = "total_amount")
     private Long totalAmount;
 
+    /** WEBSITE (formulaire public) ou ADMIN (inscription manuelle). */
+    @Column(nullable = false, length = 10)
+    private String source = "WEBSITE";
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancelled_reason", columnDefinition = "TEXT")
+    private String cancelledReason;
+
     /** Compte apprenant rattaché quand le premier paiement est confirmé. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "learner_id")

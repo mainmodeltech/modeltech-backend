@@ -40,6 +40,11 @@ public interface NotificationService {
     /** « Votre certificat est prêt » : lien de vérification, lien LinkedIn et PDF en pièce jointe. */
     void sendCertificateReadyEmail(CertificateNotice notice);
 
+    // ── Factures ───────────────────────────────────────────────────────────
+
+    /** Facture PDF en pièce jointe. */
+    void sendInvoiceEmail(InvoiceNotice notice);
+
     // ── Contact ────────────────────────────────────────────────────────────
 
     void notifyNewContactMessage(ContactMessage contactMessage);

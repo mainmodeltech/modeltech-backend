@@ -39,6 +39,8 @@ public interface BootcampMapper {
     @Mapping(target = "bootcampId", source = "bootcamp.id")
     @Mapping(target = "price", expression = "java(resolvePrice(session))")
     @Mapping(target = "spotsRemaining", expression = "java(computeSpots(session))")
+    @Mapping(target = "trainerId", source = "trainer.id")
+    @Mapping(target = "trainerName", source = "trainer.fullName")
     BootcampSessionResponse toSessionResponse(BootcampSession session);
 
     @IterableMapping(qualifiedByName = "session")
@@ -76,6 +78,7 @@ public interface BootcampMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "bootcamp", ignore = true)
+    @Mapping(target = "trainer", ignore = true)
     @Mapping(target = "isFull", ignore = true)
     @Mapping(target = "currentParticipants", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -109,6 +112,7 @@ public interface BootcampMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "bootcamp", ignore = true)
+    @Mapping(target = "trainer", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)

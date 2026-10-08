@@ -59,6 +59,7 @@ public class CertificateServiceImpl implements CertificateService {
     private final EnrollmentRepository enrollmentRepository;
     private final BootcampSessionRepository sessionRepository;
     private final CertificateEligibility eligibility;
+    private final com.modeltech.datamasteryhub.modules.course.service.SessionAccessPolicy sessionAccess;
     private final CertificatePdfGenerator pdfGenerator;
     private final NotificationService notificationService;
     private final ApplicationEventPublisher events;
@@ -116,6 +117,7 @@ public class CertificateServiceImpl implements CertificateService {
                                                               String actorEmail, Collection<String> actorRoles) {
         BootcampSession session = sessionRepository.findByIdAndIsDeletedFalse(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session", "id", sessionId));
+        sessionAccess.require(session, actorEmail, actorRoles);
         Enrollment enrollment = enrollmentRepository.findActiveBySession(sessionId).stream()
                 .filter(e -> e.getLearner().getId().equals(learnerId)).findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Apprenant", "id", learnerId));
@@ -166,7 +168,7 @@ public class CertificateServiceImpl implements CertificateService {
         c.setIncludesProject(includesProject);
         c.setSignatoryName(signatoryName);
         c.setSignatoryTitle(signatoryTitle);
-        c.setTrainerName(null);
+        c.setTrainerName(session != null && session.getTrainer() != null ? session.getTrainer().getFullName() : null);
         c.setIssuedAt(now);
         c.setIssuedBy(issuedBy);
         c.setForced(forced);

@@ -30,6 +30,8 @@ public class PublicPaymentResponse {
     private PaymentMethod method;
     private String reference;
     private Boolean hasProof;
+    /** Une facture est disponible sur `/payments/{token}/invoice` (entreprises). */
+    private Boolean invoiceAvailable;
     private String rejectionReason;
 
     /** Montant total de l'inscription (toutes échéances). */

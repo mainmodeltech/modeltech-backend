@@ -39,4 +39,7 @@ public interface BootcampService {
     void deleteSession(UUID sessionId);
     BootcampSessionResponse toggleSessionFeatured(UUID sessionId);
 
+    /** Confie la session à un formateur (compte TRAINER), ou la libère si {@code trainerId} est nul. */
+    BootcampSessionResponse assignTrainer(UUID sessionId, UUID trainerId);
+
 }

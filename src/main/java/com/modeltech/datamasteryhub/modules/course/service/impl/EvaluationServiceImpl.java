@@ -54,6 +54,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final FinalProjectService finalProjectService;
     private final CourseContentAssembler assembler;
     private final LearnerAccess access;
+    private final com.modeltech.datamasteryhub.modules.course.service.SessionAccessPolicy sessionAccess;
     private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
     private final com.modeltech.datamasteryhub.modules.course.repository.CertificateRepository certificateRepository;
 
@@ -138,8 +139,9 @@ public class EvaluationServiceImpl implements EvaluationService {
     // =========================================================================
 
     @Override
-    public EvaluationPayloads.SessionTracking getSessionTracking(UUID sessionId) {
+    public EvaluationPayloads.SessionTracking getSessionTracking(UUID sessionId, String actorEmail, java.util.Collection<String> actorRoles) {
         BootcampSession session = requireSession(sessionId);
+        sessionAccess.require(session, actorEmail, actorRoles);
         Bootcamp bootcamp = session.getBootcamp();
         CourseConfig config = assembler.configOf(bootcamp);
         List<Enrollment> enrollments = enrollmentRepository.findActiveBySession(sessionId);
@@ -217,7 +219,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .formationTitle(bootcamp.getTitle())
                 .sessionName(session.getSessionName())
                 .deliveredBy(bootcamp.getPartner() != null ? bootcamp.getPartner().getName() : brandName)
-                .trainerName(null)
+                .trainerName(session.getTrainer() != null ? session.getTrainer().getFullName() : null)
                 .startDate(session.getStartDate())
                 .endDate(session.getEndDate())
                 .formatLabel(formatLabel(session))
@@ -231,8 +233,10 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     @Transactional
     public EvaluationPayloads.SessionLive saveAttendance(UUID sessionId, UUID liveId,
-                                                         EvaluationPayloads.AttendanceUpdate update, String actorEmail) {
+                                                         EvaluationPayloads.AttendanceUpdate update, String actorEmail,
+                                                         java.util.Collection<String> actorRoles) {
         BootcampSession session = requireSession(sessionId);
+        sessionAccess.require(session, actorEmail, actorRoles);
         CourseLesson lesson = lessonRepository.findByIdAndIsDeletedFalse(liveId)
                 .filter(l -> l.getType() == LessonType.LIVE && l.getStatus() != LessonStatus.DRAFT && !l.getModule().isDeleted()
                         && l.getModule().getBootcamp().getId().equals(session.getBootcamp().getId()))

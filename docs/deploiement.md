@@ -50,6 +50,8 @@ cible la précédente tant qu'elle n'est pas fusionnée, puis `develop`.
 | `MINIO_ENDPOINT`, `MINIO_PUBLIC_URL`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_BUCKET` | oui | Stockage (logos, photos, captures de paiement, rendus de projet) |
 | `APP_TIMEZONE` | non | Défaut `Africa/Dakar` (dates des lives, accès aux cours) |
 | `APP_RATE_LIMIT_LOGIN_PER_HOUR`, `APP_RATE_LIMIT_FORMS_PER_HOUR` | non | Défauts 30 et 10 par heure et par IP (dernier saut de `X-Forwarded-For`) |
+| `APP_INVOICE_SELLER_NAME`, `_ADDRESS`, `_PHONE`, `_EMAIL`, `_WEBSITE`, `_TAX_ID` (NINEA), `_REGISTER_NUMBER` (RCCM), `_PAYMENT_DETAILS`, `_FOOTER`, `APP_INVOICE_VAT_PERCENT` | recommandées | Mentions légales imprimées sur les factures (vides = non imprimées) |
+| `APP_CERTIFICATE_SIGNATORY_NAME`, `_SIGNATORY_TITLE`, `APP_CERTIFICATE_LINKEDIN_ORGANIZATION_ID` | non | Défauts : Patrick Lionnel DOOKO, « Gérant, Model Technologie », 103600105 |
 | `APP_PAYMENT_*`, `APP_COURSE_DEFAULT_*` | non | Délais de paiement / relances, règles de certificat par défaut (voir `CLAUDE.md`) |
 
 Le profil `prod` coupe Swagger et passe les logs applicatifs en `INFO`.

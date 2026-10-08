@@ -50,6 +50,13 @@ public class AdminPaymentController {
                 paymentService.rejectPayment(id, request.getReason())));
     }
 
+    @PostMapping("/payments/{id}/refund")
+    public ResponseEntity<ApiResponse<AdminPaymentResponse>> refund(
+            @PathVariable UUID id, @Valid @RequestBody RejectReasonRequest request, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Remboursement consigné",
+                paymentService.refund(id, request.getReason(), authentication.getName())));
+    }
+
     @PostMapping("/payments/{id}/remind")
     public ResponseEntity<ApiResponse<AdminPaymentResponse>> remind(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok("Relance envoyée", paymentService.remind(id)));

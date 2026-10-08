@@ -37,6 +37,8 @@ public class AdminPaymentResponse {
     private String invoiceRef;
     private String purchaseOrderRef;
     private String notes;
+    private LocalDateTime refundedAt;
+    private String refundReason;
     private Integer reminderCount;
     private LocalDateTime lastReminderAt;
     /** Lien de paiement à communiquer au candidat. */

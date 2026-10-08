@@ -68,6 +68,8 @@ public class PaymentMapper {
                 .invoiceRef(p.getInvoiceRef())
                 .purchaseOrderRef(p.getPurchaseOrderRef())
                 .notes(p.getNotes())
+                .refundedAt(p.getRefundedAt())
+                .refundReason(p.getRefundReason())
                 .reminderCount(p.getReminderCount())
                 .lastReminderAt(p.getLastReminderAt())
                 .paymentLink(paymentLink(p))

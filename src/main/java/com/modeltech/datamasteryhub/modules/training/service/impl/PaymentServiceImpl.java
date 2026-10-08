@@ -69,6 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final RegistrationPricing pricing;
     private final NotificationService notificationService;
     private final StorageService storageService;
+    private final com.modeltech.datamasteryhub.modules.training.repository.InvoiceRepository invoiceRepository;
 
     /** Délai (jours) laissé pour payer quand l'admin ne fixe pas d'échéance. */
     @Value("${app.payment.default-due-days:2}")
@@ -181,6 +182,75 @@ public class PaymentServiceImpl implements PaymentService {
         target.setPurchaseOrderRef(firstNonBlank(request.getPurchaseOrderRef(), target.getPurchaseOrderRef()));
         target.setNotes(blankToNull(request.getNotes()));
         return paymentMapper.toAdmin(paymentRepository.save(target));
+    }
+
+    private static final Set<RegistrationStatus> CANCELLABLE = Set.of(RegistrationStatus.PENDING,
+            RegistrationStatus.PAYMENT_PENDING, RegistrationStatus.PAYMENT_TO_CONFIRM, RegistrationStatus.CONFIRMED);
+
+    @Override
+    @Transactional
+    public RegistrationResponse cancelRegistration(UUID registrationId, String reason, String actor) {
+        Registration reg = getRegistration(registrationId);
+        if (!CANCELLABLE.contains(reg.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cette inscription ne peut plus être annulée (statut : " + reg.getStatus() + ").");
+        }
+        closeRegistration(reg, reason.trim());
+        log.info("Inscription {} annulée par {} : {}", registrationId, actor, reason);
+        return toResponse(reg);
+    }
+
+    /** Annulation : échéances ouvertes annulées ; si elle était confirmée, la place est libérée et l'accès fermé. */
+    private void closeRegistration(Registration reg, String reason) {
+        boolean wasConfirmed = reg.getStatus() == RegistrationStatus.CONFIRMED;
+        reg.setStatus(RegistrationStatus.CANCELLED);
+        reg.setCancelledAt(LocalDateTime.now());
+        reg.setCancelledReason(reason);
+
+        paymentRepository.findAllByRegistrationIdAndIsDeletedFalseOrderByInstallmentNumberAsc(reg.getId()).stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING || p.getStatus() == PaymentStatus.DECLARED)
+                .forEach(p -> {
+                    p.setStatus(PaymentStatus.CANCELLED);
+                    paymentRepository.save(p);
+                });
+
+        if (wasConfirmed) {
+            BootcampSession session = reg.getSession();
+            if (session != null) {
+                session.setCurrentParticipants(Math.max(0, session.getCurrentParticipants() - 1));
+                session.setIsFull(false);
+                sessionRepository.save(session);
+            }
+            enrollmentRepository.findByRegistrationIdAndIsDeletedFalse(reg.getId()).ifPresent(e -> {
+                e.setStatus(com.modeltech.datamasteryhub.modules.training.enums.EnrollmentStatus.CANCELLED);
+                enrollmentRepository.save(e);
+            });
+        }
+        registrationRepository.save(reg);
+    }
+
+    @Override
+    @Transactional
+    public AdminPaymentResponse refund(UUID paymentId, String reason, String actor) {
+        Payment payment = getPayment(paymentId);
+        if (payment.getStatus() != PaymentStatus.CONFIRMED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Seule une échéance confirmée peut être remboursée (statut : " + payment.getStatus() + ").");
+        }
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setRefundedAt(LocalDateTime.now());
+        payment.setRefundedBy(actor);
+        payment.setRefundReason(reason.trim());
+        paymentRepository.save(payment);
+
+        Registration reg = payment.getRegistration();
+        boolean stillPaid = paymentRepository.findAllByRegistrationIdAndIsDeletedFalseOrderByInstallmentNumberAsc(reg.getId())
+                .stream().anyMatch(p -> p.getStatus() == PaymentStatus.CONFIRMED);
+        if (!stillPaid && reg.getStatus() == RegistrationStatus.CONFIRMED) {
+            closeRegistration(reg, "Remboursement : " + reason.trim());
+        }
+        log.info("Échéance {} remboursée par {} : {}", paymentId, actor, reason);
+        return paymentMapper.toAdmin(payment);
     }
 
     // =========================================================================
@@ -491,7 +561,10 @@ public class PaymentServiceImpl implements PaymentService {
     private PublicPaymentResponse toPublic(Payment payment) {
         List<Payment> all = paymentRepository.findAllByRegistrationIdAndIsDeletedFalseOrderByInstallmentNumberAsc(
                 payment.getRegistration().getId());
-        return paymentMapper.toPublic(payment, all);
+        PublicPaymentResponse response = paymentMapper.toPublic(payment, all);
+        response.setInvoiceAvailable(invoiceRepository.findByRegistrationIdAndStatusAndIsDeletedFalse(
+                payment.getRegistration().getId(), com.modeltech.datamasteryhub.modules.training.entity.Invoice.ISSUED).isPresent());
+        return response;
     }
 
     private RegistrationResponse toResponse(Registration reg) {

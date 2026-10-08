@@ -13,6 +13,9 @@ public interface RegistrationService {
     /** Creer une inscription (endpoint public) */
     RegistrationResponse register(CreateRegistrationRequest request);
 
+    /** Inscription saisie par l'équipe (sans reCAPTCHA ni e-mail automatique) ; reste en attente d'acceptation. */
+    RegistrationResponse createManually(com.modeltech.datamasteryhub.modules.training.dto.request.ManualRegistrationRequest request, String actor);
+
     /** Recuperer toutes les inscriptions pour l'admin (avec filtre optionnel par statut) */
     Page<RegistrationResponse> findAllForAdmin(Pageable pageable, RegistrationStatus status);
 

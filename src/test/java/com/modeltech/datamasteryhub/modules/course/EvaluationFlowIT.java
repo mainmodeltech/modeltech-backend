@@ -57,6 +57,8 @@ class EvaluationFlowIT extends AbstractIntegrationTest {
     @Autowired private RegistrationRepository registrationRepository;
     @Autowired private EnrollmentRepository enrollmentRepository;
     @Autowired private LearnerRepository learnerRepository;
+    @Autowired private com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository adminUserRepository;
+    @Autowired private com.modeltech.datamasteryhub.modules.auth.repository.RoleRepository roleRepository;
 
     private Bootcamp bootcamp;
     private BootcampSession session;
@@ -72,6 +74,7 @@ class EvaluationFlowIT extends AbstractIntegrationTest {
         session = TestData.session(bootcamp, "Cohorte 1", LocalDate.now().minusDays(7), SessionStatus.IN_PROGRESS);
         session.setEndDate(LocalDate.now().plusDays(60));
         session = sessionRepository.save(session);
+        assignTrainer("staff@test.local");
 
         JsonNode programme = json(mockMvc.perform(put(contentUrl()).with(staff("ADMIN")).contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -496,6 +499,18 @@ class EvaluationFlowIT extends AbstractIntegrationTest {
 
     private String learnerId(String email) {
         return learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).orElseThrow().getId().toString();
+    }
+
+
+    /** Le formateur « staff@test.local » (rôle TRAINER) est celui de la session. */
+    private void assignTrainer(String email) {
+        com.modeltech.datamasteryhub.modules.auth.entity.AdminUser trainer = new com.modeltech.datamasteryhub.modules.auth.entity.AdminUser();
+        trainer.setEmail(email);
+        trainer.setFullName("Moussa Fall");
+        trainer.setPasswordHash("x");
+        trainer.setRoles(new java.util.HashSet<>(List.of(roleRepository.findByName("ROLE_TRAINER").orElseThrow())));
+        session.setTrainer(adminUserRepository.save(trainer));
+        session = sessionRepository.save(session);
     }
 
     // ── Helpers HTTP ─────────────────────────────────────────────────

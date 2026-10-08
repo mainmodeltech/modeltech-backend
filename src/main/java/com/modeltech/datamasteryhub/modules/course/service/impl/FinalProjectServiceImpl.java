@@ -57,6 +57,7 @@ public class FinalProjectServiceImpl implements FinalProjectService {
     private final StorageService storageService;
     private final LearnerAccess access;
     private final CourseAccessPolicy accessPolicy;
+    private final com.modeltech.datamasteryhub.modules.course.service.SessionAccessPolicy sessionAccess;
     private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
 
     // =========================================================================
@@ -208,6 +209,7 @@ public class FinalProjectServiceImpl implements FinalProjectService {
         if (hasMessage && review.getMessage().length() > 5000) throw bad("Message trop long (5 000 caractères maximum).");
 
         Enrolled enrolled = requireEnrolled(sessionId, learnerId);
+        sessionAccess.require(enrolled.session(), actorEmail, actorRoles);
         CourseProject project = requireProject(enrolled.bootcamp().getId());
         ProjectSubmission submission = submissionRepository
                 .findByLearnerIdAndBootcampId(learnerId, enrolled.bootcamp().getId())
@@ -233,8 +235,9 @@ public class FinalProjectServiceImpl implements FinalProjectService {
     }
 
     @Override
-    public List<EvaluationPayloads.ProjectFileLink> files(UUID sessionId, UUID learnerId) {
+    public List<EvaluationPayloads.ProjectFileLink> files(UUID sessionId, UUID learnerId, String actorEmail, Collection<String> actorRoles) {
         Enrolled enrolled = requireEnrolled(sessionId, learnerId);
+        sessionAccess.require(enrolled.session(), actorEmail, actorRoles);
         return submissionRepository.findByLearnerIdAndBootcampId(learnerId, enrolled.bootcamp().getId())
                 .map(s -> fileRepository.findAllBySubmissionIdAndIsDeletedFalseOrderByCreatedAtAsc(s.getId()).stream()
                         .map(f -> EvaluationPayloads.ProjectFileLink.builder()

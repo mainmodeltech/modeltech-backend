@@ -109,6 +109,12 @@ public class AdminBootcampController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/sessions/{sessionId}/trainer")
+    public ResponseEntity<BootcampSessionResponse> assignTrainer(
+            @PathVariable UUID sessionId, @RequestBody AssignTrainerRequest request) {
+        return ResponseEntity.ok(bootcampService.assignTrainer(sessionId, request.getTrainerId()));
+    }
+
     @PatchMapping("/sessions/{sessionId}/toggle-featured")
     @Operation(summary = "Mettre en avant / retirer la mise en avant d'une session")
     public ResponseEntity<BootcampSessionResponse> toggleFeatured(@PathVariable UUID sessionId) {

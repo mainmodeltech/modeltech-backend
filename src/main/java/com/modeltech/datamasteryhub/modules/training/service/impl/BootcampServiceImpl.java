@@ -49,6 +49,7 @@ public class BootcampServiceImpl implements BootcampService {
     private final DomainRepository domainRepository;
     private final PartnerRepository partnerRepository;
     private final BootcampMapper mapper;
+    private final com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository adminUserRepository;
 
     // ── Public ──────────────────────────────────────────────────────
 
@@ -204,6 +205,24 @@ public class BootcampServiceImpl implements BootcampService {
         BootcampSession session = getSessionOrThrow(sessionId);
         session.setDeleted(true);
         sessionRepository.save(session);
+    }
+
+    @Override
+    @Transactional
+    public BootcampSessionResponse assignTrainer(UUID sessionId, UUID trainerId) {
+        BootcampSession session = getSessionOrThrow(sessionId);
+        if (trainerId == null) {
+            session.setTrainer(null);
+        } else {
+            com.modeltech.datamasteryhub.modules.auth.entity.AdminUser trainer = adminUserRepository.findByIdAndIsDeletedFalse(trainerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Formateur", "id", trainerId));
+            if (!trainer.isActive() || !trainer.hasRole(com.modeltech.datamasteryhub.modules.auth.entity.RoleNames.TRAINER)) {
+                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Ce compte n'est pas un formateur actif (rôle TRAINER requis).");
+            }
+            session.setTrainer(trainer);
+        }
+        return mapper.toSessionResponse(sessionRepository.save(session));
     }
 
     @Override

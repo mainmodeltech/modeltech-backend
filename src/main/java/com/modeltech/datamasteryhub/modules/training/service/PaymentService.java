@@ -35,6 +35,9 @@ public interface PaymentService {
     /** Enregistre, pour le candidat, un paiement reçu hors du site : l'échéance passe à DECLARED. */
     AdminPaymentResponse recordManualPayment(UUID registrationId, ManualPaymentRequest request);
 
+    /** Annule l'inscription : échéances ouvertes annulées, place libérée et accès fermé si elle était confirmée. */
+    RegistrationResponse cancelRegistration(UUID registrationId, String reason, String actor);
+
     // ── Paiements (admin) ────────────────────────────────────────────
 
     Page<AdminPaymentResponse> findAllForAdmin(PaymentStatus status, UUID registrationId, Pageable pageable);
@@ -44,6 +47,9 @@ public interface PaymentService {
     AdminPaymentResponse rejectPayment(UUID paymentId, String reason);
 
     AdminPaymentResponse remind(UUID paymentId);
+
+    /** Consigne le remboursement d'une échéance confirmée ; si plus rien n'est payé, l'inscription est annulée. */
+    AdminPaymentResponse refund(UUID paymentId, String reason, String actor);
 
     Page<EnrollmentResponse> findEnrollments(Pageable pageable);
 

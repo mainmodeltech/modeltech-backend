@@ -23,10 +23,22 @@ public class PublicPaymentController {
 
     private final PaymentService paymentService;
     private final IpRateLimiter rateLimiter;
+    private final com.modeltech.datamasteryhub.modules.training.service.InvoiceService invoiceService;
 
     @GetMapping("/{token}")
     public ResponseEntity<ApiResponse<PublicPaymentResponse>> get(@PathVariable String token) {
         return ResponseEntity.ok(ApiResponse.ok("Paiement", paymentService.getByToken(token)));
+    }
+
+    /** Facture de l'inscription (entreprises), téléchargeable depuis le lien de paiement. */
+    @GetMapping("/{token}/invoice")
+    public ResponseEntity<byte[]> invoice(@PathVariable String token, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, "payment-invoice");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header("Content-Disposition", "inline; filename=\"Facture.pdf\"")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(invoiceService.pdfForPaymentToken(token));
     }
 
     @PostMapping("/{token}/declaration")

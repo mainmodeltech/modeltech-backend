@@ -3,6 +3,7 @@ package com.modeltech.datamasteryhub.modules.training.controller;
 import com.modeltech.datamasteryhub.common.dto.ApiResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.request.AcceptRegistrationRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.ManualPaymentRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.request.ManualRegistrationRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.RejectReasonRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdateRegistrationStatusRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.AdminPaymentResponse;
@@ -49,6 +50,21 @@ public class AdminRegistrationController {
             @Valid @RequestBody UpdateRegistrationStatusRequest request
     ) {
         return registrationService.updateStatus(id, request.getStatus());
+    }
+
+    /** « Inscription manuelle » : candidature saisie par l'équipe, ensuite acceptée comme les autres. */
+    @PostMapping
+    public ResponseEntity<ApiResponse<RegistrationResponse>> create(
+            @Valid @RequestBody ManualRegistrationRequest request, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Candidature enregistrée",
+                registrationService.createManually(request, authentication.getName())));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<RegistrationResponse>> cancel(
+            @PathVariable UUID id, @Valid @RequestBody RejectReasonRequest request, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Inscription annulée",
+                paymentService.cancelRegistration(id, request.getReason(), authentication.getName())));
     }
 
     // ── Parcours candidature → paiement (réponses ApiResponse : endpoints récents) ──

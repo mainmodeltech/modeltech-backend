@@ -32,6 +32,8 @@ public class RegistrationResponse {
     private LocalDateTime acceptedAt;
     private String rejectedReason;
     private UUID learnerId;
+    private String source;
+    private String cancelledReason;
     /** Renseigné dans les listes et le détail admin dès que des échéances existent. */
     private PaymentSummaryResponse paymentSummary;
     private LocalDateTime createdAt;

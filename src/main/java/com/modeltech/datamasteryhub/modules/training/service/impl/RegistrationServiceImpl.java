@@ -11,6 +11,7 @@ import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.communication.service.RecaptchaService;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import com.modeltech.datamasteryhub.modules.training.dto.request.CreateRegistrationRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.request.ManualRegistrationRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.response.RegistrationResponse;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
@@ -66,10 +67,51 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (!recaptchaService.verify(request.getRecaptchaToken())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vérification anti-robot échouée. Veuillez réessayer.");
         }
+        Registration saved = persistNew(request, "WEBSITE");
+
+        notificationService.notifyNewRegistration(saved);
+        notificationService.sendRegistrationPendingEmail(saved);
+
+        return registrationMapper.toResponse(saved);
+    }
+
+    /**
+     * Inscription saisie par l'équipe : pas de reCAPTCHA ni d'e-mail automatique (le candidat reçoit
+     * le lien de paiement quand la candidature est acceptée).
+     */
+    @Override
+    @Transactional
+    public RegistrationResponse createManually(ManualRegistrationRequest request, String actor) {
+        CreateRegistrationRequest asPublic = new CreateRegistrationRequest();
+        asPublic.setBootcampId(request.getBootcampId());
+        asPublic.setSessionId(request.getSessionId());
+        asPublic.setBootcampTitle(request.getBootcampTitle());
+        asPublic.setPromoCode(request.getPromoCode());
+        asPublic.setFirstName(request.getFirstName());
+        asPublic.setLastName(request.getLastName());
+        asPublic.setEmail(request.getEmail());
+        asPublic.setPhone(request.getPhone());
+        asPublic.setCountry(request.getCountry());
+        asPublic.setProfile(request.getProfile());
+        asPublic.setSchool(request.getSchool());
+        asPublic.setCompany(request.getCompany());
+        asPublic.setPosition(request.getPosition());
+        asPublic.setMessage(request.getMessage());
+
+        Registration saved = persistNew(asPublic, "ADMIN");
+        log.info("Inscription manuelle créée par {} pour {}", actor, saved.getEmail());
+        RegistrationResponse response = registrationMapper.toResponse(saved);
+        attachPaymentSummaries(List.of(response));
+        return response;
+    }
+
+    /** Valide et enregistre une candidature (statut PENDING) : commun au formulaire public et à la saisie manuelle. */
+    private Registration persistNew(CreateRegistrationRequest request, String source) {
         validateProfileFields(request);
 
         Registration registration = registrationMapper.toEntity(request);
         registration.setStatus(RegistrationStatus.PENDING);
+        registration.setSource(source);
 
         resolveSession(request, registration);
         resolveBootcampFallback(request, registration);
@@ -77,15 +119,11 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         Registration saved = registrationRepository.save(registration);
 
-        log.info("Nouvelle inscription : {} {} — bootcamp={} | session={} | pays={} | profil={} | promo={}",
-                saved.getFirstName(), saved.getLastName(),
+        log.info("Nouvelle inscription ({}) : {} {} — bootcamp={} | session={} | pays={} | profil={} | promo={}",
+                source, saved.getFirstName(), saved.getLastName(),
                 saved.getBootcampTitle(), saved.getSessionName(),
                 saved.getCountry(), saved.getProfile(), saved.getPromoCodeUsed());
-
-        notificationService.notifyNewRegistration(saved);
-        notificationService.sendRegistrationPendingEmail(saved);
-
-        return registrationMapper.toResponse(saved);
+        return saved;
     }
 
     // =========================================================================

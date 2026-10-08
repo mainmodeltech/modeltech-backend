@@ -6,5 +6,7 @@ public enum PaymentStatus {
     /** Le candidat (ou l'admin pour lui) a déclaré avoir payé : à vérifier. */
     DECLARED,
     CONFIRMED,
-    CANCELLED
+    CANCELLED,
+    /** Remboursé (le remboursement se fait hors plateforme, il est consigné ici). */
+    REFUNDED
 }
