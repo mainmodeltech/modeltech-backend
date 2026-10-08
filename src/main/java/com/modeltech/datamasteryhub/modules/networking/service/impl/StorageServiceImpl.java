@@ -72,6 +72,61 @@ public class StorageServiceImpl implements StorageService {
     }
 
 
+    @Override
+    public UploadResult uploadDocument(MultipartFile file, String folder, java.util.Set<String> allowedExtensions, long maxBytes) {
+        if (file == null || file.isEmpty()) {
+            throw new StorageException("Le fichier est vide ou absent.");
+        }
+        if (file.getSize() > maxBytes) {
+            throw new StorageException("Fichier trop volumineux (max " + maxBytes / (1024 * 1024) + " Mo).");
+        }
+        String name = file.getOriginalFilename();
+        String extension = name != null && name.contains(".")
+                ? name.substring(name.lastIndexOf('.') + 1).toLowerCase() : "";
+        if (!allowedExtensions.contains(extension)) {
+            throw new StorageException("Extension non autorisée : ." + extension
+                    + " (autorisées : " + String.join(", ", new java.util.TreeSet<>(allowedExtensions)) + ").");
+        }
+        String objectKey = folder + "/" + UUID.randomUUID() + "." + extension;
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioProperties.getBucket())
+                            .object(objectKey)
+                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .contentType("application/octet-stream")
+                            .build()
+            );
+            log.info("Document uploadé : {}", objectKey);
+            return new UploadResult(objectKey, null);
+        } catch (Exception e) {
+            log.error("Erreur upload MinIO [{}] : {}", objectKey, e.getMessage(), e);
+            throw new StorageException("Impossible d'uploader le fichier : " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String presignedGetUrl(String objectKey, int validMinutes) {
+        try {
+            // Le lien est signé pour l'adresse publique de MinIO (celle que voit le navigateur).
+            // La région est fixée pour éviter tout appel réseau au moment de signer.
+            MinioClient signer = MinioClient.builder()
+                    .endpoint(minioProperties.getEffectivePublicUrl())
+                    .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
+                    .region("us-east-1")
+                    .build();
+            return signer.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
+                    .bucket(minioProperties.getBucket())
+                    .object(objectKey)
+                    .expiry(validMinutes, TimeUnit.MINUTES)
+                    .build());
+        } catch (Exception e) {
+            log.error("Erreur lien signé MinIO [{}] : {}", objectKey, e.getMessage());
+            throw new StorageException("Impossible de générer le lien de téléchargement.");
+        }
+    }
+
     // ── Delete ────────────────────────────────────────────────────────────────
 
     /**
@@ -121,12 +176,5 @@ public class StorageServiceImpl implements StorageService {
         String base = minioProperties.getEffectivePublicUrl().replaceAll("/+$", "");
         return base + "/" + minioProperties.getBucket() + "/" + objectKey;
     }
-
-    /** Exception métier levée en cas d'erreur de stockage */
-    public static class StorageException extends RuntimeException {
-        public StorageException(String message) { super(message); }
-    }
-
-
 
 }

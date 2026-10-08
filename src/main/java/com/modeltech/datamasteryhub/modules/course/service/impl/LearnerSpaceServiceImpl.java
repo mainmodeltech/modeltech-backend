@@ -1,7 +1,6 @@
 package com.modeltech.datamasteryhub.modules.course.service.impl;
 
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
-import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.course.dto.CourseContentPayload;
 import com.modeltech.datamasteryhub.modules.course.dto.LearnerPayloads;
 import com.modeltech.datamasteryhub.modules.course.dto.LessonProgressRequest;
@@ -13,6 +12,7 @@ import com.modeltech.datamasteryhub.modules.course.enums.LessonType;
 import com.modeltech.datamasteryhub.modules.course.repository.CourseLessonRepository;
 import com.modeltech.datamasteryhub.modules.course.repository.LessonProgressRepository;
 import com.modeltech.datamasteryhub.modules.course.service.CourseContentAssembler;
+import com.modeltech.datamasteryhub.modules.course.service.LearnerAccess;
 import com.modeltech.datamasteryhub.modules.course.service.LearnerSpaceService;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.Enrollment;
@@ -46,11 +46,11 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
     private static final int LIVES_HORIZON_DAYS = 14;
     private static final int MAX_LIVES = 5;
 
-    private final LearnerRepository learnerRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseLessonRepository lessonRepository;
     private final LessonProgressRepository progressRepository;
     private final CourseContentAssembler assembler;
+    private final LearnerAccess access;
 
     @Value("${app.timezone:Africa/Dakar}")
     private String timezone;
@@ -64,8 +64,8 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
 
     @Override
     public LearnerPayloads.Dashboard getDashboard(String learnerEmail) {
-        Learner learner = requireLearner(learnerEmail);
-        LocalDate today = today();
+        Learner learner = access.requireLearner(learnerEmail);
+        LocalDate today = access.today();
         List<Enrollment> enrollments = distinctByFormation(enrollmentRepository.findAccessibleByLearner(learner.getId()));
 
         List<UUID> formationIds = enrollments.stream().map(e -> e.getRegistration().getBootcamp().getId()).toList();
@@ -122,8 +122,8 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
 
     @Override
     public LearnerPayloads.LearnerCourse getCourse(String learnerEmail, UUID formationId) {
-        Learner learner = requireLearner(learnerEmail);
-        Enrollment enrollment = requireAccess(learner, formationId);
+        Learner learner = access.requireLearner(learnerEmail);
+        Enrollment enrollment = access.requireAccess(learner, formationId);
         Bootcamp bootcamp = enrollment.getRegistration().getBootcamp();
 
         CourseContentPayload content = assembler.assemble(bootcamp, true);
@@ -156,15 +156,15 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
     @Override
     @Transactional
     public void setLessonProgress(String learnerEmail, UUID lessonId, LessonProgressRequest request) {
-        Learner learner = requireLearner(learnerEmail);
+        Learner learner = access.requireLearner(learnerEmail);
         CourseLesson lesson = lessonRepository.findByIdAndIsDeletedFalse(lessonId)
                 .filter(l -> !l.getModule().isDeleted() && l.getStatus() != LessonStatus.DRAFT)
                 .orElseThrow(() -> new com.modeltech.datamasteryhub.exception.ResourceNotFoundException("Leçon", "id", lessonId));
         Bootcamp bootcamp = lesson.getModule().getBootcamp();
-        requireAccess(learner, bootcamp.getId());
+        access.requireAccess(learner, bootcamp.getId());
 
         if (lesson.getStatus() == LessonStatus.SCHEDULED) {
-            throw forbidden("Cette leçon n'est pas encore disponible.");
+            throw access.forbidden("Cette leçon n'est pas encore disponible.");
         }
 
         LessonProgress progress = progressRepository.findByLearnerIdAndLessonId(learner.getId(), lessonId)
@@ -178,59 +178,16 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         // Un quiz se valide en le réussissant (évaluations), jamais sur simple déclaration du client
         boolean completed = request.getCompleted();
         if (lesson.getType() == LessonType.QUIZ) {
-            if (completed && !progress.isCompleted()) throw forbidden("Un quiz se valide en le réussissant.");
+            if (completed && !progress.isCompleted()) throw access.forbidden("Un quiz se valide en le réussissant.");
             completed = progress.isCompleted();
         }
-        if (completed && !progress.isCompleted() && isModuleLocked(learner, lesson)) {
-            throw forbidden("Terminez d'abord les leçons du module précédent.");
+        if (completed && !progress.isCompleted() && access.isModuleLocked(learner, lesson)) {
+            throw access.forbidden("Terminez d'abord les leçons du module précédent.");
         }
 
         progress.setCompleted(completed);
         progress.setPositionSeconds(request.getPositionSeconds());
         progressRepository.save(progress);
-    }
-
-    // =========================================================================
-    //  ACCÈS
-    // =========================================================================
-
-    private Enrollment requireAccess(Learner learner, UUID formationId) {
-        Enrollment enrollment = enrollmentRepository.findAccessibleByLearner(learner.getId()).stream()
-                .filter(e -> e.getRegistration().getBootcamp().getId().equals(formationId))
-                .findFirst()
-                .orElseThrow(() -> forbidden("Vous n'avez pas accès à cette formation."));
-
-        CourseConfig config = assembler.configOf(enrollment.getRegistration().getBootcamp());
-        LocalDate today = today();
-        if (enrollment.getAccessStartsAt() != null && today.isBefore(enrollment.getAccessStartsAt())) {
-            throw forbidden("Votre accès s'ouvre le " + DAY.format(enrollment.getAccessStartsAt()) + ".");
-        }
-        if (CourseConfig.ACCESS_12_MONTHS.equals(config.getAccessDuration())) {
-            LocalDate reference = enrollment.getAccessEndsAt() != null
-                    ? enrollment.getAccessEndsAt() : enrollment.getAccessStartsAt();
-            if (reference != null && today.isAfter(reference.plusMonths(12))) {
-                throw forbidden("Votre accès à cette formation a expiré.");
-            }
-        }
-        return enrollment;
-    }
-
-    /** Déblocage séquentiel : un module n'est ouvert que si toutes les leçons publiées du précédent sont terminées. */
-    private boolean isModuleLocked(Learner learner, CourseLesson target) {
-        Bootcamp bootcamp = target.getModule().getBootcamp();
-        if (!assembler.configOf(bootcamp).isSequentialUnlock()) return false;
-
-        Set<UUID> completed = progressRepository.findAllByLearnerIdAndIsDeletedFalse(learner.getId()).stream()
-                .filter(LessonProgress::isCompleted).map(p -> p.getLesson().getId()).collect(Collectors.toSet());
-        Map<UUID, List<CourseLesson>> byModule = lessonRepository.findAllByBootcampIds(List.of(bootcamp.getId())).stream()
-                .filter(l -> l.getStatus() != LessonStatus.DRAFT)
-                .collect(Collectors.groupingBy(l -> l.getModule().getId(), LinkedHashMap::new, Collectors.toList()));
-
-        for (Map.Entry<UUID, List<CourseLesson>> module : byModule.entrySet()) {
-            if (module.getKey().equals(target.getModule().getId())) return false;
-            if (!module.getValue().stream().allMatch(l -> completed.contains(l.getId()))) return true;
-        }
-        return false;
     }
 
     // =========================================================================
@@ -254,7 +211,7 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
             position = lastStarted.get().getPositionSeconds();
         } else {
             for (Enrollment e : enrollments) {
-                if (e.getAccessStartsAt() != null && today().isBefore(e.getAccessStartsAt())) continue;
+                if (e.getAccessStartsAt() != null && access.today().isBefore(e.getAccessStartsAt())) continue;
                 lesson = lessonsByFormation.getOrDefault(e.getRegistration().getBootcamp().getId(), List.of()).stream()
                         .filter(l -> l.getStatus() == LessonStatus.PUBLISHED && !isDone(l, progress))
                         .findFirst().orElse(null);
@@ -336,18 +293,5 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         Map<UUID, Enrollment> byFormation = new LinkedHashMap<>();
         enrollments.forEach(e -> byFormation.putIfAbsent(e.getRegistration().getBootcamp().getId(), e));
         return new ArrayList<>(byFormation.values());
-    }
-
-    private Learner requireLearner(String email) {
-        return learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email)
-                .orElseThrow(() -> forbidden("Espace réservé aux apprenants."));
-    }
-
-    private LocalDate today() {
-        return LocalDate.now(ZoneId.of(timezone));
-    }
-
-    private ResponseStatusException forbidden(String message) {
-        return new ResponseStatusException(HttpStatus.FORBIDDEN, message);
     }
 }

@@ -263,6 +263,40 @@ Contrats **exactement ceux de `src/types/course.type.ts`** (JSON brut, sans enve
 
 **Migration V23** : additive, aucune donnée semée.
 
+### 3.D quinquies — Lot g livré (`feature/quiz-project-live`) : évaluations, projet final, appel des lives, suivi de session
+
+Contrats **exactement ceux de `src/types/evaluation.type.ts`** (JSON brut). Les deux écrans d'édition (banque de questions, consigne du projet) n'avaient pas de contrat côté front : ils sont définis ici.
+
+**Apprenant** (`LEARNER`, inscrit, accès ouvert)
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/learner/formations/{id}/evaluations` | `EvaluationsOverview` : `quizzes[]` (statut `PASSED|FAILED|LOCKED|TO_DO|AVAILABLE`), `project` (null si la formation n'en a pas), `conditions[]` du certificat calculées par le serveur |
+| POST | `/learner/quizzes/{quizId}/attempts` | `QuizAttemptStart` ; `quizId` = **id de la leçon QUIZ** ; reprend la tentative ouverte ; 409 si déjà réussi / plus de tentative / quiz sans questions ; 403 module fermé |
+| POST | `/learner/quiz-attempts/{id}/submit` | `{answers:{questionId: choiceId}}` → `QuizAttemptResult` ; `review` seulement après réussite ou à la dernière tentative (sinon null) ; réponses inconnues ignorées ; 409 si déjà rendue |
+| POST | `/learner/formations/{id}/project/files` | multipart `file` → `ProjectOverview` ; extensions et taille imposées par la consigne ; 10 fichiers max ; 409 si VALIDATED |
+| DELETE | `/learner/formations/{id}/project/files/{fileId}` | → `ProjectOverview` ; plus aucun fichier ⇒ `NOT_STARTED` |
+
+**Back-office — contenu** (SUPER_ADMIN, ADMIN, EDITOR ; PARTNER pour ses formations)
+
+| Méthode | Chemin | Corps |
+|---|---|---|
+| GET/PUT | `/admin/lessons/{lessonId}/quiz` | `{questions:[{id?, text, explanation?, choices:[{id?, label, correct}]}]}` — 1 bonne réponse exactement, 2–8 choix ; GET renvoie en plus `questionCount/passThreshold/maxAttempts` (réglés dans le programme). Le quiz tire `questionCount` questions au hasard dans la banque. |
+| GET/PUT/DELETE | `/admin/formations/{id}/project` | `{brief*, deadlineLabel?, acceptedExtensions*, maxSizeMb* (1–50)}` ; GET sans consigne ⇒ champs null |
+
+**Back-office — suivi** (SUPER_ADMIN, ADMIN, TRAINER ; les formateurs voient toutes les sessions tant qu'aucun lien formateur ↔ session n'existe)
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/admin/sessions/{id}/tracking` | `SessionTracking` |
+| PUT | `/admin/sessions/{id}/lives/{liveId}/attendance` | `{presentLearnerIds[]}` → `SessionLive` ; les inscrits non listés sont absents ; 400 si un id n'est pas inscrit à la session ; 404 si ce n'est pas un live de la formation |
+| GET | `/admin/sessions/{id}/learners/{learnerId}/project/files` | fichiers rendus avec lien de téléchargement signé (15 min) |
+| POST | `/admin/sessions/{id}/learners/{learnerId}/project/review` | `{status: VALIDATED|CHANGES_REQUESTED, message}` (message obligatoire pour demander des corrections) → `ProjectOverview` |
+
+**Règles côté serveur** : voir CLAUDE.md « Évaluations ». Points à connaître côté front : le statut de suivi `ISSUED` n'est jamais renvoyé ; `timeLimitMinutes` et `dueLabel` sont toujours null ; `todos`, `averageQuizScore`, `certificates` du tableau de bord (lot f) restent à brancher sur ces données ; la **correction d'un quiz n'est pas affichable après un échec avec tentatives restantes** (le front doit gérer `review: null`).
+
+**Correctif transverse** : `StorageException` (type/taille de fichier refusés) renvoyait un 500 ; c'est maintenant un 400 avec le message (alumni/projets/partenaires y gagnent aussi).
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

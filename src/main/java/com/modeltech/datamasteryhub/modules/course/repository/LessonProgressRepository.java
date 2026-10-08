@@ -14,4 +14,6 @@ public interface LessonProgressRepository extends SoftDeleteRepository<LessonPro
     List<LessonProgress> findAllByLearnerIdAndIsDeletedFalse(UUID learnerId);
 
     Optional<LessonProgress> findByLearnerIdAndLessonId(UUID learnerId, UUID lessonId);
+
+    List<LessonProgress> findAllByLearnerIdInAndIsDeletedFalse(java.util.Collection<UUID> learnerIds);
 }

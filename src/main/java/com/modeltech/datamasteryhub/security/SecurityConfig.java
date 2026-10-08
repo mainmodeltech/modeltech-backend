@@ -112,8 +112,13 @@ public class SecurityConfig {
                                 "/api/v1/admin/enrollments/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")
                         // Programme d'une formation : le personnel, et un partenaire pour SES formations (vérifié par le service)
-                        .requestMatchers("/api/v1/admin/formations/*/content")
+                        .requestMatchers("/api/v1/admin/formations/*/content",
+                                "/api/v1/admin/formations/*/project",
+                                "/api/v1/admin/lessons/*/quiz")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR", "PARTNER")
+                        // Suivi de session, appel et correction : équipe pédagogique (le formateur n'a pas d'autre accès au back-office)
+                        .requestMatchers("/api/v1/admin/sessions/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "TRAINER")
                         .requestMatchers("/api/v1/admin/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR")
                         // ── Espace apprenant ──────────────────────────────────────

@@ -1,14 +1,20 @@
 package com.modeltech.datamasteryhub.modules.course.controller;
 
+import com.modeltech.datamasteryhub.modules.course.dto.EvaluationPayloads;
 import com.modeltech.datamasteryhub.modules.course.dto.LearnerPayloads;
 import com.modeltech.datamasteryhub.modules.course.dto.LessonProgressRequest;
+import com.modeltech.datamasteryhub.modules.course.service.EvaluationService;
 import com.modeltech.datamasteryhub.modules.course.service.LearnerSpaceService;
+import com.modeltech.datamasteryhub.modules.course.service.FinalProjectService;
+import com.modeltech.datamasteryhub.modules.course.service.QuizAttemptService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -23,6 +29,9 @@ import java.util.UUID;
 public class LearnerController {
 
     private final LearnerSpaceService learnerSpaceService;
+    private final EvaluationService evaluationService;
+    private final QuizAttemptService quizAttemptService;
+    private final FinalProjectService finalProjectService;
 
     @GetMapping("/dashboard")
     public LearnerPayloads.Dashboard dashboard(Authentication authentication) {
@@ -40,5 +49,38 @@ public class LearnerController {
                                             Authentication authentication) {
         learnerSpaceService.setLessonProgress(authentication.getName(), lessonId, request);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Évaluations ──────────────────────────────────────────────────
+
+    @GetMapping("/formations/{formationId}/evaluations")
+    public EvaluationPayloads.EvaluationsOverview evaluations(@PathVariable UUID formationId, Authentication authentication) {
+        return evaluationService.getOverview(authentication.getName(), formationId);
+    }
+
+    /** Démarre (ou reprend) une tentative ; {@code quizId} = identifiant de la leçon QUIZ. */
+    @PostMapping("/quizzes/{quizId}/attempts")
+    public EvaluationPayloads.QuizAttemptStart startAttempt(@PathVariable UUID quizId, Authentication authentication) {
+        return quizAttemptService.start(authentication.getName(), quizId);
+    }
+
+    @PostMapping("/quiz-attempts/{attemptId}/submit")
+    public EvaluationPayloads.QuizAttemptResult submitAttempt(@PathVariable UUID attemptId,
+                                                              @RequestBody EvaluationPayloads.QuizSubmission submission,
+                                                              Authentication authentication) {
+        return quizAttemptService.submit(authentication.getName(), attemptId, submission);
+    }
+
+    @PostMapping(value = "/formations/{formationId}/project/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public EvaluationPayloads.ProjectOverview uploadProjectFile(@PathVariable UUID formationId,
+                                                                @RequestPart("file") MultipartFile file,
+                                                                Authentication authentication) {
+        return finalProjectService.uploadFile(authentication.getName(), formationId, file);
+    }
+
+    @DeleteMapping("/formations/{formationId}/project/files/{fileId}")
+    public EvaluationPayloads.ProjectOverview deleteProjectFile(@PathVariable UUID formationId, @PathVariable UUID fileId,
+                                                                Authentication authentication) {
+        return finalProjectService.deleteFile(authentication.getName(), formationId, fileId);
     }
 }

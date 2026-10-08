@@ -1,9 +1,6 @@
 package com.modeltech.datamasteryhub.modules.course.service.impl;
 
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
-import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
-import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
-import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.course.dto.CourseContentPayload;
 import com.modeltech.datamasteryhub.modules.course.entity.CourseConfig;
 import com.modeltech.datamasteryhub.modules.course.entity.CourseLesson;
@@ -14,6 +11,7 @@ import com.modeltech.datamasteryhub.modules.course.repository.CourseConfigReposi
 import com.modeltech.datamasteryhub.modules.course.repository.CourseLessonRepository;
 import com.modeltech.datamasteryhub.modules.course.repository.CourseModuleRepository;
 import com.modeltech.datamasteryhub.modules.course.repository.LessonResourceRepository;
+import com.modeltech.datamasteryhub.modules.course.service.CourseAccessPolicy;
 import com.modeltech.datamasteryhub.modules.course.service.CourseContentAssembler;
 import com.modeltech.datamasteryhub.modules.course.service.CourseContentService;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
@@ -42,19 +40,17 @@ import java.util.stream.Collectors;
 public class CourseContentServiceImpl implements CourseContentService {
 
     private static final Pattern WEB_URL = Pattern.compile("^https?://\\S+$", Pattern.CASE_INSENSITIVE);
-    private static final Set<String> STAFF_ROLES = Set.of(
-            RoleNames.SUPER_ADMIN, RoleNames.ADMIN, RoleNames.EDITOR);
     private static final int MAX_MODULES = 50;
     private static final int MAX_LESSONS_PER_MODULE = 100;
     private static final int MAX_RESOURCES_PER_LESSON = 30;
 
     private final BootcampRepository bootcampRepository;
-    private final AdminUserRepository adminUserRepository;
     private final CourseConfigRepository configRepository;
     private final CourseModuleRepository moduleRepository;
     private final CourseLessonRepository lessonRepository;
     private final LessonResourceRepository resourceRepository;
     private final CourseContentAssembler assembler;
+    private final CourseAccessPolicy accessPolicy;
 
     /** Fuseau du site, pour convertir une date de live reçue avec un décalage horaire. */
     @Value("${app.timezone:Africa/Dakar}")
@@ -348,14 +344,7 @@ public class CourseContentServiceImpl implements CourseContentService {
     private Bootcamp requireEditable(UUID formationId, String actorEmail, Collection<String> actorRoles) {
         Bootcamp bootcamp = bootcampRepository.findByIdAndIsDeletedFalse(formationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Formation", "id", formationId));
-        if (actorRoles.stream().anyMatch(STAFF_ROLES::contains)) return bootcamp;
-
-        if (actorRoles.contains(RoleNames.PARTNER)) {
-            AdminUser actor = adminUserRepository.findByEmailAndIsDeletedFalse(actorEmail).orElse(null);
-            boolean ownsIt = actor != null && actor.getPartner() != null && bootcamp.getPartner() != null
-                    && bootcamp.getPartner().getId().equals(actor.getPartner().getId());
-            if (ownsIt) return bootcamp;
-        }
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous ne pouvez pas modifier le programme de cette formation.");
+        accessPolicy.requireEditable(bootcamp, actorEmail, actorRoles);
+        return bootcamp;
     }
 }
