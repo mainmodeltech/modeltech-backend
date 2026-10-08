@@ -290,13 +290,14 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V25 | email_logs : journal des e-mails sortants (métadonnées seulement) |
 | V24 | évaluations : banque de questions, tentatives de quiz, projet final (consigne, rendus, retours), appel des lives |
 | V23 | programme des formations (course_configs, course_modules, course_lessons, lesson_resources) + lesson_progress |
 | V22 | site_settings : contenus du site éditables (clé → JSON) |
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V25** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V26** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -352,6 +353,7 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET | `/api/v1/learner/dashboard`, `/formations/{id}/course` ; PUT `/lessons/{id}/progress` | JWT LEARNER | Espace apprenant (JSON brut) |
 | GET | `/api/v1/site-settings` | Non | Tous les contenus du site `{clé: valeur}` (ApiResponse) |
 | GET/PUT/DELETE | `/api/v1/admin/site-settings` (`/{key}`) | JWT EDITOR+ | Lire / créer-remplacer / retirer un contenu du site (ApiResponse) |
+| GET/POST | `/api/v1/admin/email-logs` (`/status`, `POST /test`) | JWT ADMIN (test : SUPER_ADMIN) | Journal des e-mails et diagnostic (ApiResponse) |
 | GET/POST/PATCH | `/api/v1/admin/learners/**` (`/{id}/activate`, `/{id}/deactivate`, `POST /{id}/resend-invitation`) | JWT ADMIN | Comptes apprenants (ApiResponse) |
 | GET/POST/PUT | `/api/v1/admin/users/**`                    | JWT SUPER_ADMIN | Comptes back-office + invitation (ApiResponse) |
 
@@ -390,6 +392,14 @@ Les e-mails de paiement reçoivent un `PaymentNotice` (valeurs simples), jamais 
 **Règle importante dans `updateStatus`** : l'email de confirmation n'est envoyé que si `oldStatus != CONFIRMED` pour éviter les doublons en cas de re-confirmation.
 
 ---
+
+## E-mails sortants
+
+Tout e-mail passe par `ResilientMailSender` (jamais `JavaMailSender` directement) : 3 tentatives sur les erreurs transitoires (pas sur un refus d'authentification), trace dans `email_logs` (**jamais le corps** : certains messages portent un lien de mot de passe), aucune exception remontée au métier. Types : `PAYMENT_LINK`, `PASSWORD_RESET`, `ACCOUNT_INVITATION`, `REGISTRATION_*`, `INTERNAL_*`, `NEWSLETTER_CONFIRMATION`, `MASTERCLASS_CONFIRMATION`, `TEST`.
+- `app.mail.redirect-to` (`MAIL_REDIRECT_TO`) : **hors production**, envoie tout à une seule adresse de recette (l'original est rappelé dans l'objet). À laisser vide en production.
+- `MAIL_FROM` : expéditeur ; vide = le compte SMTP (Gmail impose la même adresse). `MAIL_SMTP_DEBUG=true` trace SMTP complète — affiche les identifiants, dépannage local seulement.
+- Diagnostic : `GET /admin/email-logs` (`?status=FAILED`), `GET /admin/email-logs/status`, `POST /admin/email-logs/test` (SUPER_ADMIN).
+- Local sous Windows derrière un antivirus qui intercepte le TLS : lancer avec `scripts/run-local.ps1` (trust store Windows), sinon e-mail, Slack et reCAPTCHA échouent en `PKIX path building failed`.
 
 ## Notifications async (pattern)
 
@@ -713,6 +723,7 @@ CREATE TABLE xxx_table_name (
 
 ## Build
 ```bash
+.\scripts\run-local.ps1 [-Build]   # backend local (JAR) avec logs dans le terminal, base/MinIO de Docker
 make compile     # compile (JAVA_HOME force Temurin 17)
 make run         # spring-boot:run profil dev
 make test        # tests (idem ./mvnw test) — les tests d'intégration utilisent Testcontainers : Docker doit tourner

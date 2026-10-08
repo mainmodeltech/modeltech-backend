@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
@@ -22,15 +21,12 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class EmailNotifier {
 
-    private final JavaMailSender mailSender;
+    private final ResilientMailSender mailSender;
 
     /** Email de l'équipe interne (destinataire des notifications) */
     @Value("${app.notifications.email.to:admin@model-technologie.com}")
     private String internalEmail;
 
-    /** Adresse expéditeur Spring Mail */
-    @Value("${spring.mail.username:business.modeltech@gmail.com}")
-    private String fromEmail;
 
     /** Email de l'équipe interne (destinataire des notifications) */
     @Value("${app.notifications.phone.to:788625238}")
@@ -49,12 +45,12 @@ public class EmailNotifier {
             String fullName = fullName(registration);
             String bootcamp = orDash(registration.getBootcampTitle());
 
-            h.setFrom(fromEmail);
+            h.setFrom(mailSender.fromAddress());
             h.setTo(internalEmail);
             h.setSubject("📋 Nouvelle inscription — " + fullName + " — " + bootcamp);
             h.setText(buildInternalRegistrationHtml(registration, fullName, bootcamp), true);
 
-            mailSender.send(msg);
+            mailSender.send(msg, "INTERNAL_REGISTRATION");
             log.info("Email interne envoyé à {} pour l'inscription de {}", internalEmail, fullName);
         } catch (MessagingException e) {
             log.error("Erreur email interne inscription : {}", e.getMessage(), e);
@@ -83,12 +79,12 @@ public class EmailNotifier {
             String fullName = fullName(registration);
             String bootcamp = orDash(registration.getBootcampTitle());
 
-            h.setFrom(fromEmail);
+            h.setFrom(mailSender.fromAddress());
             h.setTo(registration.getEmail());
             h.setSubject("✅ Inscription reçue — " + bootcamp + " · Prochaine étape : paiement");
             h.setText(buildPendingCandidateHtml(registration, fullName, bootcamp), true);
 
-            mailSender.send(msg);
+            mailSender.send(msg, "REGISTRATION_PENDING");
             log.info("Email 'pending' envoyé au candidat {}", registration.getEmail());
         } catch (MessagingException e) {
             log.error("Erreur email 'pending' candidat {} : {}", registration.getEmail(), e.getMessage(), e);
@@ -112,12 +108,12 @@ public class EmailNotifier {
             String fullName = fullName(registration);
             String bootcamp = orDash(registration.getBootcampTitle());
 
-            h.setFrom(fromEmail);
+            h.setFrom(mailSender.fromAddress());
             h.setTo(registration.getEmail());
             h.setSubject("🎉 Place confirmée ! Bienvenue dans le bootcamp " + bootcamp);
             h.setText(buildConfirmedCandidateHtml(registration, fullName, bootcamp), true);
 
-            mailSender.send(msg);
+            mailSender.send(msg, "REGISTRATION_CONFIRMED");
             log.info("Email 'confirmed' envoyé au candidat {}", registration.getEmail());
         } catch (MessagingException e) {
             log.error("Erreur email 'confirmed' candidat {} : {}", registration.getEmail(), e.getMessage(), e);
@@ -138,13 +134,13 @@ public class EmailNotifier {
             String sujet    = contact.getSubject() != null && !contact.getSubject().isBlank()
                     ? contact.getSubject() : "Sans objet";
 
-            h.setFrom(fromEmail);
+            h.setFrom(mailSender.fromAddress());
             h.setTo(internalEmail);
             h.setReplyTo(contact.getEmail());
             h.setSubject("✉️ Nouveau message de contact — " + fullName + " — " + sujet);
             h.setText(buildContactHtml(contact, fullName, sujet), true);
 
-            mailSender.send(msg);
+            mailSender.send(msg, "INTERNAL_CONTACT");
             log.info("Email (contact) envoyé à {} pour {}", internalEmail, fullName);
         } catch (MessagingException e) {
             log.error("Erreur email contact : {}", e.getMessage(), e);
@@ -158,7 +154,7 @@ public class EmailNotifier {
     public void sendPasswordResetEmail(String to, String resetLink, int expiresMinutes) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
+            msg.setFrom(mailSender.fromAddress());
             msg.setTo(to);
             msg.setSubject("[Model Technologie] Réinitialisation de votre mot de passe");
             msg.setText("""
@@ -175,7 +171,7 @@ public class EmailNotifier {
                     
                     — L'équipe Model Technologie
                     """.formatted(resetLink, expiresMinutes));
-            mailSender.send(msg);
+            mailSender.send(msg, "PASSWORD_RESET");
             log.info("Email reset envoyé à {}", to);
         } catch (Exception e) {
             log.error("Erreur email reset pour {} : {}", to, e.getMessage());
@@ -189,7 +185,7 @@ public class EmailNotifier {
     public void sendNewsletterConfirmationEmail(String to, String confirmLink, int validDays) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
+            msg.setFrom(mailSender.fromAddress());
             msg.setTo(to);
             msg.setSubject("[Model Technologie] Confirmez votre inscription à la newsletter");
             msg.setText("""
@@ -207,7 +203,7 @@ public class EmailNotifier {
 
                     — L'équipe Model Technologie
                     """.formatted(confirmLink, validDays));
-            mailSender.send(msg);
+            mailSender.send(msg, "NEWSLETTER_CONFIRMATION");
             log.info("Email de confirmation newsletter envoyé à {}", to);
         } catch (Exception e) {
             log.error("Erreur email confirmation newsletter pour {} : {}", to, e.getMessage());
@@ -222,7 +218,7 @@ public class EmailNotifier {
                                            int validHours, boolean learner) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
+            msg.setFrom(mailSender.fromAddress());
             msg.setTo(to);
             String hello = firstName != null && !firstName.isBlank() ? "Bonjour " + firstName.trim() + "," : "Bonjour,";
             if (learner) {
@@ -255,7 +251,7 @@ public class EmailNotifier {
                         — L'équipe Model Technologie
                         """.formatted(hello, setupLink, validHours));
             }
-            mailSender.send(msg);
+            mailSender.send(msg, "ACCOUNT_INVITATION");
             log.info("Email d'invitation envoyé à {}", to);
         } catch (Exception e) {
             log.error("Erreur email d'invitation pour {} : {}", to, e.getMessage());
@@ -269,7 +265,7 @@ public class EmailNotifier {
     public void sendPaymentLinkEmail(PaymentNotice n, boolean reminder) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
+            msg.setFrom(mailSender.fromAddress());
             msg.setTo(n.to());
             String formation = n.bootcampTitle() != null ? n.bootcampTitle() : "votre formation";
             String echeance = n.installmentCount() > 1
@@ -302,7 +298,7 @@ public class EmailNotifier {
                     echeance, amount(n.amount()), n.currency(),
                     due,
                     n.link()));
-            mailSender.send(msg);
+            mailSender.send(msg, "PAYMENT_LINK");
             log.info("Email lien de paiement{} envoyé à {}", reminder ? " (rappel)" : "", n.to());
         } catch (Exception e) {
             log.error("Erreur email lien de paiement pour {} : {}", n.to(), e.getMessage());
@@ -312,7 +308,7 @@ public class EmailNotifier {
     public void sendPaymentRejectedEmail(PaymentNotice n) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
+            msg.setFrom(mailSender.fromAddress());
             msg.setTo(n.to());
             msg.setSubject("[Model Technologie] Votre paiement n'a pas pu être vérifié");
             msg.setText("""
@@ -331,7 +327,7 @@ public class EmailNotifier {
                     n.bootcampTitle() != null ? n.bootcampTitle() : "votre formation",
                     n.reason() != null ? n.reason() : "—",
                     n.link()));
-            mailSender.send(msg);
+            mailSender.send(msg, "PAYMENT_REJECTED");
         } catch (Exception e) {
             log.error("Erreur email paiement refusé pour {} : {}", n.to(), e.getMessage());
         }
@@ -341,7 +337,7 @@ public class EmailNotifier {
         if (isDisabled()) return;
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromEmail);
+            msg.setFrom(mailSender.fromAddress());
             msg.setTo(internalEmail);
             msg.setSubject("[Paiement à confirmer] " + n.fullName() + " — " + amount(n.amount()) + " " + n.currency());
             msg.setText("""
@@ -358,7 +354,7 @@ public class EmailNotifier {
                     n.installmentNumber(), n.installmentCount(), amount(n.amount()), n.currency(),
                     n.method() != null ? n.method() : "—",
                     n.reference() != null ? n.reference() : "—"));
-            mailSender.send(msg);
+            mailSender.send(msg, "INTERNAL_PAYMENT_DECLARED");
         } catch (Exception e) {
             log.error("Erreur email interne (paiement déclaré) : {}", e.getMessage());
         }

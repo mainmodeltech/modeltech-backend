@@ -112,7 +112,7 @@ public class SlackNotifier {
                 log.warn("Slack a repondu avec le statut {}", response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Erreur lors de l'envoi de la notification Slack : {}", e.getMessage(), e);
+            log.error("Erreur lors de l'envoi de la notification Slack : {}", safe(e));
         }
     }
 
@@ -174,7 +174,7 @@ public class SlackNotifier {
                     contact.getFirstName(), contact.getLastName());
 
         } catch (Exception e) {
-            log.error("Erreur Slack (contact) : {}", e.getMessage(), e);
+            log.error("Erreur Slack (contact) : {}", safe(e));
         }
     }
 
@@ -209,7 +209,7 @@ public class SlackNotifier {
                     escapeJson(n.reference() != null ? n.reference() : "—"));
             postToSlack(payload);
         } catch (Exception e) {
-            log.error("Erreur Slack (paiement déclaré) : {}", e.getMessage(), e);
+            log.error("Erreur Slack (paiement déclaré) : {}", safe(e));
         }
     }
 
@@ -223,6 +223,12 @@ public class SlackNotifier {
         if (!response.getStatusCode().is2xxSuccessful()) {
             log.warn("Slack a répondu avec le statut {}", response.getStatusCode());
         }
+    }
+
+    /** Message d'erreur sans l'URL du webhook (c'est un secret : quiconque la connaît peut écrire dans le canal). */
+    private String safe(Exception e) {
+        String message = e.getClass().getSimpleName() + (e.getMessage() != null ? " : " + e.getMessage() : "");
+        return message.replaceAll("https?://hooks\\.slack\\.com/\\S*", "[webhook Slack]");
     }
 
     private boolean isDisabled() {

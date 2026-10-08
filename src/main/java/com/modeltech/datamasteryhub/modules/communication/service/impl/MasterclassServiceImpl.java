@@ -17,7 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.modeltech.datamasteryhub.modules.notification.service.ResilientMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -32,14 +32,11 @@ import java.util.UUID;
 public class MasterclassServiceImpl implements MasterclassService  {
 
     private final MasterclassRegistrationRepository repository;
-    private final JavaMailSender mailSender;
+    private final ResilientMailSender mailSender;
     private final RecaptchaService recaptchaService;  // ← ajout
 
     @Value("${app.notifications.slack.webhook-url:}")
     private String slackWebhookUrl;
-
-    @Value("${spring.mail.properties.mail.from:noreply@model-technologie.com}")
-    private String fromEmail;
 
     @Value("${app.masterclass.meet-link:https://meet.google.com/vbh-nodg-qwe}")
     private String meetLink;
@@ -113,17 +110,15 @@ public class MasterclassServiceImpl implements MasterclassService  {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
+            helper.setFrom(mailSender.fromAddress());
             helper.setTo(reg.getEmail());
             helper.setSubject("✅ Inscription confirmée — Masterclass Power BI · 24 mars 2026");
             helper.setText(buildConfirmationHtml(reg), true);
 
-            mailSender.send(msg);
-
-            reg.setEmailSent(true);
-            repository.save(reg);
-
-            log.info("Email de confirmation envoyé à {}", reg.getEmail());
+            if (mailSender.send(msg, "MASTERCLASS_CONFIRMATION")) {
+                reg.setEmailSent(true);
+                repository.save(reg);
+            }
         } catch (MessagingException e) {
             log.error("Erreur envoi email masterclass : {}", e.getMessage(), e);
         }

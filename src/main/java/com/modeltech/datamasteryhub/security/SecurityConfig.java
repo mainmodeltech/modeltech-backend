@@ -102,13 +102,14 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                         // ── Back-office : contrôle par rôle (les règles les plus précises d'abord) ──
-                        .requestMatchers("/api/v1/admin/users/**")
+                        .requestMatchers("/api/v1/admin/users/**", "/api/v1/admin/email-logs/test")
                                 .hasRole("SUPER_ADMIN")
                         .requestMatchers(
                                 "/api/v1/admin/registrations/**",
                                 "/api/v1/admin/promo-codes/**",
                                 "/api/v1/admin/learners/**",
                                 "/api/v1/admin/payments/**",
+                                "/api/v1/admin/email-logs/**",
                                 "/api/v1/admin/enrollments/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")
                         // Programme d'une formation : le personnel, et un partenaire pour SES formations (vérifié par le service)
