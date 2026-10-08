@@ -25,8 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.Locale;
@@ -59,12 +63,20 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider             jwtTokenProvider;
     private final PasswordEncoder              passwordEncoder;
     private final NotificationService          notificationService;
+    private final UserDetailsServiceImpl       userDetailsService;
 
     @Value("${app.password-reset.expiration-minutes:15}")
     private int resetTokenExpirationMinutes;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
+
+    /** Echecs de mot de passe consecutifs avant verrouillage temporaire de la connexion par mot de passe. */
+    @Value("${app.auth.lockout.max-attempts:5}")
+    private int lockoutMaxAttempts;
+
+    @Value("${app.auth.lockout.minutes:15}")
+    private int lockoutMinutes;
 
     /** Route frontend (hors /admin) où l'apprenant définit ou réinitialise son mot de passe. */
     @Value("${app.frontend.learner-reset-path:/reinitialiser-mot-de-passe}")
@@ -74,26 +86,55 @@ public class AuthServiceImpl implements AuthService {
     // LOGIN
     // ─────────────────────────────────────────────────────────────────────
 
+    // Les echecs sont comptes : la transaction ne doit pas etre annulee par l'exception qui remonte au client.
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = {BadCredentialsException.class, ResponseStatusException.class})
     public AuthResponse login(LoginRequest request) {
         log.info("Tentative de connexion: {}", request.getEmail());
+        requireNotLocked(request.getEmail());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        } catch (BadCredentialsException e) {
+            registerFailedAttempt(request.getEmail());
+            throw e;
+        }
+        return completeLogin(authentication);
+    }
 
+    @Override
+    @Transactional
+    public AuthResponse loginWithoutPassword(String email) {
+        UserDetails details = userDetailsService.loadUserByUsername(email);
+        if (!details.isAccountNonLocked()) throw new LockedException("Compte désactivé");
+        learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).ifPresent(learner -> {
+            if (learner.getEmailVerifiedAt() == null) {
+                learner.setEmailVerifiedAt(LocalDateTime.now());   // le lien, le code ou Google l'ont prouvé
+                learnerRepository.save(learner);
+            }
+        });
+        return completeLogin(new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
+    }
+
+    /** Jeton + profil + horodatage de connexion ; remet le compteur d'échecs à zéro. */
+    private AuthResponse completeLogin(Authentication authentication) {
         String token = jwtTokenProvider.generateToken(authentication);
         String email = authentication.getName();
 
         AuthResponse.AdminUserResponse profile = adminUserRepository.findByEmailAndIsDeletedFalse(email)
                 .map(admin -> {
                     admin.setLastLoginAt(LocalDateTime.now());
+                    admin.setFailedLoginAttempts(0);
+                    admin.setLockedUntil(null);
                     adminUserRepository.save(admin);
                     return toProfile(admin);
                 })
                 .or(() -> learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).map(learner -> {
                     learner.setLastLoginAt(LocalDateTime.now());
+                    learner.setFailedLoginAttempts(0);
+                    learner.setLockedUntil(null);
                     learnerRepository.save(learner);
                     return toProfile(learner);
                 }))
@@ -274,6 +315,41 @@ public class AuthServiceImpl implements AuthService {
     // ─────────────────────────────────────────────────────────────────────
     // HELPERS PRIVÉS
     // ─────────────────────────────────────────────────────────────────────
+
+    // ── Verrouillage temporaire après échecs ─────────────────────────
+
+    private void requireNotLocked(String email) {
+        LocalDateTime until = adminUserRepository.findByEmailAndIsDeletedFalse(email).map(AdminUser::getLockedUntil)
+                .or(() -> learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).map(Learner::getLockedUntil))
+                .orElse(null);
+        if (until != null && until.isAfter(LocalDateTime.now())) {
+            long minutes = Math.max(1, Duration.between(LocalDateTime.now(), until).toMinutes() + 1);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Trop de tentatives échouées. Réessayez dans " + minutes
+                            + " minute(s), ou connectez-vous avec un lien envoyé par e-mail.");
+        }
+    }
+
+    private void registerFailedAttempt(String email) {
+        adminUserRepository.findByEmailAndIsDeletedFalse(email).ifPresentOrElse(admin -> {
+            LocalDateTime until = lockedUntilAfter(admin.getFailedLoginAttempts() + 1, admin.getLockedUntil());
+            admin.setFailedLoginAttempts(until != null ? 0 : admin.getFailedLoginAttempts() + 1);
+            admin.setLockedUntil(until != null ? until : admin.getLockedUntil());
+            adminUserRepository.save(admin);
+        }, () -> learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).ifPresent(learner -> {
+            LocalDateTime until = lockedUntilAfter(learner.getFailedLoginAttempts() + 1, learner.getLockedUntil());
+            learner.setFailedLoginAttempts(until != null ? 0 : learner.getFailedLoginAttempts() + 1);
+            learner.setLockedUntil(until != null ? until : learner.getLockedUntil());
+            learnerRepository.save(learner);
+        }));
+    }
+
+    /** Heure de fin du verrouillage si ce nouvel échec atteint le seuil, sinon null. */
+    private LocalDateTime lockedUntilAfter(int attempts, LocalDateTime currentLock) {
+        if (attempts < lockoutMaxAttempts) return null;
+        log.warn("Verrouillage de la connexion par mot de passe pour {} minute(s) après {} échecs", lockoutMinutes, attempts);
+        return LocalDateTime.now().plusMinutes(lockoutMinutes);
+    }
 
     private AuthResponse.AdminUserResponse toProfile(AdminUser admin) {
         return AuthResponse.AdminUserResponse.builder()

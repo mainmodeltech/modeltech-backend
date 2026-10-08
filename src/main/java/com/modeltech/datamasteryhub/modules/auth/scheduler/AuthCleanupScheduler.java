@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.auth.scheduler;
 
+import com.modeltech.datamasteryhub.modules.auth.repository.LoginChallengeRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.PasswordResetTokenRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.TokenBlacklistRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class AuthCleanupScheduler {
 
     private final TokenBlacklistRepository     tokenBlacklistRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final LoginChallengeRepository     loginChallengeRepository;
 
     /**
      * Supprime les tokens JWT expirés de la blacklist — toutes les heures.
@@ -42,5 +44,12 @@ public class AuthCleanupScheduler {
     public void cleanExpiredResetTokens() {
         passwordResetTokenRepository.deleteExpiredAndUsed(LocalDateTime.now());
         log.debug("Reset tokens : nettoyage effectué");
+    }
+
+    /** Supprime les demandes de connexion sans mot de passe expirées ou utilisées — toutes les 6h. */
+    @Scheduled(fixedRate = 21_600_000)
+    @Transactional
+    public void cleanLoginChallenges() {
+        loginChallengeRepository.deleteExpiredAndConsumed(LocalDateTime.now());
     }
 }

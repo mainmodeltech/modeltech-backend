@@ -53,6 +53,14 @@ app:
     enabled: true   # false en dev local
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
+  auth:
+    lockout:
+      max-attempts: ${AUTH_LOCKOUT_MAX_ATTEMPTS:5}   # echecs de mot de passe avant verrouillage
+      minutes: ${AUTH_LOCKOUT_MINUTES:15}
+    passwordless:
+      minutes: ${AUTH_PASSWORDLESS_MINUTES:10}       # validite du lien / code de connexion
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}                # vide = connexion Google desactivee
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}

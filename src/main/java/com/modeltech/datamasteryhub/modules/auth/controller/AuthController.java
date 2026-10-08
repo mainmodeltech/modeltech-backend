@@ -3,11 +3,17 @@ package com.modeltech.datamasteryhub.modules.auth.controller;
 import com.modeltech.datamasteryhub.common.ratelimit.IpRateLimiter;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ChangePasswordRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ForgotPasswordRequest;
+import com.modeltech.datamasteryhub.modules.auth.dto.request.GoogleLoginRequest;
+import com.modeltech.datamasteryhub.modules.auth.dto.request.PasswordlessRequest;
+import com.modeltech.datamasteryhub.modules.auth.dto.request.PasswordlessVerifyRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.LoginRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ResetPasswordRequest;
+import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthOptionsResponse;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.MessageResponse;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
+import com.modeltech.datamasteryhub.modules.auth.service.GoogleLoginService;
+import com.modeltech.datamasteryhub.modules.auth.service.PasswordlessLoginService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -28,6 +34,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final IpRateLimiter rateLimiter;
+    private final PasswordlessLoginService passwordlessLoginService;
+    private final GoogleLoginService googleLoginService;
 
     // ─────────────────────────────────────────────────────────────────────
     // LOGIN
@@ -40,6 +48,51 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);   // freine la force brute
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // MODES DE CONNEXION ALTERNATIFS (lien / code / Google)
+    // ─────────────────────────────────────────────────────────────────────
+
+    @GetMapping("/options")
+    @Operation(summary = "Modes de connexion disponibles")
+    public ResponseEntity<AuthOptionsResponse> options() {
+        return ResponseEntity.ok(googleLoginService.options());
+    }
+
+    @PostMapping("/passwordless/request")
+    @Operation(summary = "Recevoir un lien et un code de connexion",
+            description = "Toujours 200 (pas d'énumération de comptes) ; une demande par minute et par adresse.")
+    public ResponseEntity<MessageResponse> passwordlessRequest(
+            @Valid @RequestBody PasswordlessRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, "passwordless-request");   // envoie des messages
+        passwordlessLoginService.request(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse(
+                "Si un compte correspond à cette adresse, un lien et un code de connexion viennent d'être envoyés."));
+    }
+
+    @PostMapping("/passwordless/verify")
+    @Operation(summary = "Se connecter avec le lien ou le code reçu")
+    @ApiResponse(responseCode = "200", description = "Connexion réussie")
+    @ApiResponse(responseCode = "400", description = "Lien ou code invalide, expiré ou déjà utilisé")
+    public ResponseEntity<AuthResponse> passwordlessVerify(
+            @Valid @RequestBody PasswordlessVerifyRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);
+        boolean byLink = request.getToken() != null && !request.getToken().isBlank();
+        return ResponseEntity.ok(byLink
+                ? passwordlessLoginService.verifyLink(request.getToken())
+                : passwordlessLoginService.verifyCode(request.getEmail(), request.getCode()));
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Se connecter avec Google",
+            description = "Le compte doit déjà exister et être actif ; aucun compte n'est créé par cette route.")
+    @ApiResponse(responseCode = "200", description = "Connexion réussie")
+    @ApiResponse(responseCode = "401", description = "Jeton Google invalide ou aucun compte correspondant")
+    @ApiResponse(responseCode = "404", description = "Connexion Google non activée sur ce serveur")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);
+        return ResponseEntity.ok(googleLoginService.login(request.getCredential()));
     }
 
     // ─────────────────────────────────────────────────────────────────────

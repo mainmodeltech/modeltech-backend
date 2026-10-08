@@ -370,6 +370,21 @@ Additif, aucune migration. Chaque leçon du programme (`/admin/formations/{id}/c
 **Front à faire** : dans `CoursePlayer`, si `videoEmbedUrl` est présent, afficher `<iframe src={videoEmbedUrl} allow="fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin">` ; sinon `<video src={videoUrl}>` comme aujourd'hui. Éditeur : un seul champ « Lien de la vidéo » (Vimeo ou YouTube) avec aperçu ; `videoProviderId` devient facultatif.
 **Hébergeur** : abonnement Vimeo Standard ; dans chaque vidéo, confidentialité « Masquée sur Vimeo » + intégration limitée au domaine du site + téléchargement désactivé.
 
+### 3.D undecies — Lot F livré (`feature/advanced-auth`) : connexions sans mot de passe
+
+Toutes ces routes sont publiques (limitées par IP) et renvoient, en cas de succès, **exactement la réponse de `POST /auth/login`** (`{accessToken, tokenType, expiresIn, user}`).
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/auth/options` | `{password, passwordless, google, googleClientId}` |
+| POST | `/auth/passwordless/request` | `{email}` → toujours 200 « Si un compte correspond… » ; envoie un lien + un code à 6 chiffres (10 min, usage unique) |
+| POST | `/auth/passwordless/verify` | `{token}` (lien) **ou** `{email, code}` → session ; 400 « Lien ou code invalide, expiré ou déjà utilisé » (le code est annulé après 5 essais ratés) |
+| POST | `/auth/google` | `{credential}` (ID token Google) → session ; 401 si jeton refusé / aucun compte ; 404 si Google non configuré |
+
+`POST /auth/login` renvoie désormais **429** (« Réessayez dans N minute(s), ou connectez-vous avec un lien… ») après 5 mots de passe faux consécutifs, pendant 15 minutes.
+**Front à faire** : page de connexion avec « Recevoir un lien de connexion » (saisie e-mail → écran « code ou lien »), bouton Google (`@react-oauth/google` / Google Identity Services avec `googleClientId` issu de `/auth/options`), route `/connexion/lien?token=…` qui appelle `verify` puis redirige, message d'erreur 429.
+**Configuration Google (à faire par le propriétaire)** : console Google Cloud → API et services → Identifiants → « ID client OAuth » de type *Application Web* ; origines JavaScript autorisées = domaines du site (prod + `http://localhost:8080`) ; copier l'ID client dans `GOOGLE_CLIENT_ID` (aucun secret client n'est nécessaire côté serveur).
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

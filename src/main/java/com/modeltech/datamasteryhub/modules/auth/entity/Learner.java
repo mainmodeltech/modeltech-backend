@@ -53,6 +53,14 @@ public class Learner extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    /** Echecs de mot de passe consecutifs ; remis a zero a la connexion reussie. */
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
+
+    /** Connexion par mot de passe refusee jusqu a cette heure (verrouillage temporaire). */
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "learner_roles",

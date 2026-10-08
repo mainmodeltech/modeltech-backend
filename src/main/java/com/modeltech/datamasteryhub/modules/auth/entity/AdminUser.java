@@ -57,6 +57,14 @@ public class AdminUser extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    /** Echecs de mot de passe consecutifs ; remis a zero a la connexion reussie. */
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
+
+    /** Connexion par mot de passe refusee jusqu a cette heure (verrouillage temporaire). */
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     /** Partenaire rattaché (comptes ROLE_PARTNER : limités à leurs propres formations). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id")

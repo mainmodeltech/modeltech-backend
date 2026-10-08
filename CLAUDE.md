@@ -262,6 +262,13 @@ Conditions du certificat (`EvaluationServiceImpl`) : leçons ≥ `lessonsComplet
 `StorageService.uploadDocument(file, folder, extensions, maxBytes)` : documents hors images, stockés en `application/octet-stream`. `StorageException` → 400 (handler ajouté ; auparavant 500).
 Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel), `CourseAccessPolicy` (qui édite le contenu : personnel + partenaire propriétaire).
 
+### Connexions avancées (V29)
+- **Verrouillage** : `app.auth.lockout.max-attempts` (5) échecs de mot de passe consécutifs → connexion par mot de passe refusée **429** pendant `minutes` (15), même avec le bon mot de passe ; compteur remis à zéro à la connexion réussie. Le lien/code et Google restent utilisables.
+- **Lien + code** (`PasswordlessLoginService`) : `POST /auth/passwordless/request {email}` (toujours 200, envoi en tâche de fond, 1 demande/minute/adresse, limité par IP) envoie **un lien et un code à 6 chiffres** (valables `app.auth.passwordless.minutes` = 10, usage unique, une nouvelle demande annule la précédente) via `MessageDispatcher` (type `LOGIN_LINK`, `toPhone` renseigné pour un futur canal WhatsApp) ; `POST /auth/passwordless/verify {token}` ou `{email, code}` → même réponse que `/auth/login`. Le code est annulé après 5 essais ratés. Seules des empreintes SHA-256 sont stockées. Lien = `{app.frontend.url}{app.frontend.magic-link-path=/connexion/lien}?token=…`.
+- **Google** : `POST /auth/google {credential}` (ID token de Google Identity Services, vérifié localement par `JwksGoogleIdTokenVerifier`). Actif seulement si `GOOGLE_CLIENT_ID` est renseigné (sinon 404). **Ne crée jamais de compte** : l'adresse (vérifiée par Google) doit déjà correspondre à un compte actif, sinon 401.
+- `GET /auth/options` → `{password, passwordless, google, googleClientId}` : le front n'affiche que les modes actifs.
+- `AuthService.loginWithoutPassword(email)` : point commun des modes sans mot de passe (marque aussi l'e-mail de l'apprenant comme vérifié).
+
 ### Vidéos (Vimeo / YouTube, sans migration)
 L'équipe colle le **lien normal** de la vidéo dans `videoUrl` (`vimeo.com/123…[/hash]`, `player.vimeo.com/video/123…?h=…`, `youtube.com/watch?v=…`, `youtu.be/…`). `VideoSource.parse` le reconnaît et le serveur livre en plus `videoProvider` (`VIMEO`/`YOUTUBE`) et `videoEmbedUrl` : adresse d'iframe **construite par le serveur** (hôtes fixes `player.vimeo.com` / `youtube-nocookie.com`, `dnt=1`) — le front n'intègre jamais une adresse saisie. Autre lien (HLS, fichier) : `videoUrl` seul, comme avant. Comme `videoUrl`, ces champs ne sont **pas livrés** pour une leçon brouillon/programmée. Empêcher le téléchargement et limiter l'intégration à `model-technologie.com` se règle **chez Vimeo** (abonnement Standard : « Qui peut intégrer » + désactiver le téléchargement) ; YouTube ne sait pas empêcher le téléchargement.
 
@@ -320,6 +327,7 @@ L'équipe colle le **lien normal** de la vidéo dans `videoUrl` (`vimeo.com/123�
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V29 | login_challenges (lien + code de connexion), verrouillage après échecs (admin_users, learners) |
 | V28 | rappels de live, messages de session, questions des apprenants |
 | V27 | formateur de session, origine/annulation des inscriptions, remboursement d'échéance, factures (invoices + compteur continu) |
 | V26 | certificates + séquence de numérotation + bootcamps.certificate_code |
@@ -330,7 +338,7 @@ L'équipe colle le **lien normal** de la vidéo dans `videoUrl` (`vimeo.com/123�
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V29** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V30** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -382,6 +390,7 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET | `/api/v1/certificates/{publicId}` et `/pdf` | Non | Vérification publique et PDF (limités par IP ; PDF 410 si révoqué) |
 | GET | `/api/v1/learner/certificates` | JWT LEARNER | Mes certificats (+ lien de vérification, PDF, LinkedIn) |
 | POST/GET | `/api/v1/admin/sessions/{id}/messages`, `GET …/questions?open=`, `POST …/questions/{qid}/answer` | JWT ADMIN / TRAINER de la session | Messages aux apprenants, questions (ApiResponse) |
+| POST/GET | `/api/v1/auth/passwordless/request`, `/passwordless/verify`, `/google`, `GET /auth/options` | Non (limités par IP) | Connexion par lien/code, par Google, modes disponibles |
 | GET | `/api/v1/admin/stats/actions`, `/overview?from&to` | JWT ADMIN | Tableau de bord : à traiter + indicateurs de période (ApiResponse) |
 | GET/POST | `/api/v1/learner/lessons/{id}/questions` | JWT LEARNER | Poser / relire ses questions (JSON brut) |
 | POST | `/api/v1/admin/registrations` (manuelle), `/{id}/cancel`, `/{id}/invoice` ; `POST /admin/payments/{id}/refund` | JWT ADMIN | Inscription manuelle, annulation, facture, remboursement (ApiResponse) |

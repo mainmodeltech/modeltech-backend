@@ -14,6 +14,12 @@ public interface AuthService {
     AuthResponse.AdminUserResponse me(String email);
 
     /**
+     * Ouvre une session pour un compte actif dont l'identité vient d'être prouvée autrement que par mot de passe
+     * (lien/code reçu, jeton Google vérifié). Compte inconnu : {@code UsernameNotFoundException}.
+     */
+    AuthResponse loginWithoutPassword(String email);
+
+    /**
      * Déconnexion : révoque le token JWT en le mettant en blacklist.
      *
      * @param token le Bearer token extrait du header Authorization

@@ -52,6 +52,8 @@ cible la précédente tant qu'elle n'est pas fusionnée, puis `develop`.
 | `APP_RATE_LIMIT_LOGIN_PER_HOUR`, `APP_RATE_LIMIT_FORMS_PER_HOUR` | non | Défauts 30 et 10 par heure et par IP (dernier saut de `X-Forwarded-For`) |
 | `APP_INVOICE_SELLER_NAME`, `_ADDRESS`, `_PHONE`, `_EMAIL`, `_WEBSITE`, `_TAX_ID` (NINEA), `_REGISTER_NUMBER` (RCCM), `_PAYMENT_DETAILS`, `_FOOTER`, `APP_INVOICE_VAT_PERCENT` | recommandées | Mentions légales imprimées sur les factures (vides = non imprimées) |
 | `APP_CERTIFICATE_SIGNATORY_NAME`, `_SIGNATORY_TITLE`, `APP_CERTIFICATE_LINKEDIN_ORGANIZATION_ID` | non | Défauts : Patrick Lionnel DOOKO, « Gérant, Model Technologie », 103600105 |
+| `GOOGLE_CLIENT_ID` | non | ID client OAuth (Web) de la connexion Google ; vide = bouton Google masqué |
+| `AUTH_LOCKOUT_MAX_ATTEMPTS` / `AUTH_LOCKOUT_MINUTES` / `AUTH_PASSWORDLESS_MINUTES` | non | Verrouillage après échecs (5 / 15 min) et validité du lien-code (10 min) |
 | `APP_MESSAGING_CHANNELS` | non | Canaux de diffusion (défaut `EMAIL`) ; `APP_MESSAGING_LIVE_REMINDER_CRON` pour l'horaire des rappels |
 | `APP_PAYMENT_*`, `APP_COURSE_DEFAULT_*` | non | Délais de paiement / relances, règles de certificat par défaut (voir `CLAUDE.md`) |
 

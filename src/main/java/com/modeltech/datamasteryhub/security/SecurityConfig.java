@@ -65,6 +65,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/forgot-password",
                                 "/api/v1/auth/reset-password",
+                                "/api/v1/auth/passwordless/request",
+                                "/api/v1/auth/passwordless/verify",
+                                "/api/v1/auth/google",
                                 "/api/v1/masterclass/register",
                                 "/api/v1/contact-messages",
                                 "/api/v1/diagnostic-requests",
@@ -78,6 +81,7 @@ public class SecurityConfig {
                                 "/api/v1/payments/*/proof"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
+                                "/api/v1/auth/options",
                                 "/api/v1/bootcamps",
                                 "/api/v1/bootcamps/**",
                                 "/api/v1/formations",
