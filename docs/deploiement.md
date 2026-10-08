@@ -79,3 +79,13 @@ statuts ; les ramener d'abord à `PENDING` / `CANCELLED`. Le plus sûr reste la 
 - Les rendus de projet sont stockés sous une clé aléatoire ; seul un lien signé de 15 minutes permet de les télécharger. Les captures de paiement, elles, sont dans le bucket public sous une clé aléatoire.
 - La limitation de débit est en mémoire (une instance). À remplacer par un stockage partagé si le backend est répliqué.
 - `docker-compose` de staging / production : l'image MinIO `minio/minio` n'est plus tirable depuis Docker Hub ; épingler une image disponible avant le prochain déploiement.
+
+### Passer à Brevo (fournisseur d'e-mails transactionnels)
+
+Aucun code à changer : Brevo expose un relais SMTP, il suffit de trois variables.
+
+1. Créer un compte Brevo, puis **Expéditeurs, domaines** : ajouter `model-technologie.com` et publier chez le registrar les enregistrements **SPF, DKIM et DMARC** indiqués (sans eux, les messages finissent en spam).
+2. **SMTP & API** : créer une **clé SMTP** (≠ clé API) ; noter l'identifiant SMTP.
+3. Variables : `MAIL_HOST=smtp-relay.brevo.com`, `MAIL_PORT=587`, `MAIL_USERNAME=<identifiant SMTP>`, `MAIL_PASSWORD=<clé SMTP>`, `MAIL_FROM=noreply@model-technologie.com` (adresse d'un domaine validé).
+4. Contrôle : `POST /api/v1/admin/email-logs/test` (SUPER_ADMIN) avec une adresse de test, puis `GET /api/v1/admin/email-logs?status=FAILED`.
+
