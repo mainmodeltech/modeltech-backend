@@ -52,6 +52,7 @@ cible la précédente tant qu'elle n'est pas fusionnée, puis `develop`.
 | `APP_RATE_LIMIT_LOGIN_PER_HOUR`, `APP_RATE_LIMIT_FORMS_PER_HOUR` | non | Défauts 30 et 10 par heure et par IP (dernier saut de `X-Forwarded-For`) |
 | `APP_INVOICE_SELLER_NAME`, `_ADDRESS`, `_PHONE`, `_EMAIL`, `_WEBSITE`, `_TAX_ID` (NINEA), `_REGISTER_NUMBER` (RCCM), `_PAYMENT_DETAILS`, `_FOOTER`, `APP_INVOICE_VAT_PERCENT` | recommandées | Mentions légales imprimées sur les factures (vides = non imprimées) |
 | `APP_CERTIFICATE_SIGNATORY_NAME`, `_SIGNATORY_TITLE`, `APP_CERTIFICATE_LINKEDIN_ORGANIZATION_ID` | non | Défauts : Patrick Lionnel DOOKO, « Gérant, Model Technologie », 103600105 |
+| `APP_INVOICE_SELLER_*`, `APP_INVOICE_VAT_PERCENT` | non | Mentions de facture : défauts = Model Technologie (NINEA, RCCM, adresse, Wave/OM/RIB, TVA 0) ; ne définir que pour changer |
 | `GOOGLE_CLIENT_ID` | non | ID client OAuth (Web) de la connexion Google ; vide = bouton Google masqué |
 | `AUTH_LOCKOUT_MAX_ATTEMPTS` / `AUTH_LOCKOUT_MINUTES` / `AUTH_PASSWORDLESS_MINUTES` | non | Verrouillage après échecs (5 / 15 min) et validité du lien-code (10 min) |
 | `APP_MESSAGING_CHANNELS` | non | Canaux de diffusion (défaut `EMAIL`) ; `APP_MESSAGING_LIVE_REMINDER_CRON` pour l'horaire des rappels |
@@ -89,3 +90,6 @@ Aucun code à changer : Brevo expose un relais SMTP, il suffit de trois variable
 3. Variables : `MAIL_HOST=smtp-relay.brevo.com`, `MAIL_PORT=587`, `MAIL_USERNAME=<identifiant SMTP>`, `MAIL_PASSWORD=<clé SMTP>`, `MAIL_FROM=noreply@model-technologie.com` (adresse d'un domaine validé).
 4. Contrôle : `POST /api/v1/admin/email-logs/test` (SUPER_ADMIN) avec une adresse de test, puis `GET /api/v1/admin/email-logs?status=FAILED`.
 
+### Montants des formations
+
+Exécuter `docs/sql/prix-formations.sql` une fois (contrôle, puis mises à jour qui ne touchent que les montants vides), ou saisir `priceAmount` par formation dans le back-office. Sans montant numérique, l'acceptation d'une candidature ne peut pas calculer d'échéance.

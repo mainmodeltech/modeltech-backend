@@ -53,6 +53,16 @@ app:
     enabled: true   # false en dev local
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
+  invoice:
+    vat-percent: ${APP_INVOICE_VAT_PERCENT:0}          # non assujetti a la TVA
+    seller:
+      name: ${APP_INVOICE_SELLER_NAME:Model Technologie}
+      address: "${APP_INVOICE_SELLER_ADDRESS:129 Liberté 6 extension}"
+      phone: ${APP_INVOICE_SELLER_PHONE:+221 78 862 52 38}
+      tax-id: ${APP_INVOICE_SELLER_TAX_ID:009775076}                  # NINEA
+      register-number: "${APP_INVOICE_SELLER_REGISTER_NUMBER:SN DKR 2022 A 35655}"   # RCCM
+      payment-details: "${APP_INVOICE_SELLER_PAYMENT_DETAILS:Wave : +221 78 862 52 38 | Orange Money : +221 78 862 52 38 | Virement (RIB) : SN012 01232 36213087001 80}"
+      footer: "${APP_INVOICE_SELLER_FOOTER:TVA non applicable (entreprise non assujettie).}"
   auth:
     lockout:
       max-attempts: ${AUTH_LOCKOUT_MAX_ATTEMPTS:5}   # echecs de mot de passe avant verrouillage
