@@ -262,6 +262,9 @@ Conditions du certificat (`EvaluationServiceImpl`) : leçons ≥ `lessonsComplet
 `StorageService.uploadDocument(file, folder, extensions, maxBytes)` : documents hors images, stockés en `application/octet-stream`. `StorageException` → 400 (handler ajouté ; auparavant 500).
 Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel), `CourseAccessPolicy` (qui édite le contenu : personnel + partenaire propriétaire).
 
+### Statistiques d'administration (module `stats`, sans migration)
+`GET /admin/stats/actions` (compteurs « à traiter » : candidatures PENDING, paiements DECLARED, échéances en retard, messages non lus, questions sans réponse, projets à corriger, lives à 7 jours, e-mails en échec à 7 jours) et `GET /admin/stats/overview?from&to` (30 derniers jours par défaut, 366 max, 400 si incohérent) : candidatures par statut, entonnoir (acceptées / payées, taux), encaissé / remboursé / net / reste à encaisser / retard / par moyen, série mensuelle, remplissage des sessions ouvertes, top formations, répartitions (source, profil, pays, code promo), apprenants et certificats, newsletter et messages par type. **SUPER_ADMIN et ADMIN seulement** (montants). SQL d'agrégation via `NamedParameterJdbcTemplate` (aucune entité chargée) ; mono-devise XOF ; réponses `ApiResponse`.
+
 ### Messagerie multi-canaux (V28)
 - **Canaux** (`modules/notification/channel`) : `NotificationChannel` (`name`, `canReach`, `send`), `EmailChannel`, `MessageDispatcher` (envoie sur les canaux de `app.messaging.channels`, `EMAIL` par défaut ; un canal en panne ne bloque pas les autres). **Ajouter WhatsApp** = un `@Component implements NotificationChannel` (qui lit `OutboundMessage.toPhone`) + `app.messaging.channels=EMAIL,WHATSAPP`. Aucun appelant à modifier.
 - **Rappels de live automatiques** (`LiveReminderScheduler`, toutes les 15 min) : 24 h puis 1 h avant chaque live (non brouillon), une seule fois par (live, session, moment) grâce à `live_reminders` ; seuls les apprenants dont l'accès est ouvert.
@@ -376,6 +379,7 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET | `/api/v1/certificates/{publicId}` et `/pdf` | Non | Vérification publique et PDF (limités par IP ; PDF 410 si révoqué) |
 | GET | `/api/v1/learner/certificates` | JWT LEARNER | Mes certificats (+ lien de vérification, PDF, LinkedIn) |
 | POST/GET | `/api/v1/admin/sessions/{id}/messages`, `GET …/questions?open=`, `POST …/questions/{qid}/answer` | JWT ADMIN / TRAINER de la session | Messages aux apprenants, questions (ApiResponse) |
+| GET | `/api/v1/admin/stats/actions`, `/overview?from&to` | JWT ADMIN | Tableau de bord : à traiter + indicateurs de période (ApiResponse) |
 | GET/POST | `/api/v1/learner/lessons/{id}/questions` | JWT LEARNER | Poser / relire ses questions (JSON brut) |
 | POST | `/api/v1/admin/registrations` (manuelle), `/{id}/cancel`, `/{id}/invoice` ; `POST /admin/payments/{id}/refund` | JWT ADMIN | Inscription manuelle, annulation, facture, remboursement (ApiResponse) |
 | GET/POST | `/api/v1/admin/invoices` (`/{number}/pdf`, `/{number}/cancel`, `/{number}/send`), `GET /admin/registrations/{id}/invoices` | JWT ADMIN | Factures PDF des entreprises |

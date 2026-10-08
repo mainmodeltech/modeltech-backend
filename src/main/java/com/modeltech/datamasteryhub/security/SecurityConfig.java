@@ -115,6 +115,7 @@ public class SecurityConfig {
                                 "/api/v1/admin/email-logs/**",
                                 "/api/v1/admin/certificates/**",
                                 "/api/v1/admin/invoices/**",
+                                "/api/v1/admin/stats/**",
                                 "/api/v1/admin/bootcamps/sessions/*/trainer",
                                 "/api/v1/admin/enrollments/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN")

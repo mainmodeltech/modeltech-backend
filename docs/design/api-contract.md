@@ -352,6 +352,18 @@ Aperçu de la facture : `docs/design/facture-apercu.png`.
 **Rappels de live** : automatiques (aucun endpoint), e-mail 24 h et 1 h avant, avec le lien du live. **Canaux** : e-mail aujourd'hui ; WhatsApp se branche par un composant `NotificationChannel` + `app.messaging.channels` (voir CLAUDE.md), sans toucher aux écrans ni aux endpoints.
 **Front à faire** : bouton « Envoyer un message » du suivi de session (formulaire objet/message, sélection des destinataires), liste « Questions » de la session, bouton « Poser une question » du lecteur de cours (liste des échanges sous la leçon).
 
+### 3.D nonies — Lot E livré (`feature/admin-stats`) : tableau de bord
+
+Réservé SUPER_ADMIN / ADMIN, enveloppe `ApiResponse`, aucune migration.
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/admin/stats/actions` | `{newApplications, paymentsToConfirm, overdueInstallments, unreadMessages, openQuestions, projectsToReview, upcomingLives, failedEmails}` : pastilles du menu, léger |
+| GET | `/admin/stats/overview?from=YYYY-MM-DD&to=YYYY-MM-DD` | défaut : 30 derniers jours ; 400 si `from > to` ou plus de 366 jours |
+
+`overview` : `{from, to, currency:"XOF", registrations{total, byStatus}, funnel{submitted, accepted, paid, acceptanceRate, paymentRate, conversionRate (% ou null)}, revenue{collected, refunded, net, outstanding, overdue, averagePayment, collectedByMethod}, monthly[{month:"yyyy-MM", registrations, collected}], sessions[{sessionId, sessionName, formationTitle, startDate, status, capacity, confirmed, pending, fillRate}], topFormations[{formationId, title, registrations, paid, collected}], breakdowns{bySource, byProfile, byCountry, byPromoCode}, learners{total, newInPeriod, activeEnrollments, certificatesIssued, certificatesTotal}, audience{newsletterSubscribers, newsletterNewInPeriod, contactMessagesByType}}`. Les montants sont en XOF, non arrondis ; « reste à encaisser » et « en retard » ne dépendent pas de la période.
+**Front à faire** : page « Tableau de bord » (cartes, entonnoir, courbe mensuelle, remplissage des sessions, sélecteur de période) et pastilles du menu alimentées par `/actions` (interrogation toutes les 60 s).
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |
