@@ -338,6 +338,20 @@ Aperçu de la facture : `docs/design/facture-apercu.png`.
 **À fournir pour des factures conformes** : NINEA, RCCM, adresse, coordonnées bancaires / Wave, mentions de pied de page, et le taux de TVA applicable (variables `APP_INVOICE_SELLER_*`, `APP_INVOICE_VAT_PERCENT`) — rien n'est imprimé tant que ce n'est pas renseigné.
 **Front à faire** : « Inscription manuelle » (formulaire), « Annuler » et « Rembourser », sélecteur de formateur sur les sessions, bouton « Facture » (candidatures d'entreprise), lien de téléchargement sur la page de paiement.
 
+### 3.D octies — Lot D livré (`feature/messaging`) : rappels, messages, questions
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| POST | `/admin/sessions/{sessionId}/messages` | `{subject*, body*, learnerIds?}` → **202** + `{id, recipientCount, deliveredCount (null tant que l'envoi n'est pas fini), sentBy, sentAt}` ; 409 si aucun apprenant ; 400 si un destinataire n'est pas de la session |
+| GET | `/admin/sessions/{sessionId}/messages` | historique |
+| GET | `/admin/sessions/{sessionId}/questions?open=true` | questions des apprenants `[{id, learnerName, lessonTitle, question, askedAt, answer, answeredBy, answeredAt}]` |
+| POST | `/admin/sessions/{sessionId}/questions/{questionId}/answer` | `{answer*}` → e-mail à l'apprenant ; 409 si déjà répondu |
+| POST | `/learner/lessons/{lessonId}/questions` | `{question* (5–2000)}` → 201 ; 409 au-delà de 5 questions sans réponse sur la leçon ; 403 sans accès à la formation |
+| GET | `/learner/lessons/{lessonId}/questions` | mes questions de la leçon, avec la réponse quand elle existe |
+
+**Rappels de live** : automatiques (aucun endpoint), e-mail 24 h et 1 h avant, avec le lien du live. **Canaux** : e-mail aujourd'hui ; WhatsApp se branche par un composant `NotificationChannel` + `app.messaging.channels` (voir CLAUDE.md), sans toucher aux écrans ni aux endpoints.
+**Front à faire** : bouton « Envoyer un message » du suivi de session (formulaire objet/message, sélection des destinataires), liste « Questions » de la session, bouton « Poser une question » du lecteur de cours (liste des échanges sous la leçon).
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

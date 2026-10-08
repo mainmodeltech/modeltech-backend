@@ -22,4 +22,17 @@ public interface CourseLessonRepository extends SoftDeleteRepository<CourseLesso
             ORDER BY b.id, m.position, l.position
             """)
     List<CourseLesson> findAllByBootcampIds(@Param("bootcampIds") Collection<UUID> bootcampIds);
+
+    /** Lives (non brouillon) qui commencent entre deux instants, avec leur formation. */
+    @Query("""
+            SELECT l FROM CourseLesson l
+            JOIN FETCH l.module m
+            JOIN FETCH m.bootcamp
+            WHERE l.type = com.modeltech.datamasteryhub.modules.course.enums.LessonType.LIVE
+              AND l.status <> com.modeltech.datamasteryhub.modules.course.enums.LessonStatus.DRAFT
+              AND l.liveAt BETWEEN :from AND :to
+              AND l.isDeleted = false AND m.isDeleted = false
+            ORDER BY l.liveAt
+            """)
+    List<CourseLesson> findLivesBetween(@Param("from") java.time.LocalDateTime from, @Param("to") java.time.LocalDateTime to);
 }

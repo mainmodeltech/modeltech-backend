@@ -262,6 +262,12 @@ Conditions du certificat (`EvaluationServiceImpl`) : leçons ≥ `lessonsComplet
 `StorageService.uploadDocument(file, folder, extensions, maxBytes)` : documents hors images, stockés en `application/octet-stream`. `StorageException` → 400 (handler ajouté ; auparavant 500).
 Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel), `CourseAccessPolicy` (qui édite le contenu : personnel + partenaire propriétaire).
 
+### Messagerie multi-canaux (V28)
+- **Canaux** (`modules/notification/channel`) : `NotificationChannel` (`name`, `canReach`, `send`), `EmailChannel`, `MessageDispatcher` (envoie sur les canaux de `app.messaging.channels`, `EMAIL` par défaut ; un canal en panne ne bloque pas les autres). **Ajouter WhatsApp** = un `@Component implements NotificationChannel` (qui lit `OutboundMessage.toPhone`) + `app.messaging.channels=EMAIL,WHATSAPP`. Aucun appelant à modifier.
+- **Rappels de live automatiques** (`LiveReminderScheduler`, toutes les 15 min) : 24 h puis 1 h avant chaque live (non brouillon), une seule fois par (live, session, moment) grâce à `live_reminders` ; seuls les apprenants dont l'accès est ouvert.
+- **Messages de l'équipe** : `POST /admin/sessions/{id}/messages` (toute la session ou `learnerIds`, 300 max, envoi en tâche de fond, historique `GET …/messages`) ; l'adresse de réponse est celle de l'expéditeur. Réservé à l'administration et au formateur de la session.
+- **Questions** : l'apprenant pose une question depuis une leçon (`POST /learner/lessons/{id}/questions`, 5 en attente max par leçon) → e-mail au formateur de la session (sinon `NOTIFICATION_EMAIL_TO`) ; l'équipe répond (`POST /admin/sessions/{sid}/questions/{qid}/answer`) → e-mail à l'apprenant ; les questions d'un apprenant restent privées.
+
 ### Formateurs, factures, annulations (V27)
 - **Formateur de session** : `BootcampSession.trainer` (compte `AdminUser` actif avec `ROLE_TRAINER`), affecté par `PUT /admin/bootcamps/sessions/{id}/trainer` (ADMIN) ; liste : `GET /admin/trainers`. `SessionAccessPolicy` : l'administration voit toutes les sessions, **un formateur uniquement les siennes** (suivi, appel, rendus de projet, délivrance de certificats). Son nom alimente le suivi de session, le cours apprenant et le certificat.
 - **Inscription manuelle** : `POST /admin/registrations` (`source = ADMIN`, sans reCAPTCHA ni e-mail automatique), puis acceptation normale.
@@ -308,6 +314,7 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V28 | rappels de live, messages de session, questions des apprenants |
 | V27 | formateur de session, origine/annulation des inscriptions, remboursement d'échéance, factures (invoices + compteur continu) |
 | V26 | certificates + séquence de numérotation + bootcamps.certificate_code |
 | V25 | email_logs : journal des e-mails sortants (métadonnées seulement) |
@@ -317,7 +324,7 @@ Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel),
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V28** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V29** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -368,6 +375,8 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET/POST | `/api/v1/admin/payments` (`?status=&registrationId=`), `/{id}/confirm`, `/{id}/reject`, `/{id}/remind`, `/api/v1/admin/enrollments` | JWT ADMIN | File « paiement à confirmer », confirmation, refus, relance, accès |
 | GET | `/api/v1/certificates/{publicId}` et `/pdf` | Non | Vérification publique et PDF (limités par IP ; PDF 410 si révoqué) |
 | GET | `/api/v1/learner/certificates` | JWT LEARNER | Mes certificats (+ lien de vérification, PDF, LinkedIn) |
+| POST/GET | `/api/v1/admin/sessions/{id}/messages`, `GET …/questions?open=`, `POST …/questions/{qid}/answer` | JWT ADMIN / TRAINER de la session | Messages aux apprenants, questions (ApiResponse) |
+| GET/POST | `/api/v1/learner/lessons/{id}/questions` | JWT LEARNER | Poser / relire ses questions (JSON brut) |
 | POST | `/api/v1/admin/registrations` (manuelle), `/{id}/cancel`, `/{id}/invoice` ; `POST /admin/payments/{id}/refund` | JWT ADMIN | Inscription manuelle, annulation, facture, remboursement (ApiResponse) |
 | GET/POST | `/api/v1/admin/invoices` (`/{number}/pdf`, `/{number}/cancel`, `/{number}/send`), `GET /admin/registrations/{id}/invoices` | JWT ADMIN | Factures PDF des entreprises |
 | GET | `/api/v1/payments/{token}/invoice` | Jeton | Facture téléchargeable depuis le lien de paiement |

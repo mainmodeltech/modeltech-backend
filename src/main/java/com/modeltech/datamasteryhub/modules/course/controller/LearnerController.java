@@ -33,6 +33,7 @@ public class LearnerController {
     private final QuizAttemptService quizAttemptService;
     private final FinalProjectService finalProjectService;
     private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
+    private final com.modeltech.datamasteryhub.modules.course.service.MessagingService messagingService;
 
     @GetMapping("/dashboard")
     public LearnerPayloads.Dashboard dashboard(Authentication authentication) {
@@ -50,6 +51,23 @@ public class LearnerController {
                                             Authentication authentication) {
         learnerSpaceService.setLessonProgress(authentication.getName(), lessonId, request);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Questions à l'équipe pédagogique ─────────────────────────────
+
+    @PostMapping("/lessons/{lessonId}/questions")
+    public ResponseEntity<com.modeltech.datamasteryhub.modules.course.dto.MessagingPayloads.LearnerQuestion> ask(
+            @PathVariable UUID lessonId,
+            @Valid @RequestBody com.modeltech.datamasteryhub.modules.course.dto.MessagingPayloads.AskRequest request,
+            Authentication authentication) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(messagingService.ask(authentication.getName(), lessonId, request.getQuestion()));
+    }
+
+    @GetMapping("/lessons/{lessonId}/questions")
+    public java.util.List<com.modeltech.datamasteryhub.modules.course.dto.MessagingPayloads.LearnerQuestion> myQuestions(
+            @PathVariable UUID lessonId, Authentication authentication) {
+        return messagingService.myQuestions(authentication.getName(), lessonId);
     }
 
     // ── Certificats ──────────────────────────────────────────────────

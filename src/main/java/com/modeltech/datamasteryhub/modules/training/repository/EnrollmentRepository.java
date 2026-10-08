@@ -56,4 +56,16 @@ public interface EnrollmentRepository extends SoftDeleteRepository<Enrollment, U
                                              com.modeltech.datamasteryhub.modules.training.enums.SessionStatus.COMPLETED))
             """)
     List<Enrollment> findAllForCertificateSweep();
+
+    /** Apprenants actifs d'une formation, par session (rappels de live). */
+    @Query("""
+            SELECT e FROM Enrollment e
+            JOIN FETCH e.learner
+            JOIN FETCH e.session s
+            JOIN e.registration r
+            WHERE r.bootcamp.id = :bootcampId AND e.isDeleted = false
+              AND e.status = com.modeltech.datamasteryhub.modules.training.enums.EnrollmentStatus.ACTIVE
+              AND e.learner.active = true
+            """)
+    List<Enrollment> findActiveByBootcamp(@Param("bootcampId") UUID bootcampId);
 }
