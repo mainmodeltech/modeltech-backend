@@ -222,6 +222,25 @@ Décisions appliquées : paiement par **déclaration manuelle + confirmation adm
 
 **Limites assumées** : pas de réservation de place avant paiement (Q20) → sur-réservation possible, signalée dans les logs ; les justificatifs sont dans le bucket MinIO public sous une clé aléatoire (pas d'URL signée) ; la relance est par e-mail seulement (WhatsApp/WATI reporté, Q21) ; aucun e-mail n'est envoyé au candidat refusé.
 
+### 3.D ter — Lot e livré (`feature/site-content`) : contenus du site pilotés par le back-office
+
+Remplace les constantes de `src/config/siteContent.ts` (« faits métier sans back-office ») et sert de mécanisme générique pour tout texte du site que l'équipe veut modifier sans livraison.
+
+| Méthode | Chemin | Effet |
+|---|---|---|
+| GET | `/site-settings` (public) | `ApiResponse<{ [clé]: valeur JSON }>` — une clé absente = le site masque le bloc, exactement comme les `null` actuels |
+| GET | `/admin/site-settings` | liste `[{key, value, updatedAt, updatedBy}]` (rôles EDITOR, ADMIN, SUPER_ADMIN) |
+| PUT | `/admin/site-settings/{key}` | corps `{value: <JSON>}` (20 Ko max) → crée ou remplace ; 400 si clé invalide ou valeur nulle |
+| DELETE | `/admin/site-settings/{key}` | retire le contenu (404 si absent) |
+
+**Clés proposées** (mêmes formes que `siteContent.ts`, à saisir depuis le back-office ; rien n'est pré-rempli) :
+`coaching.prices` `{deblocage, progression, projet}` (texte libre ou null) · `coaching.coach` `{name}` · `coaching.testimonial` `{quote, author}` · `resources.next-workshop` `{title, date, time}` · `enterprises.client-case` `{name, sector, size, need, result}`.
+Toute nouvelle clé est créée par simple `PUT` : aucune migration ni livraison backend pour ajouter un contenu.
+
+**Règle** : tout ce qui est stocké ici est public. Pas de secret, pas de donnée interne.
+
+**À faire côté front** : lire `/site-settings` (un seul appel, à mettre en cache) à la place de `siteContent.ts` ; page admin « Paramètres du site » (formulaires par clé). `references`/`gallery` : les services front `referenceService`/`galleryService` n'ont aucun consommateur, **non implémentés côté back** (à retirer du front ou à rebrancher explicitement).
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

@@ -245,6 +245,9 @@ Config : `app.payment.default-due-days` (2), `link-validity-days` (30, après l'
 ### NewsletterSubscription (V19)
 `id | email(unique, minuscules) | status(PENDING/CONFIRMED/UNSUBSCRIBED) | source | confirmationToken | confirmationExpiresAt | unsubscribeToken | confirmedAt | unsubscribedAt` — double opt-in ; **les jetons ne sortent jamais** dans l'API admin.
 
+### SiteSetting (V22, cms)
+`id | key (unique, ^[a-z0-9][a-z0-9._-]*$, ≤100) | value (jsonb libre, ≤20 Ko)` — contenus **publics** du site (tarifs du coaching, coach, prochain atelier, étude de cas, accroches…). Aucun secret ici. Clé absente = le site masque le bloc. Aucune donnée n'est semée. Supprimer = soft delete ; la clé peut être recréée.
+
 ### Service (cms)
 `id(UUID) | title | description | iconName | features(text[]) | duration | displayOrder(Integer=0) | published(boolean=true)`
 **ATTENTION**: Service utilise `@Builder` (historique, devrait être retiré).
@@ -274,10 +277,11 @@ Config : `app.payment.default-due-days` (2), `link-validity-days` (30, après l'
 | V17 | Contenu riche bootcamp (jsonb), schedule, FK témoignage|
 | V18 | domains, partners, bootcamp_related, champs formation + rétro-remplissage (slug, domaine data-bi) |
 | V19 | contact_messages : type / requester_type / details (jsonb) ; table newsletter_subscriptions |
+| V22 | site_settings : contenus du site éditables (clé → JSON) |
 | V21 | montants numériques (bootcamps, sessions), statuts PAYMENT_PENDING/PAYMENT_TO_CONFIRM/REJECTED, registrations (+acceptation, total, learner), tables payments et enrollments |
 | V20 | learners + learner_roles, rôles LEARNER/TRAINER/PARTNER, admin_users.partner_id, rattrapage des rôles admin (+ amorçage d'un SUPER_ADMIN si aucun) |
 
-**Prochaine migration : V22** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
+**Prochaine migration : V23** — additive uniquement (jamais modifier une migration appliquée) ; tester le rétro-remplissage sur données existantes (cf. `V18BackfillMigrationIT`, `V20BackfillMigrationIT`).
 
 > Numérotation indicative : la source de vérité est le dossier `src/main/resources/db/migration/`.
 
@@ -326,6 +330,8 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | POST | `/api/v1/payments/{token}/declaration`, `/proof` (multipart `file`, image ≤ 5 Mo) | Jeton | Déclaration du paiement / capture (limités par IP) |
 | POST | `/api/v1/admin/registrations/{id}/accept`, `/reject`, `/payments` | JWT ADMIN | Acceptation (calcul + échéances + lien), refus, paiement saisi à la main (ApiResponse) |
 | GET/POST | `/api/v1/admin/payments` (`?status=&registrationId=`), `/{id}/confirm`, `/{id}/reject`, `/{id}/remind`, `/api/v1/admin/enrollments` | JWT ADMIN | File « paiement à confirmer », confirmation, refus, relance, accès |
+| GET | `/api/v1/site-settings` | Non | Tous les contenus du site `{clé: valeur}` (ApiResponse) |
+| GET/PUT/DELETE | `/api/v1/admin/site-settings` (`/{key}`) | JWT EDITOR+ | Lire / créer-remplacer / retirer un contenu du site (ApiResponse) |
 | GET/POST/PATCH | `/api/v1/admin/learners/**` (`/{id}/activate`, `/{id}/deactivate`, `POST /{id}/resend-invitation`) | JWT ADMIN | Comptes apprenants (ApiResponse) |
 | GET/POST/PUT | `/api/v1/admin/users/**`                    | JWT SUPER_ADMIN | Comptes back-office + invitation (ApiResponse) |
 
