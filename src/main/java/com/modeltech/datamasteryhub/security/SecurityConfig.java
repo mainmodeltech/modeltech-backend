@@ -57,6 +57,16 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Non authentifié (pas de jeton, jeton expiré ou révoqué) → 401 ; un utilisateur connecté
+                // sans le bon rôle reçoit 403 (AccessDenied).
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json;charset=UTF-8");
+                    String path = request.getRequestURI().replace("\\", "").replace("\"", "");
+                    response.getWriter().write("{\"timestamp\":\"" + java.time.LocalDateTime.now()
+                            + "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Authentification requise ou session expirée.\",\"path\":\""
+                            + path + "\"}");
+                }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
@@ -132,6 +142,9 @@ public class SecurityConfig {
                         // Suivi de session, appel et correction : équipe pédagogique (le formateur n'a pas d'autre accès au back-office)
                         .requestMatchers("/api/v1/admin/sessions/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "TRAINER")
+                        // « Mon espace » : chaque compte du back-office voit ce qui le concerne (filtré par le contrôleur)
+                        .requestMatchers("/api/v1/admin/me/**")
+                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR", "TRAINER", "PARTNER")
                         .requestMatchers("/api/v1/admin/**")
                                 .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR")
                         // ── Espace apprenant ──────────────────────────────────────

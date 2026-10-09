@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.controller;
 
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
+import com.modeltech.datamasteryhub.modules.training.dto.response.PromoCodeCheckResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.PromoCodeResponse;
 import com.modeltech.datamasteryhub.modules.training.service.PromoCodeService;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +17,10 @@ public class PublicPromoCodeController {
 
     /**
      * Valider un code promo côté visiteur.
-     * Retourne le discountPercent si valide, ou une ResourceNotFoundException avec message approprié.
+     * Retourne uniquement {valid, code, discountPercent, message} : aucune donnée du parrain n'est exposée.
      */
     @GetMapping("/validate")
-    public ResponseEntity<PromoCodeResponse> validate(@RequestParam String code) {
+    public ResponseEntity<PromoCodeCheckResponse> validate(@RequestParam String code) {
         PromoCodeResponse result = promoCodeService.validateCode(code);
 
         // Si le service retourne null, on lance une exception avec le message approprié
@@ -27,6 +28,6 @@ public class PublicPromoCodeController {
             throw new ResourceNotFoundException("Code promo invalide ou expiré : " + code);
         }
 
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(PromoCodeCheckResponse.of(result));
     }
 }

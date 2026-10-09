@@ -216,7 +216,7 @@ class AdminBootcampControllerIT extends AbstractIntegrationTest {
 
     @Test
     void requiresAuthentication() throws Exception {
-        mockMvc.perform(get(URL)).andExpect(status().isForbidden());
+        mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
     }
 
     private static RequestPostProcessor admin() {

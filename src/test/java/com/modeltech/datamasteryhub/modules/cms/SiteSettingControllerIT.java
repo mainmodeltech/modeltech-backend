@@ -78,11 +78,11 @@ class SiteSettingControllerIT extends AbstractIntegrationTest {
     @Test
     void writes_requireABackOfficeRole() throws Exception {
         mockMvc.perform(put(ADMIN + "/coach").contentType(MediaType.APPLICATION_JSON).content("{\"value\":\"x\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(put(ADMIN + "/coach").with(admin("LEARNER")).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"value\":\"x\"}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get(ADMIN)).andExpect(status().isForbidden());
+        mockMvc.perform(get(ADMIN)).andExpect(status().isUnauthorized());
     }
 
     private org.springframework.test.web.servlet.ResultActions putSetting(String key, String body) throws Exception {

@@ -256,7 +256,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByToken(request.getToken())
+                .findByToken(sha256(request.getToken()))   // le jeton n'est stocké que haché
                 .filter(PasswordResetToken::isValid)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Lien de réinitialisation invalide ou expiré."));
@@ -297,12 +297,15 @@ public class AuthServiceImpl implements AuthService {
         String normalized = email.toLowerCase(Locale.ROOT).trim();
         passwordResetTokenRepository.invalidateAllByEmail(normalized);
 
+        // Seul le hash SHA-256 est conservé en base : une fuite de la table ne donne aucun lien utilisable
+        String rawToken = TokenUtils.randomToken();
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(TokenUtils.randomToken())
+                .token(sha256(rawToken))
                 .email(normalized)
                 .expiresAt(LocalDateTime.now().plusMinutes(validityMinutes))
                 .build();
-        return passwordResetTokenRepository.save(resetToken).getToken();
+        passwordResetTokenRepository.save(resetToken);
+        return rawToken;
     }
 
     @Override

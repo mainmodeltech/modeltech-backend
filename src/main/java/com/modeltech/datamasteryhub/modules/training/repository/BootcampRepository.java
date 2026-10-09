@@ -57,6 +57,9 @@ public interface BootcampRepository extends JpaRepository<Bootcamp, UUID> {
     boolean existsByDomainIdAndIsDeletedFalse(UUID domainId);
     boolean existsByPartnerIdAndIsDeletedFalse(UUID partnerId);
 
+    // « Mes formations » d'un partenaire
+    List<Bootcamp> findAllByPartnerIdAndIsDeletedFalseOrderByDisplayOrderAscCreatedAtDesc(UUID partnerId);
+
     // Check unicité du titre
     boolean existsByTitleIgnoreCaseAndIsDeletedFalse(String title);
     boolean existsByTitleIgnoreCaseAndIsDeletedFalseAndIdNot(String title, UUID id);

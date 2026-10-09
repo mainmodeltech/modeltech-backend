@@ -39,7 +39,7 @@ class AdminUserControllerIT extends AbstractIntegrationTest {
 
     @Test
     void onlySuperAdminsCanManageAccounts() throws Exception {
-        mockMvc.perform(get(URL)).andExpect(status().isForbidden());
+        mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
         mockMvc.perform(get(URL).with(user("x@test.local", "ADMIN"))).andExpect(status().isForbidden());
         mockMvc.perform(post(URL).with(user("x@test.local", "EDITOR")).contentType(MediaType.APPLICATION_JSON)
                 .content("{}")).andExpect(status().isForbidden());

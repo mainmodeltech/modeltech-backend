@@ -48,6 +48,7 @@ public final class LearnerProfilePayloads {
     public static class SetPasswordRequest {
         @NotBlank(message = "Le nouveau mot de passe est obligatoire")
         @Size(min = 8, max = 128, message = "Le mot de passe doit contenir au moins 8 caractères")
+        @lombok.ToString.Exclude
         private String newPassword;
     }
 }

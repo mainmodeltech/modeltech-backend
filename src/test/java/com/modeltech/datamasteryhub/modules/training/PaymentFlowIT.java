@@ -499,7 +499,7 @@ class PaymentFlowIT extends AbstractIntegrationTest {
         String[] urls = {ADMIN_PAYMENTS, "/api/v1/admin/enrollments"};
 
         for (String url : urls) {
-            mockMvc.perform(get(url)).andExpect(status().isForbidden());
+            mockMvc.perform(get(url)).andExpect(status().isUnauthorized());
             mockMvc.perform(get(url).with(user("editeur@test.local", "EDITOR"))).andExpect(status().isForbidden());
             mockMvc.perform(get(url).with(user("apprenant@test.local", "LEARNER"))).andExpect(status().isForbidden());
         }

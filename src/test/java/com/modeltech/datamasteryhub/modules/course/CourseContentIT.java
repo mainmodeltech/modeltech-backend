@@ -202,7 +202,7 @@ class CourseContentIT extends AbstractIntegrationTest {
 
     @Test
     void access_isLimitedToStaffAndTheOwningPartner() throws Exception {
-        mockMvc.perform(get(url())).andExpect(status().isForbidden());
+        mockMvc.perform(get(url())).andExpect(status().isUnauthorized());
         mockMvc.perform(get(url()).with(staff("LEARNER"))).andExpect(status().isForbidden());
         mockMvc.perform(get(url()).with(staff("TRAINER"))).andExpect(status().isForbidden());
         mockMvc.perform(get(url()).with(staff("EDITOR"))).andExpect(status().isOk());
@@ -271,7 +271,7 @@ class CourseContentIT extends AbstractIntegrationTest {
 
     @Test
     void learnerEndpoints_areClosedToStaffAndAnonymous() throws Exception {
-        mockMvc.perform(get("/api/v1/learner/dashboard")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/learner/dashboard")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/learner/dashboard").with(user("admin@test.local", "ADMIN"))).andExpect(status().isForbidden());
     }
 

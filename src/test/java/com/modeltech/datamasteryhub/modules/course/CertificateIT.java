@@ -207,7 +207,7 @@ class CertificateIT extends AbstractIntegrationTest {
         learnerRepository.save(learner("autre@example.com"));
         mockMvc.perform(get("/api/v1/learner/certificates").with(user("autre@example.com", "LEARNER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
-        mockMvc.perform(get("/api/v1/learner/certificates")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/learner/certificates")).andExpect(status().isUnauthorized());
     }
 
     // ── Back-office ──────────────────────────────────────────────────

@@ -25,9 +25,9 @@ class AdminDomainControllerIT extends AbstractIntegrationTest {
 
     @Test
     void requiresAuthentication() throws Exception {
-        mockMvc.perform(get(URL)).andExpect(status().isForbidden());
+        mockMvc.perform(get(URL)).andExpect(status().isUnauthorized());
         mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"X\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -122,7 +122,7 @@ class StatsIT extends AbstractIntegrationTest {
 
     @Test
     void stats_are_reserved_to_administrators() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/stats/overview")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/admin/stats/overview")).andExpect(status().isUnauthorized());
         for (String role : new String[]{"EDITOR", "TRAINER", "PARTNER", "LEARNER"}) {
             mockMvc.perform(get("/api/v1/admin/stats/overview").with(user("x@test.local", role))).andExpect(status().isForbidden());
             mockMvc.perform(get("/api/v1/admin/stats/actions").with(user("x@test.local", role))).andExpect(status().isForbidden());

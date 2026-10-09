@@ -233,7 +233,7 @@ class SiteFormsControllerIT extends AbstractIntegrationTest {
 
     @Test
     void admin_requiresAuthentication() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/contact-messages")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/admin/contact-messages")).andExpect(status().isUnauthorized());
     }
 
     private static RequestPostProcessor admin() {

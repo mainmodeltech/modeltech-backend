@@ -211,7 +211,7 @@ class NewsletterControllerIT extends AbstractIntegrationTest {
 
     @Test
     void admin_requiresAuthentication() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/newsletter-subscriptions")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/admin/newsletter-subscriptions")).andExpect(status().isUnauthorized());
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -11,7 +12,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -77,6 +80,39 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(),
                 null
         ));
+    }
+
+    /** Route inexistante → 404 (et non 500 « No static resource »). */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(
+                LocalDateTime.now(), HttpStatus.NOT_FOUND.value(), "Not Found",
+                "Ressource introuvable", request.getRequestURI(), null));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new ErrorResponse(
+                LocalDateTime.now(), HttpStatus.METHOD_NOT_ALLOWED.value(), "Method Not Allowed",
+                "Méthode non autorisée sur cette ressource", request.getRequestURI(), null));
+    }
+
+    /**
+     * Contrainte d'intégrité (valeur hors liste, doublon…) → 409/400 explicite plutôt qu'un 500.
+     * Le détail SQL reste dans les logs.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
+        String detail = String.valueOf(ex.getMostSpecificCause().getMessage());
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+                .warn("Contrainte d'intégrité sur {} {} : {}", request.getMethod(), request.getRequestURI(), detail);
+        boolean duplicate = detail.contains("duplicate key") || detail.contains("unique");
+        HttpStatus status = duplicate ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status).body(new ErrorResponse(
+                LocalDateTime.now(), status.value(), status.getReasonPhrase(),
+                duplicate ? "Cette valeur existe déjà."
+                          : "Une valeur transmise n'est pas autorisée (voir les champs obligatoires ou les listes de choix).",
+                request.getRequestURI(), null));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

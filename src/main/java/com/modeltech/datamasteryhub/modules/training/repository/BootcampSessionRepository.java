@@ -19,6 +19,11 @@ public interface BootcampSessionRepository extends JpaRepository<BootcampSession
     // Toutes les sessions d'un bootcamp (public)
     List<BootcampSession> findAllByBootcampIdAndPublishedTrueAndIsDeletedFalseOrderByStartDateAsc(UUID bootcampId);
 
+    // « Mes sessions » : sessions confiées à un formateur / toutes les sessions (administration)
+    List<BootcampSession> findAllByTrainerEmailIgnoreCaseAndIsDeletedFalseOrderByStartDateDesc(String email);
+
+    List<BootcampSession> findAllByIsDeletedFalseOrderByStartDateDesc();
+
     // Toutes les sessions d'un bootcamp (admin)
     List<BootcampSession> findAllByBootcampIdAndIsDeletedFalseOrderByStartDateAsc(UUID bootcampId);
 

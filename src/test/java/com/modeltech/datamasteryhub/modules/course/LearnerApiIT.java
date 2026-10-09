@@ -177,7 +177,7 @@ class LearnerApiIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/v1/learner/payments/" + paid.getId() + "/receipt").with(asMoussa)).andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/learner/payments/" + due.getId() + "/receipt").with(asAwa)).andExpect(status().isNotFound());
-        mockMvc.perform(get("/api/v1/learner/payments/" + paid.getId() + "/receipt")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/learner/payments/" + paid.getId() + "/receipt")).andExpect(status().isUnauthorized());
     }
 
     @Test
