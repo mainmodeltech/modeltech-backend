@@ -1,0 +1,25 @@
+{
+  "name": "Model Technologie",
+  "tagline": "Toujours plus haut !",
+  "description": "Expert en formations Power BI et Data Analytics. Accompagnement des entreprises vers l'excellence data.",
+  "address": "129 Liberté 6 Extension, Dakar, Sénégal",
+  "addressHelper": "Sur rendez-vous",
+  "phone": "+221 78 862 52 38",
+  "phoneRaw": "+221788625238",
+  "whatsappUrl": "https://wa.me/221788625238",
+  "whatsappHelper": "Réponse dans la journée",
+  "email": "admin@model-technologie.com",
+  "emailHelper": "Pour les devis et documents",
+  "hours": "Lun–Ven 9h–18h · Sam 9h–13h",
+  "hoursHelper": "Heure de Dakar (GMT)",
+  "social": {
+    "linkedin": "https://www.linkedin.com/company/model-technologie/?viewAsMember=true",
+    "instagram": "https://www.instagram.com/model.technologie/"
+  },
+  "map": {
+    "enabled": true,
+    "query": "129 Liberté 6 Extension, Dakar, Sénégal",
+    "zoom": 16,
+    "title": "Où nous trouver"
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "event": {
+    "id": "power-bi-dashboard-2026-03-24",
+    "startsAt": "2026-03-24T18:00:00+00:00",
+    "durationLabel": "18h00 – 20h00 (GMT+0)",
+    "timeLabel": "18h00",
+    "place": "En ligne · Google Meet",
+    "format": "Session live interactive",
+    "registrationsClosed": true,
+    "registeredCount": "150+"
+  },
+  "hero": {
+    "badgeOpen": "Masterclass gratuite · Places limitées",
+    "badgeClosed": "Masterclass gratuite · Inscriptions closes",
+    "titleBefore": "Construire son premier",
+    "titleAccent": "tableau de bord",
+    "titleAfter": "avec Microsoft Power BI",
+    "description": "En 2 heures, apprenez à transformer vos données brutes en dashboards professionnels qui impressionnent. Une session 100 % pratique, live et gratuite.",
+    "countdownLabel": "La session commence dans",
+    "points": [
+      "100 % gratuit, aucune carte requise",
+      "Session live avec Q&A en direct",
+      "Exercice pratique inclus",
+      "Replay disponible pour les inscrits",
+      "Certificat de participation",
+      "Ouvert à tous les niveaux"
+    ],
+    "image": "/images/photos/picture-1.jpg",
+    "imageAlt": "Une analyste construisant un tableau de bord"
+  },
+  "closed": {
+    "badge": "Inscriptions closes",
+    "titleOver": "Cette masterclass a eu lieu",
+    "titleClosed": "Les inscriptions sont terminées",
+    "message": "Avec {count} inscrits, nous avons atteint notre capacité maximale pour la session du {date}. La prochaine masterclass sera annoncée sur nos réseaux sociaux.",
+    "formations": "Voir nos formations"
+  },
+  "form": {
+    "badge": "Inscription gratuite",
+    "title": "Réservez votre place",
+    "subtitle": "Recevez le lien Meet directement par e-mail",
+    "firstName": "Prénom *",
+    "firstNamePlaceholder": "Amadou",
+    "lastName": "Nom *",
+    "lastNamePlaceholder": "Diallo",
+    "email": "E-mail *",
+    "emailPlaceholder": "amadou@exemple.com",
+    "phone": "Téléphone *",
+    "phonePlaceholder": "+221 77 000 00 00",
+    "profile": "Vous êtes *",
+    "profilePlaceholder": "Sélectionner votre profil",
+    "profiles": [
+      {
+        "value": "Étudiant(e)",
+        "label": "Étudiant(e)"
+      },
+      {
+        "value": "Professionnel",
+        "label": "Professionnel(le)"
+      },
+      {
+        "value": "Entrepreneur",
+        "label": "Entrepreneur(se)"
+      },
+      {
+        "value": "En reconversion",
+        "label": "En reconversion"
+      },
+      {
+        "value": "Autre",
+        "label": "Autre"
+      }
+    ],
+    "company": "Entreprise / École",
+    "companyPlaceholder": "Orange, UGB, UCAD…",
+    "submit": "Je m'inscris gratuitement",
+    "pending": "Vérification en cours…",
+    "meetNote": "Lien Google Meet envoyé par e-mail après inscription",
+    "successTitle": "Inscription confirmée !",
+    "successText": "Un e-mail de confirmation avec le lien Google Meet vous a été envoyé à {email}.",
+    "successDate": "Rendez-vous le {date} à {time} !",
+    "duplicateTitle": "Vous êtes déjà inscrit(e) !",
+    "duplicateText": "L'adresse {email} est déjà enregistrée pour cette masterclass.",
+    "duplicateHint": "Vérifiez votre boîte mail (et les spams) — le lien Google Meet vous y a été envoyé.",
+    "duplicateReset": "Utiliser une autre adresse e-mail"
+  },
+  "learn": {
+    "eyebrow": "Au programme",
+    "title": "Ce que vous allez maîtriser",
+    "description": "Une progression logique de zéro au dashboard complet en 2 heures.",
+    "items": [
+      {
+        "icon": "chart",
+        "title": "Visualisations pro",
+        "description": "Créez des graphiques, jauges et KPI cards qui racontent vos données avec clarté."
+      },
+      {
+        "icon": "zap",
+        "title": "Zéro code requis",
+        "description": "Power BI est un outil no-code. Aucune compétence en programmation nécessaire."
+      },
+      {
+        "icon": "award",
+        "title": "Portfolio concret",
+        "description": "Repartez avec un vrai dashboard à montrer à vos recruteurs ou votre direction."
+      }
+    ]
+  },
+  "programme": {
+    "eyebrow": "Déroulé",
+    "title": "Programme de la session",
+    "items": [
+      {
+        "time": "18h00",
+        "title": "Accueil & présentation",
+        "description": "Tour de table, objectifs de la session"
+      },
+      {
+        "time": "18h15",
+        "title": "Interface Power BI Desktop",
+        "description": "Découverte de l'environnement de travail"
+      },
+      {
+        "time": "18h30",
+        "title": "Importer et préparer vos données",
+        "description": "Connexion à Excel, nettoyage avec Power Query"
+      },
+      {
+        "time": "19h00",
+        "title": "Créer vos premières visualisations",
+        "description": "Graphiques, cartes, indicateurs KPI"
+      },
+      {
+        "time": "19h30",
+        "title": "Construire le dashboard complet",
+        "description": "Mise en page, filtres, interactivité"
+      },
+      {
+        "time": "19h45",
+        "title": "Q&A et ressources",
+        "description": "Questions libres, ressources pour continuer"
+      },
+      {
+        "time": "19h55",
+        "title": "Next Steps",
+        "description": "Annonces au sujet de Model Technologie et de ses formations"
+      }
+    ]
+  },
+  "speaker": {
+    "label": "Votre formateur",
+    "name": "Martin Komla CHOKKI",
+    "role": "Data Strategist | Expert Power BI & IA Agent",
+    "bio": "Spécialiste de la data et de l'automatisation, Martin accompagne les organisations du secteur bancaire dans la transformation de leurs données en outils de pilotage stratégique. Il conçoit des dashboards dynamiques et des solutions d'IA qui permettent aux décideurs d'agir avec précision, en temps réel.",
+    "photoUrl": "/images/martin-chokki.jpeg",
+    "tags": [
+      "Power BI",
+      "IA Agent",
+      "Secteur bancaire",
+      "Data Strategy",
+      "Automatisation"
+    ]
+  },
+  "cta": {
+    "titleOpen": "Prêt à construire votre premier dashboard ?",
+    "titleClosed": "Continuez avec nos formations",
+    "textOpen": "Rejoignez des dizaines de professionnels et d'étudiants qui transforment leurs données en insights. C'est gratuit, en direct, le {date}.",
+    "textClosed": "Cette session est terminée. Découvrez nos formations Power BI, SQL et Python pour aller plus loin.",
+    "buttonOpen": "Je m'inscris gratuitement",
+    "buttonClosed": "Voir les formations"
+  }
+}

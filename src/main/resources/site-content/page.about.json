@@ -1,0 +1,227 @@
+{
+  "hero": {
+    "badge": "Dakar, Sénégal · Depuis 2023",
+    "titleBefore": "Former la génération data",
+    "titleAccent": "d'Afrique de l'Ouest.",
+    "description": "Model Technologie est née d'un constat simple : les entreprises africaines avaient besoin de talents data locaux, formés sur des données réelles, avec un accès à l'emploi dès la sortie.",
+    "primary": {
+      "label": "Nos formations",
+      "href": "/formations"
+    },
+    "secondary": {
+      "label": "Nous contacter",
+      "href": "/contact"
+    },
+    "stats": [
+      {
+        "value": "3",
+        "label": "ans d'existence"
+      },
+      {
+        "value": "30+",
+        "label": "alumni formés"
+      },
+      {
+        "value": "90%",
+        "label": "en poste en 3 mois"
+      },
+      {
+        "value": "02",
+        "label": "entreprises partenaires"
+      }
+    ],
+    "image": "/images/photos/picture-1.jpg",
+    "imageAlt": "Une analyste de données au travail, entourée de collègues"
+  },
+  "missionVision": [
+    {
+      "label": "NOTRE MISSION",
+      "title": "Démocratiser la data en Afrique",
+      "content": "Accompagner les entreprises et professionnels africains dans leur transformation data en leur fournissant des formations de qualité internationale, ancrées dans les réalités du marché local et orientées vers l'emploi."
+    },
+    {
+      "label": "NOTRE VISION",
+      "title": "La référence data francophone",
+      "content": "Devenir le premier centre de formation Data & Business Intelligence en Afrique francophone de l'Ouest, en contribuant à l'émergence d'une nouvelle génération de professionnels capables de transformer les données en décisions stratégiques."
+    }
+  ],
+  "timeline": {
+    "eyebrow": "NOTRE PARCOURS",
+    "title": "Une structure née du terrain",
+    "items": [
+      {
+        "year": "2023",
+        "label": "Fondation",
+        "description": "Création de Model Technologie à Dakar, avec une première promotion de 6 apprenants."
+      },
+      {
+        "year": "2024",
+        "label": "Expansion",
+        "description": "Lancement du bootcamp Data Analyst SQL/Python. 15+ apprenants formés. Premiers partenariats entreprises."
+      },
+      {
+        "year": "2025",
+        "label": "Maturité",
+        "description": "30+ alumni en poste. Consolidation des acquis : structuration de l'équipe et des formateurs."
+      },
+      {
+        "year": "2026",
+        "label": "Référence régionale",
+        "description": "Ambition : devenir la référence data en Afrique francophone de l'Ouest. Expansion prévue."
+      }
+    ]
+  },
+  "values": {
+    "eyebrow": "CE QUI NOUS GUIDE",
+    "title": "Nos valeurs",
+    "items": [
+      {
+        "title": "Excellence",
+        "description": "Des contenus actualisés en permanence, calqués sur ce que les entreprises attendent vraiment de leurs analystes."
+      },
+      {
+        "title": "Pragmatisme",
+        "description": "100% des exercices sont basés sur des données très proches de la réalité. Vous sortez avec un portfolio, pas juste un certificat."
+      },
+      {
+        "title": "Proximité",
+        "description": "Des promotions volontairement limitées (10-20 apprenants) pour un suivi individualisé et une vraie communauté."
+      },
+      {
+        "title": "Impact mesurable",
+        "description": "Nous mesurons notre succès au taux de placement de nos alumni et à l'impact concret sur les entreprises clientes."
+      }
+    ]
+  },
+  "team": {
+    "eyebrow": "LES HUMAINS DERRIÈRE MODEL TECHNOLOGIE",
+    "title": "L'équipe",
+    "description": "5 passionnés de data, anciens du secteur bancaire, de la fintech et du conseil, unis par la même mission.",
+    "members": [
+      {
+        "initials": "LM",
+        "color": "navy",
+        "name": "Lionnel",
+        "role": "Fondateur & Directeur",
+        "description": "Expert en data analytics avec plus de 10 ans d'expérience en banque et conseil en transformation digitale.",
+        "linkedin": "https://www.linkedin.com/in/lionnel-code/",
+        "tags": [
+          "Power BI",
+          "Stratégie",
+          "Banque & Finance"
+        ]
+      },
+      {
+        "initials": "PK",
+        "color": "cta",
+        "name": "Primaël KOUADIO",
+        "role": "Responsable Administratif & Financier",
+        "description": "Garant de la structure opérationnelle et financière. Pilote la croissance et les partenariats stratégiques.",
+        "linkedin": "https://www.linkedin.com/in/attowla-prima%C3%ABl-armand-othniel-kouadio-515261212/",
+        "tags": [
+          "Finance",
+          "Administration",
+          "Partenariats"
+        ]
+      },
+      {
+        "initials": "ZT",
+        "color": "success",
+        "name": "Zeinab TRAORÉ",
+        "role": "Responsable Marketing & Communication",
+        "description": "Architecte de la présence digitale de Model Technologie. Pilote la communauté alumni et les partenariats.",
+        "linkedin": "https://www.linkedin.com/in/ze%C3%AFnab-traore-b46a34249/",
+        "tags": [
+          "Marketing Digital",
+          "Community",
+          "Contenu"
+        ]
+      },
+      {
+        "initials": "CZ",
+        "color": "navy-medium",
+        "name": "Cédric ZAGBA",
+        "role": "Formateur Power BI & Excel",
+        "description": "Formateur principal du bootcamp Power BI avec une approche ultra-pratique.",
+        "linkedin": "https://www.linkedin.com/in/aboubacar-gohoun-c%C3%A9dric-zagba-89219616a/",
+        "tags": [
+          "Power BI",
+          "DAX",
+          "Excel Avancé"
+        ]
+      },
+      {
+        "initials": "MG",
+        "color": "warning",
+        "name": "Mardochée K. GBANBAN",
+        "role": "Formateur SQL & Python",
+        "description": "Data Analyst senior avec expérience en fintech. Formateur principal du bootcamp Data Analyst.",
+        "linkedin": "https://www.linkedin.com/in/mardocheekg/",
+        "tags": [
+          "Python",
+          "SQL",
+          "Data Engineering"
+        ]
+      }
+    ]
+  },
+  "partners": {
+    "label": "Entreprises qui font confiance à nos alumni",
+    "items": [
+      {
+        "name": "CESAG",
+        "sector": "Business School"
+      },
+      {
+        "name": "KPMG",
+        "sector": "Audit"
+      },
+      {
+        "name": "INTOUCH",
+        "sector": "Fintech"
+      },
+      {
+        "name": "CETUD",
+        "sector": "Transport"
+      },
+      {
+        "name": "AFRIKA BANK",
+        "sector": "Banque"
+      },
+      {
+        "name": "SONATEL",
+        "sector": "Télécoms"
+      },
+      {
+        "name": "Forvis Mazars",
+        "sector": "Consulting"
+      },
+      {
+        "name": "WAVE",
+        "sector": "Fintech"
+      },
+      {
+        "name": "BDK",
+        "sector": "Banque"
+      },
+      {
+        "name": "SGSN",
+        "sector": "Banque"
+      }
+    ]
+  },
+  "cta": {
+    "eyebrow": "REJOIGNEZ L'AVENTURE",
+    "title": "Prêt à transformer votre carrière ?",
+    "description": "Rejoignez les 30+ alumni qui ont déjà fait le saut. La prochaine promotion commence bientôt.",
+    "primary": {
+      "label": "Voir les formations",
+      "href": "/formations"
+    },
+    "secondary": {
+      "label": "Quiz d'orientation (2 min)",
+      "href": "/orientation"
+    },
+    "whatsapp": "Nous contacter sur WhatsApp"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "hero": {
+    "eyebrow": "ALUMNI",
+    "title": "Ils ont changé leur façon de travailler.",
+    "image": "/images/photos/picture-4.jpg",
+    "imageAlt": "Une cohorte Model Technologie en séance de formation"
+  },
+  "stats": [
+    {
+      "value": "{alumniCount}+",
+      "label": "alumni depuis 2023"
+    },
+    {
+      "value": "90%",
+      "label": "en poste ou promus < 6 mois"
+    },
+    {
+      "value": "10+",
+      "label": "entreprises où travaillent les alumni"
+    },
+    {
+      "value": "{rating}/5",
+      "label": "note moyenne des témoignages"
+    }
+  ],
+  "featured": {
+    "label": "HISTOIRE À LA UNE",
+    "resultLabel": "Résultat"
+  },
+  "testimonials": {
+    "eyebrow": "TÉMOIGNAGES",
+    "title": "En leurs propres mots.",
+    "allLabel": "Tous",
+    "empty": "Les premiers témoignages de nos alumni seront publiés ici."
+  },
+  "projects": {
+    "eyebrow": "PROJETS FINAUX",
+    "title": "Ce qu'ils ont construit.",
+    "fallbackCapture": "Capture du projet",
+    "fallbackTag": "Projet"
+  },
+  "ctas": [
+    {
+      "title": "VOUS ÊTES ALUMNI",
+      "description": "Partagez votre expérience avec la prochaine cohorte.",
+      "label": "Partager mon témoignage",
+      "href": "/contact",
+      "style": "navy"
+    },
+    {
+      "title": "VOUS RECRUTEZ",
+      "description": "Accédez à notre vivier de talents certifiés.",
+      "label": "Publier une offre",
+      "href": "/contact",
+      "style": "outline"
+    }
+  ],
+  "closing": {
+    "title": "Votre histoire commence à la prochaine cohorte.",
+    "cta": {
+      "label": "Candidater",
+      "href": "/formations"
+    }
+  }
+}

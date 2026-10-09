@@ -1,0 +1,70 @@
+{
+  "hero": {
+    "eyebrow": "RESSOURCES",
+    "title": "Apprenez un peu chaque semaine.",
+    "searchPlaceholder": "RECHERCHEV, DAX, pandas…",
+    "searchLabel": "Rechercher",
+    "allLabel": "Tout"
+  },
+  "categories": [
+    "Excel",
+    "Power BI",
+    "Python",
+    "SQL",
+    "Carrière data",
+    "Études de cas"
+  ],
+  "featured": {
+    "badge": "À LA UNE",
+    "item": {
+      "category": "",
+      "title": "",
+      "summary": "",
+      "url": "",
+      "image": ""
+    },
+    "imageFallback": "/images/photos/picture-1.jpg"
+  },
+  "articles": {
+    "eyebrow": "LE BLOG",
+    "title": "Derniers articles",
+    "readLabel": "Lire l'article",
+    "empty": "Aucun article dans cette catégorie pour le moment.",
+    "items": []
+  },
+  "downloads": {
+    "eyebrow": "BOÎTE À OUTILS GRATUITE",
+    "title": "Des modèles prêts à utiliser dès demain.",
+    "subtitle": "Téléchargement gratuit, aucun engagement.",
+    "downloadLabel": "Télécharger gratuitement",
+    "items": []
+  },
+  "workshop": {
+    "enabled": false,
+    "badge": "En direct",
+    "title": "ATELIER GRATUIT EN LIGNE",
+    "subject": "",
+    "date": "",
+    "time": "",
+    "cta": {
+      "label": "Réserver ma place",
+      "href": "/contact"
+    }
+  },
+  "quiz": {
+    "title": "QUIZ D'ORIENTATION",
+    "description": "5 questions, 2 minutes — trouvez la formation faite pour vous.",
+    "cta": {
+      "label": "Commencer le quiz",
+      "href": "/orientation"
+    }
+  },
+  "newsletter": {
+    "title": "Une astuce data par mois, dans votre boîte mail.",
+    "subtitle": "Pas de spam. Désinscription en un clic.",
+    "placeholder": "vous@exemple.com",
+    "submitLabel": "S'abonner",
+    "successText": "Merci ! Confirmez votre adresse via l'e-mail que nous venons de vous envoyer."
+  },
+  "emptyNotice": "Les premières ressources arrivent très bientôt. En attendant, abonnez-vous à la newsletter."
+}

@@ -1,0 +1,167 @@
+{
+  "hero": {
+    "eyebrow": "ENTREPRISES & INSTITUTIONS",
+    "title": "Rendez vos équipes autonomes sur la donnée.",
+    "description": "Des formations Excel et Power BI construites sur vos données, avec un diagnostic gratuit en amont.",
+    "primary": {
+      "label": "Demander un diagnostic gratuit",
+      "href": "#diagnostic"
+    },
+    "brochure": {
+      "label": "Télécharger la plaquette",
+      "url": ""
+    },
+    "image": {
+      "url": "/images/photos/picture-2.jpg",
+      "alt": "Une équipe d'entreprise autour d'un tableau de bord"
+    }
+  },
+  "sectors": {
+    "label": "SECTEURS ACCOMPAGNÉS",
+    "items": [
+      "Banque",
+      "Assurance",
+      "Audit",
+      "Institutions & ONG"
+    ]
+  },
+  "departments": {
+    "eyebrow": "PAR SERVICE",
+    "title": "Ce qui change concrètement dans vos équipes.",
+    "todayLabel": "Aujourd'hui",
+    "afterLabel": "Après la formation",
+    "items": [
+      {
+        "name": "Direction financière",
+        "before": "Reporting manuel chaque fin de mois",
+        "after": "Tableaux de bord automatisés"
+      },
+      {
+        "name": "Audit & conformité",
+        "before": "Contrôles sur fichiers Excel dispersés",
+        "after": "Suivi centralisé et traçable"
+      },
+      {
+        "name": "Ressources humaines",
+        "before": "Indicateurs calculés à la main",
+        "after": "Dashboards RH en temps réel"
+      },
+      {
+        "name": "Équipes commerciales",
+        "before": "Pipeline suivi sur plusieurs fichiers",
+        "after": "Vue consolidée et partagée"
+      }
+    ]
+  },
+  "offers": {
+    "eyebrow": "NOS OFFRES",
+    "title": "Trois façons de former vos équipes.",
+    "cta": {
+      "label": "Demander un programme",
+      "href": "#diagnostic"
+    },
+    "specLabels": {
+      "public": "Public",
+      "format": "Format",
+      "duration": "Durée"
+    },
+    "items": [
+      {
+        "title": "Mise à niveau Excel",
+        "tagline": "Un socle solide pour toute l'équipe",
+        "description": "Remise à niveau collective avec test de positionnement en amont pour adapter le contenu.",
+        "public": "Toute l'équipe",
+        "format": "Présentiel ou hybride",
+        "duration": "2 à 3 jours",
+        "features": [
+          "Test de positionnement",
+          "Exercices sur vos propres fichiers",
+          "Support après formation"
+        ]
+      },
+      {
+        "title": "Power BI sur mesure",
+        "tagline": "Des tableaux de bord sur vos données",
+        "description": "Formation construite directement sur vos sources de données et vos cas d'usage métier.",
+        "public": "Équipes data/finance",
+        "format": "Présentiel ou distanciel",
+        "duration": "3 à 5 jours",
+        "features": [
+          "Modélisation sur vos données",
+          "DAX et Power Query",
+          "Dashboards livrés en fin de formation"
+        ]
+      },
+      {
+        "title": "Parcours data sur mesure",
+        "tagline": "Un programme multi-outils complet",
+        "description": "Un parcours combinant Excel, SQL, Python et Power BI selon les besoins de vos équipes.",
+        "public": "Profils mixtes",
+        "format": "Sur plusieurs semaines",
+        "duration": "Sur devis",
+        "features": [
+          "Programme conçu avec vous",
+          "Suivi pédagogique dédié",
+          "Projets réels fil rouge"
+        ]
+      }
+    ]
+  },
+  "method": {
+    "eyebrow": "NOTRE MÉTHODE",
+    "title": "Du diagnostic au suivi à 30 jours.",
+    "steps": [
+      {
+        "title": "Diagnostic gratuit",
+        "description": "Un échange pour comprendre vos outils et vos besoins."
+      },
+      {
+        "title": "Programme sur vos données",
+        "description": "Un contenu construit sur vos cas d'usage réels."
+      },
+      {
+        "title": "Formation",
+        "description": "Sessions animées par nos formateurs certifiés."
+      },
+      {
+        "title": "Suivi à 30 jours",
+        "description": "Un point pour consolider les acquis."
+      }
+    ]
+  },
+  "reference": {
+    "enabled": false,
+    "eyebrow": "RÉFÉRENCE",
+    "title": "Ils nous ont fait confiance.",
+    "name": "",
+    "sector": "",
+    "size": "",
+    "need": "",
+    "result": "",
+    "needLabel": "Le besoin",
+    "resultLabel": "Le résultat"
+  },
+  "diagnostic": {
+    "eyebrow": "DIAGNOSTIC GRATUIT",
+    "title": "Parlons de votre équipe.",
+    "points": [
+      "Sans engagement",
+      "Adapté à vos outils",
+      "Facturation entreprise"
+    ],
+    "namePlaceholder": "Awa Ndiaye",
+    "rolePlaceholder": "DRH, DAF, manager…",
+    "companyPlaceholder": "Nom de l'organisation",
+    "peoplePlaceholder": "Personnes à former",
+    "emailPlaceholder": "vous@entreprise.sn",
+    "phonePlaceholder": "+221 …",
+    "needPlaceholder": "Besoin principal",
+    "contextPlaceholder": "Outils utilisés, difficultés, échéance…",
+    "submitLabel": "Demander mon diagnostic gratuit",
+    "note": "Nous vous recontactons sous 48h ouvrées.",
+    "successTitle": "Demande envoyée !",
+    "successText": "Nous vous recontactons sous 48h ouvrées.",
+    "image": "/images/photos/picture-3.jpg",
+    "imageAlt": "Des collaborateurs échangeant autour de leurs indicateurs"
+  }
+}

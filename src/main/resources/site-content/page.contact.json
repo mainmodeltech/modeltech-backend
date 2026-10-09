@@ -1,0 +1,70 @@
+{
+  "eyebrow": "CONTACT",
+  "title": "Parlons de votre projet.",
+  "intro": "Le plus rapide reste WhatsApp.",
+  "form": {
+    "particulierLabel": "Je suis un particulier",
+    "entrepriseLabel": "Je représente une entreprise",
+    "namePlaceholder": "Awa Ndiaye",
+    "phonePlaceholder": "+221 …",
+    "emailPlaceholder": "vous@exemple.com",
+    "subjectPlaceholder": "Sujet",
+    "companyPlaceholder": "Nom de l'entreprise",
+    "messagePlaceholder": "Dites-nous en quelques lignes ce dont vous avez besoin.",
+    "submitLabel": "Envoyer le message",
+    "note": "Réponse sous 24h ouvrées. Vos données ne sont utilisées que pour vous répondre.",
+    "successTitle": "Message envoyé !",
+    "successText": "Nous vous répondrons sous 24h ouvrées.",
+    "successAgain": "Envoyer un autre message",
+    "subjects": [
+      {
+        "value": "Candidater à une cohorte",
+        "param": "cohorte"
+      },
+      {
+        "value": "Réserver un coaching",
+        "param": "coaching"
+      },
+      {
+        "value": "Formation pour mon entreprise",
+        "param": "entreprise"
+      },
+      {
+        "value": "Partenariat",
+        "param": "partenariat"
+      },
+      {
+        "value": "Autre",
+        "param": ""
+      }
+    ]
+  },
+  "faq": {
+    "eyebrow": "QUESTIONS FRÉQUENTES",
+    "title": "Les réponses aux questions les plus courantes",
+    "items": [
+      {
+        "question": "Quand démarre la prochaine cohorte ?",
+        "answer": "Consultez le calendrier des sessions sur la page Formations pour la prochaine date disponible."
+      },
+      {
+        "question": "Quels moyens de paiement acceptez-vous ?",
+        "answer": "Wave, Orange Money et virement bancaire."
+      },
+      {
+        "question": "Proposez-vous des facilités de paiement ?",
+        "answer": "Oui, un paiement en plusieurs fois est possible — précisez-le dans votre message."
+      },
+      {
+        "question": "Les formations sont-elles accessibles à distance ?",
+        "answer": "Cela dépend de la formation — le format est indiqué sur chaque fiche formation."
+      },
+      {
+        "question": "Pouvez-vous facturer mon entreprise ?",
+        "answer": "Oui, nous émettons une facture ou un bon de commande entreprise sur demande."
+      }
+    ]
+  },
+  "image": "/images/photos/picture-3.jpg",
+  "imageAlt": "Une équipe prête à répondre à vos questions"
+}

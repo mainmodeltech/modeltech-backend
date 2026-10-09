@@ -1,0 +1,172 @@
+{
+  "intro": {
+    "badge": "Parcours d'orientation personnalisé",
+    "titleBefore": "Trouvez la formation",
+    "titleAccent": "faite pour vous",
+    "description": "En 5 questions, nous analysons votre profil, vos objectifs et votre niveau pour vous recommander la formation exacte qui va transformer votre carrière.",
+    "features": [
+      { "icon": "zap", "text": "2 minutes", "sub": "Pas plus" },
+      { "icon": "target", "text": "100% personnalisé", "sub": "Selon votre profil" },
+      { "icon": "trending", "text": "Résultat immédiat", "sub": "Avec recommandation" }
+    ],
+    "social": "+30 personnes ont déjà trouvé leur parcours",
+    "start": "Commencer maintenant",
+    "note": "Aucune inscription requise · Résultat immédiat",
+    "image": "/images/photos/picture-1.jpg",
+    "imageAlt": "Une analyste de données au travail"
+  },
+  "ui": {
+    "back": "Retour",
+    "questionOf": "Question {current} sur {total}",
+    "next": "Suivant",
+    "seeResult": "Voir mon résultat",
+    "analysis": "Analyse complète",
+    "resultTitle": "Votre parcours idéal est trouvé !",
+    "resultSubtitle": "Basé sur vos réponses, voici notre recommandation personnalisée",
+    "accomplish": "Ce que vous allez accomplir",
+    "questionLabel": "Une question ?",
+    "whatsappLink": "Discutez avec nous sur WhatsApp →",
+    "alumniLabel": "Voir tous nos alumni",
+    "alumniLink": "Les réussites de nos anciens →",
+    "restart": "Recommencer le questionnaire"
+  },
+  "questions": [
+    {
+      "id": "situation",
+      "title": "Quelle est votre situation actuelle ?",
+      "subtitle": "Choisissez ce qui vous correspond le mieux",
+      "options": [
+        { "emoji": "💼", "label": "Salarié en poste", "sublabel": "Je travaille et veux progresser", "value": "employed" },
+        { "emoji": "🔄", "label": "En reconversion", "sublabel": "Je change de secteur ou de métier", "value": "reorientation" },
+        { "emoji": "🎓", "label": "Étudiant / Jeune diplômé", "sublabel": "Je cherche à me spécialiser", "value": "student" },
+        { "emoji": "🏢", "label": "Manager / Responsable", "sublabel": "Je pilote une équipe ou un budget", "value": "manager" }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Votre rapport aux outils numériques aujourd'hui ?",
+      "subtitle": "Soyez honnête, il n'y a pas de mauvaise réponse",
+      "options": [
+        { "emoji": "📊", "label": "J'utilise Excel au quotidien", "sublabel": "Formules, tableaux croisés, graphiques", "value": "excel" },
+        { "emoji": "🖥️", "label": "Je connais les bases de l'info", "sublabel": "À l'aise avec les outils bureautiques", "value": "basic" },
+        { "emoji": "⚙️", "label": "J'ai touché à un peu de code", "sublabel": "SQL, Python ou autre langage", "value": "code" },
+        { "emoji": "🚀", "label": "Je suis à l'aise techniquement", "sublabel": "Développeur ou profil tech", "value": "tech" }
+      ]
+    },
+    {
+      "id": "goal",
+      "title": "Quel est votre objectif principal ?",
+      "subtitle": "Ce que vous voulez accomplir grâce à cette formation",
+      "options": [
+        { "emoji": "📈", "label": "Créer des tableaux de bord & rapports", "sublabel": "Piloter la performance visuellement", "value": "dashboard" },
+        { "emoji": "🔬", "label": "Analyser des données & automatiser", "sublabel": "Extraire des insights avec du code", "value": "analysis" },
+        { "emoji": "💼", "label": "Décrocher un poste en data", "sublabel": "Changer de carrière vers la data", "value": "job" },
+        { "emoji": "🏗️", "label": "Améliorer les outils de mon équipe", "sublabel": "Former mes collaborateurs", "value": "team" }
+      ]
+    },
+    {
+      "id": "availability",
+      "title": "Quelle est votre disponibilité ?",
+      "subtitle": "Nos sessions s'adaptent à votre rythme de vie",
+      "options": [
+        { "emoji": "🌙", "label": "Soirs & week-ends seulement", "sublabel": "2-3 soirs par semaine + samedi", "value": "evenings" },
+        { "emoji": "☀️", "label": "Disponible en journée", "sublabel": "Format intensif en semaine", "value": "fulltime" },
+        { "emoji": "🔀", "label": "Flexible selon le programme", "sublabel": "Je m'adapte", "value": "flexible" },
+        { "emoji": "🏢", "label": "Formation pour mon entreprise", "sublabel": "Format intra sur mesure", "value": "corporate" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "title": "Votre horizon de transformation ?",
+      "subtitle": "Dans combien de temps vous projetez-vous ?",
+      "options": [
+        { "emoji": "⚡", "label": "Le plus tôt possible", "sublabel": "Je suis prêt à commencer maintenant", "value": "now" },
+        { "emoji": "📅", "label": "Dans 1 à 3 mois", "sublabel": "Je prépare ma transition", "value": "soon" },
+        { "emoji": "🌱", "label": "Dans 3 à 6 mois", "sublabel": "Je veux bien me préparer", "value": "later" },
+        { "emoji": "🔍", "label": "Je veux juste explorer", "sublabel": "Pas encore décidé", "value": "explore" }
+      ]
+    }
+  ],
+  "rules": [
+    { "result": "b2b", "anyOf": [ { "availability": ["corporate"] }, { "situation": ["manager"], "goal": ["team"] } ] },
+    { "result": "dataanalyst", "anyOf": [ { "goal": ["job"], "situation": ["reorientation", "student"], "tools": ["code", "tech"] } ] },
+    { "result": "both", "anyOf": [ { "goal": ["job"], "situation": ["reorientation", "student"] } ] },
+    { "result": "dataanalyst", "anyOf": [ { "goal": ["analysis"] }, { "goal": ["job"] }, { "tools": ["code", "tech"] }, { "situation": ["reorientation"] } ] },
+    { "result": "powerbi", "anyOf": [ { "goal": ["dashboard"] }, { "tools": ["excel"] }, { "situation": ["employed", "manager"] } ] }
+  ],
+  "defaultResult": "both",
+  "results": {
+    "powerbi": {
+      "icon": "chart",
+      "tag": "Votre match idéal",
+      "title": "Bootcamp Microsoft Power BI",
+      "subtitle": "Business Intelligence",
+      "formationSlug": "power-bi-business-intelligence",
+      "description": "Votre profil correspond parfaitement à notre bootcamp Power BI. Vous avez une base en outils bureautiques et voulez passer au niveau supérieur en business intelligence. Ce bootcamp est conçu exactement pour vous.",
+      "highlights": [
+        "Maîtriser Power BI du débutant à l'expert",
+        "Créer des dashboards qui impressionnent votre direction",
+        "Automatiser vos reportings mensuels",
+        "Préparer la certification Microsoft PL-300"
+      ],
+      "cta": { "label": "Réserver ma place", "href": "" },
+      "secondary": { "label": "En savoir plus", "href": "/formations" },
+      "urgencyText": "",
+      "testimonial": { "name": "Emmanuel BOUADI", "role": "Compliance Admin · Wave", "content": "Mon reporting mensuel prenait 2 jours. Maintenant 2 heures. Mon directeur m'a félicité pour cela!.", "initials": "EM" }
+    },
+    "dataanalyst": {
+      "icon": "database",
+      "tag": "Votre match idéal",
+      "title": "Bootcamp Data Analyst Python & SQL",
+      "subtitle": "SQL & Python",
+      "formationSlug": "data-analyst-python-sql",
+      "description": "Votre profil et vos objectifs pointent clairement vers le bootcamp Data Analyst. Ce programme intensif vous donnera toutes les armes pour devenir un data analyst opérationnel et décrocher le poste que vous visez.",
+      "highlights": [
+        "Maîtriser SQL pour interroger n'importe quelle base de données",
+        "Analyser des données réelles avec Python & Pandas",
+        "Construire un portfolio de projets pour vos entretiens",
+        "Bénéficier du réseau alumni Model Technologie"
+      ],
+      "cta": { "label": "Réserver ma place", "href": "" },
+      "secondary": { "label": "En savoir plus", "href": "/formations" },
+      "urgencyText": "",
+      "testimonial": { "name": "Khoudia DIAO", "role": "Investment Analyst · Mazars", "content": "En 10 semaines j'ai appris Python et SQL, réalisé 3 projets réels et décroché un poste chez Mazars. Meilleur investissement de ma carrière.", "initials": "KD" }
+    },
+    "both": {
+      "icon": "graduation",
+      "tag": "Parcours complet recommandé",
+      "title": "Parcours Data Complet",
+      "subtitle": "Power BI + SQL & Python",
+      "formationSlug": "",
+      "description": "Votre ambition et votre profil vous positionnent pour un parcours data complet. En combinant les deux bootcamps, vous deviendrez un data analyst polyvalent, capable de gérer la donnée de A à Z.",
+      "highlights": [
+        "Power BI pour la visualisation et le reporting",
+        "SQL & Python pour l'analyse et l'automatisation",
+        "Portfolio solide avec 6+ projets réels",
+        "Accompagnement carrière dédié jusqu'au recrutement"
+      ],
+      "cta": { "label": "Voir les formations", "href": "/formations" },
+      "secondary": { "label": "Parler à un conseiller", "href": "/contact" },
+      "urgencyText": "Découvrez nos parcours et choisissez ceux qui vous correspondent",
+      "testimonial": { "name": "Cedric Zagba", "role": "Data Analyst · INTOUCH", "content": "J'ai fait les deux bootcamps successivement. Aujourd'hui je maîtrise tout l'écosystème data et j'ai la reconnaissance de ma hiérarchie.", "initials": "CZ" }
+    },
+    "b2b": {
+      "icon": "building",
+      "tag": "Solution entreprise",
+      "title": "Formation Intra-Entreprise",
+      "subtitle": "Sur mesure · Votre timing",
+      "formationSlug": "",
+      "description": "Vous cherchez à monter en compétence toute une équipe ? Notre formule intra-entreprise est conçue pour vous. Nous adaptons le programme, les horaires et les cas pratiques à votre secteur et à vos outils.",
+      "highlights": [
+        "Programme 100% adapté à votre secteur",
+        "Cas pratiques sur vos données réelles",
+        "Formateurs experts avec expérience entreprise",
+        "Support post-formation inclus (3 mois)"
+      ],
+      "cta": { "label": "Demander un devis", "href": "/entreprises" },
+      "secondary": { "label": "Nous contacter", "href": "/contact" },
+      "urgencyText": "Devis gratuit sous 48h · Disponible toute l'année",
+      "testimonial": { "name": "Directeur RH", "role": "Institution Financière · Dakar", "content": "Model Technologie a formé toute notre équipe finance en 3 semaines. Résultat : nos reportings sont automatisés et notre DG est bluffé.", "initials": "DG" }
+    }
+  }
+}

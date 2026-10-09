@@ -1,0 +1,178 @@
+{
+  "hero": {
+    "eyebrow": "COACHING INDIVIDUEL · EXCEL & POWER BI",
+    "title": "Votre fichier. Votre rythme. Un coach.",
+    "description": "Un accompagnement 1:1 sur vos propres données, sans attendre la prochaine cohorte.",
+    "primary": {
+      "label": "Réserver un appel diagnostic",
+      "href": "/contact?sujet=coaching"
+    },
+    "secondary": {
+      "label": "Voir les formules",
+      "href": "#formules"
+    },
+    "note": "Appel de 20 minutes offert",
+    "image": "/images/photos/picture-5.jpg",
+    "imageAlt": "Séance de coaching : un coach et un apprenant sur un fichier de travail"
+  },
+  "slots": {
+    "title": "Créneaux cette semaine",
+    "badge": "3 places / semaine",
+    "bookHref": "/contact?sujet=coaching",
+    "items": [
+      {
+        "day": "Lun",
+        "time": "18h",
+        "available": true
+      },
+      {
+        "day": "Mar",
+        "time": "18h",
+        "available": false
+      },
+      {
+        "day": "Mer",
+        "time": "20h",
+        "available": true
+      },
+      {
+        "day": "Jeu",
+        "time": "18h",
+        "available": true
+      },
+      {
+        "day": "Sam",
+        "time": "10h",
+        "available": true
+      },
+      {
+        "day": "Sam",
+        "time": "14h",
+        "available": false
+      }
+    ],
+    "formatNote": "Visio ou présentiel à Dakar",
+    "durationNote": "1h30 par séance"
+  },
+  "whoFor": {
+    "eyebrow": "POUR QUI",
+    "title": "Le coaching est fait pour vous si…",
+    "items": [
+      {
+        "title": "Un rapport à livrer vite",
+        "description": "Vous avez un fichier urgent et pas le temps d'attendre une cohorte."
+      },
+      {
+        "title": "Aucune cohorte à la bonne date",
+        "description": "Les prochaines sessions ne correspondent pas à votre calendrier."
+      },
+      {
+        "title": "Un blocage précis",
+        "description": "Vous êtes bloqué sur un point technique précis, pas besoin d'un programme complet."
+      }
+    ]
+  },
+  "pricing": {
+    "eyebrow": "FORMULES",
+    "title": "Choisissez votre formule.",
+    "onQuote": "Sur devis",
+    "choose": "Choisir cette formule",
+    "recommended": "RECOMMANDÉ",
+    "note": "Paiement Wave, Orange Money ou virement · Facturation entreprise possible.",
+    "tiers": [
+      {
+        "name": "Séance déblocage",
+        "sessions": "1 séance",
+        "price": "",
+        "highlight": false,
+        "features": [
+          "1h30 en visio ou à Dakar",
+          "Sur votre propre fichier",
+          "Support écrit après la séance"
+        ]
+      },
+      {
+        "name": "Pack Progression",
+        "sessions": "5 séances",
+        "price": "",
+        "highlight": true,
+        "features": [
+          "1h30 par séance",
+          "Support WhatsApp entre les séances",
+          "Plan personnalisé",
+          "Certificat de suivi"
+        ]
+      },
+      {
+        "name": "Accompagnement projet",
+        "sessions": "10 séances",
+        "price": "",
+        "highlight": false,
+        "features": [
+          "Suivi d'un projet complet",
+          "Préparation PL-300 possible",
+          "Support WhatsApp illimité"
+        ]
+      }
+    ]
+  },
+  "process": {
+    "eyebrow": "DÉROULÉ",
+    "title": "Comment ça marche.",
+    "steps": [
+      {
+        "title": "Appel diagnostic offert",
+        "description": "20 minutes pour cerner votre besoin."
+      },
+      {
+        "title": "Plan sur mesure",
+        "description": "Un programme de séances adapté à votre objectif."
+      },
+      {
+        "title": "Séances en visio ou à Dakar",
+        "description": "1h30 par séance, sur votre propre fichier."
+      },
+      {
+        "title": "Livrable et support",
+        "description": "Un fichier fonctionnel et un support écrit."
+      }
+    ]
+  },
+  "coach": {
+    "initials": "MT",
+    "label": "VOTRE COACH",
+    "name": "Un formateur certifié Model Technologie",
+    "description": "Formateur Power BI certifié, accompagne des professionnels sur leurs projets data depuis plusieurs années.",
+    "linkedinLabel": "Profil LinkedIn",
+    "testimonial": {
+      "quote": "",
+      "author": ""
+    }
+  },
+  "faq": {
+    "eyebrow": "AVANT DE RÉSERVER",
+    "title": "Vos questions",
+    "cta": {
+      "label": "Réserver mon appel",
+      "href": "/contact?sujet=coaching"
+    },
+    "items": [
+      {
+        "question": "Dois-je préparer quelque chose avant la séance ?",
+        "answer": "Envoyez-nous votre fichier et une description du besoin au moins 24h avant."
+      },
+      {
+        "question": "Mes données sont-elles confidentielles ?",
+        "answer": "Oui, vos fichiers ne sont utilisés que pour la séance et ne sont jamais partagés."
+      },
+      {
+        "question": "Puis-je reporter une séance ?",
+        "answer": "Oui, avec au moins 24h de préavis, sans frais."
+      },
+      {
+        "question": "Le coaching prépare-t-il à la certification PL-300 ?",
+        "answer": "Oui, le pack Accompagnement projet peut inclure une préparation ciblée PL-300."
+      }
+    ]
+  }
+}

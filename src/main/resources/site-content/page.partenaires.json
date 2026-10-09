@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "eyebrow": "DEVENIR PARTENAIRE FORMATEUR",
+    "title": "Vous avez l'expertise. Nous avons la plateforme.",
+    "description": "Formateurs indépendants, cabinets ou organismes certifiés : proposez votre formation à notre communauté.",
+    "primary": {
+      "label": "Proposer une formation",
+      "href": "#proposer"
+    },
+    "secondary": {
+      "label": "Comment ça marche",
+      "href": "#fonctionnement"
+    },
+    "image": "/images/photos/picture-3.jpg",
+    "imageAlt": "Des professionnels qui collaborent autour d'un tableau de bord"
+  },
+  "principle": {
+    "eyebrow": "LE PRINCIPE",
+    "title": "Chacun son métier.",
+    "youTitle": "Vous apportez",
+    "you": [
+      "Expertise et programme pédagogique",
+      "Animation des séances",
+      "Évaluation des apprenants",
+      "Certifications reconnues"
+    ],
+    "weTitle": "Model Technologie apporte",
+    "we": [
+      "Plateforme et supports",
+      "Paiement et facturation",
+      "Communication aux apprenants",
+      "Accès à nos clients entreprises",
+      "Suivi et attestations"
+    ]
+  },
+  "benefits": {
+    "eyebrow": "CE QUE VOUS Y GAGNEZ",
+    "title": "Plus de participants, moins d'administratif.",
+    "items": [
+      {
+        "title": "Zéro logistique",
+        "description": "Nous gérons l'inscription, le paiement et le suivi administratif."
+      },
+      {
+        "title": "Une audience existante",
+        "description": "Accédez à notre communauté d'apprenants et d'entreprises partenaires."
+      },
+      {
+        "title": "Un revenu partagé clair",
+        "description": "La part de reversement et le délai de paiement sont fixés dans votre convention, avant le lancement."
+      },
+      {
+        "title": "Des contrats entreprises",
+        "description": "Accès aux formations intra-entreprise vendues par Model Technologie."
+      }
+    ]
+  },
+  "method": {
+    "eyebrow": "COMMENT ÇA MARCHE",
+    "title": "De la proposition à la première session.",
+    "steps": [
+      {
+        "title": "Proposition",
+        "description": "Vous soumettez votre formation via le formulaire."
+      },
+      {
+        "title": "Validation pédagogique",
+        "description": "Nous évaluons le contenu et vos références."
+      },
+      {
+        "title": "Lancement",
+        "description": "La formation est publiée sur le catalogue."
+      },
+      {
+        "title": "Session & reversement",
+        "description": "Vous animez, nous gérons le reste et vous reversons votre part."
+      }
+    ]
+  },
+  "requirements": {
+    "eyebrow": "NOS EXIGENCES",
+    "title": "Un label qualité à protéger.",
+    "items": [
+      "Expertise démontrée dans votre domaine",
+      "Pédagogie pratique, orientée cas réels",
+      "Bonne satisfaction des apprenants sur vos sessions précédentes",
+      "Respect des marques et agréments (PMI, Scrum.org, Microsoft…)",
+      "Supports de formation à jour"
+    ]
+  },
+  "domains": {
+    "eyebrow": "DOMAINES RECHERCHÉS",
+    "title": "Nous cherchons des experts en…",
+    "alreadyPartner": "Déjà partenaire",
+    "seeFormation": "Voir la formation"
+  },
+  "form": {
+    "eyebrow": "PROPOSER UNE FORMATION",
+    "title": "Parlons de votre formation.",
+    "namePlaceholder": "Nom et prénom",
+    "orgPlaceholder": "Organisme (si applicable)",
+    "emailPlaceholder": "vous@exemple.com",
+    "phonePlaceholder": "+221 …",
+    "domainPlaceholder": "Domaine",
+    "linkedinPlaceholder": "linkedin.com/in/…",
+    "proposalPlaceholder": "Titre, public visé, durée envisagée",
+    "referencesPlaceholder": "Certifications, entreprises formées, nombre de participants…",
+    "submitLabel": "Proposer ma formation",
+    "note": "Nous étudions chaque proposition et revenons vers vous rapidement.",
+    "successTitle": "Candidature envoyée !",
+    "successText": "Nous étudions chaque proposition et revenons vers vous rapidement."
+  }
+}

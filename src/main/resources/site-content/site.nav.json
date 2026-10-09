@@ -1,0 +1,41 @@
+{
+  "header": {
+    "links": [
+      { "label": "Formations", "href": "/formations" },
+      { "label": "Coaching", "href": "/coaching" },
+      { "label": "Entreprises", "href": "/entreprises" },
+      { "label": "Alumni", "href": "/alumni" },
+      { "label": "Ressources", "href": "/ressources" },
+      { "label": "Contact", "href": "/contact" }
+    ],
+    "loginLabel": "Connexion",
+    "applyLabel": "Candidater",
+    "applyHref": "/formations"
+  },
+  "footer": {
+    "about": "Formations data pour professionnels et entreprises. Dakar, Sénégal.",
+    "columns": [
+      {
+        "title": "Formations",
+        "links": [
+          { "label": "Cohortes", "href": "/formations" },
+          { "label": "Coaching 1:1", "href": "/coaching" },
+          { "label": "Entreprises", "href": "/entreprises" },
+          { "label": "Quiz d'orientation", "href": "/orientation" }
+        ]
+      },
+      {
+        "title": "Ressources",
+        "links": [
+          { "label": "Blog et ressources", "href": "/ressources" },
+          { "label": "Alumni", "href": "/alumni" },
+          { "label": "FAQ", "href": "/contact" },
+          { "label": "À propos", "href": "/a-propos" },
+          { "label": "Devenir partenaire", "href": "/partenaires" }
+        ]
+      }
+    ],
+    "contactTitle": "Contact",
+    "rights": "Tous droits réservés."
+  }
+}

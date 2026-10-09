@@ -1,0 +1,207 @@
+{
+  "hero": {
+    "badgeOpen": "Prochaine cohorte — candidatures ouvertes · Dakar & en ligne",
+    "badgeClosed": "Prochaines cohortes bientôt annoncées · Dakar & en ligne",
+    "titleMobile": {
+      "before": "La data au service de",
+      "accent": "votre métier."
+    },
+    "subtitleMobile": "Banquiers, comptables, RH, commerciaux : maîtrisez Excel, Power BI et Python sur vos propres cas.",
+    "titleDesktop": {
+      "before": "Des compétences concrètes pour",
+      "accent": "votre métier."
+    },
+    "subtitleDesktop": "Data, Power BI, gestion de projet : des formations courtes, sur vos propres cas, pour les banquiers, comptables, RH et managers en poste.",
+    "primaryOpen": "Rejoindre la prochaine cohorte",
+    "primaryClosed": "Voir la prochaine cohorte",
+    "secondary": {
+      "label": "Former mon équipe",
+      "href": "/entreprises"
+    },
+    "quiz": {
+      "label": "Pas sûr du parcours ? Faites le quiz en 5 questions",
+      "href": "/orientation"
+    }
+  },
+  "visual": {
+    "imageAlt": "Apprenantes d'une cohorte Model Technologie travaillant ensemble sur un exercice, en salle à Dakar",
+    "quote": "Mon reporting mensuel prenait 2 jours. Maintenant 2 heures.",
+    "author": "Emmanuel Bouadi — Data Analyst, Wave",
+    "authorExtra": " · alumni Power BI",
+    "image": "/images/photos/picture-4.jpg"
+  },
+  "proof": {
+    "alumniStat": {
+      "value": "30+",
+      "label": "alumni formés depuis 2023"
+    },
+    "formationsLabel": "formations au catalogue",
+    "projectStat": {
+      "value": "1 projet",
+      "label": "réel de votre métier par parcours"
+    },
+    "companiesLabel": "NOS ALUMNI TRAVAILLENT CHEZ",
+    "companies": [
+      "Wave",
+      "UBA Sénégal",
+      "CETUD",
+      "Afrika Banque"
+    ]
+  },
+  "cohort": {
+    "eyebrowOpen": "PROCHAINE COHORTE · CANDIDATURES OUVERTES",
+    "eyebrowClosed": "PROCHAINES COHORTES · BIENTÔT ANNONCÉES",
+    "titleWithPlaces": "{places} places par parcours. Vos données, vos cas.",
+    "titleDefault": "De petits groupes. Vos données, vos cas.",
+    "description": "4 semaines, en petit groupe, avec un formateur qui pratique en entreprise. Vous arrivez avec un problème de votre travail — vous repartez avec le tableau de bord ou l'automatisation qui le règle.",
+    "applyOpen": "Candidater",
+    "applyClosed": "Voir les formations",
+    "compare": "Comparer les parcours →",
+    "labels": {
+      "start": "Démarrage",
+      "startUnknown": "Dates communiquées prochainement",
+      "rhythm": "Rythme",
+      "format": "Format",
+      "prerequisites": "Prérequis",
+      "price": "Tarif",
+      "spots": "Places restantes"
+    },
+    "image": "/images/photos/picture-4.jpg",
+    "imageAlt": ""
+  },
+  "byRole": {
+    "eyebrow": "PAR MÉTIER",
+    "title": "Commencez par ce qui vous fait perdre du temps.",
+    "items": [
+      {
+        "title": "Banque & Finance",
+        "description": "Reporting réglementaire, suivi du PNB, tableaux de bord agences.",
+        "path": "Excel avancé → Power BI"
+      },
+      {
+        "title": "Comptabilité & Audit",
+        "description": "Rapprochements, clôtures, états automatisés sans copier-coller.",
+        "path": "Excel VBA → Power BI"
+      },
+      {
+        "title": "Ressources humaines",
+        "description": "Masse salariale, absentéisme, bilan social en un clic.",
+        "path": "Excel avancé → Power BI"
+      },
+      {
+        "title": "Marketing & Commercial",
+        "description": "Pipeline, performance des ventes, segmentation clients.",
+        "path": "Power BI → Python / SQL"
+      }
+    ]
+  },
+  "parcours": {
+    "eyebrow": "DATA & BI — NOTRE SPÉCIALITÉ",
+    "title": "4 semaines. Un livrable concret à la fin.",
+    "all": "Voir le catalogue complet →",
+    "seeProgram": "Voir le programme",
+    "fallbackTag": "FORMATION"
+  },
+  "newDomain": {
+    "badge": "NOUVEAU",
+    "eyebrow": "GESTION DE PROJET & AGILE",
+    "title": "Préparez PSM I ou CAPM avec nos partenaires experts.",
+    "description": "Des formations dispensées par des partenaires experts, avec l'inscription, le paiement et le suivi assurés par Model Technologie.",
+    "cta": {
+      "label": "Voir les formations",
+      "href": "/formations"
+    },
+    "partner": {
+      "label": "Vous êtes formateur ? Devenez partenaire →",
+      "href": "/partenaires"
+    }
+  },
+  "coaching": {
+    "eyebrow": "COACHING INDIVIDUEL",
+    "title": "Pas de cohorte à la bonne date ? Avancez en 1:1.",
+    "description": "Séances Excel avancé ou Power BI, sur votre fichier, à votre rythme. 3 places par semaine seulement.",
+    "cta": {
+      "label": "Réserver un créneau",
+      "href": "/coaching"
+    },
+    "image": "/images/photos/picture-5.jpg",
+    "imageAlt": "Un coach et un apprenant travaillant ensemble sur un fichier"
+  },
+  "testimonials": {
+    "eyebrow": "ILS L'ONT FAIT",
+    "title": "Des résultats, pas des promesses.",
+    "all": "Tous les parcours alumni →"
+  },
+  "highlights": [
+    {
+      "eyebrow": "CERTIFICATION",
+      "title": "Un certificat vérifiable, à afficher sur LinkedIn.",
+      "description": "Délivré après validation du projet final. Préparation à la certification Microsoft PL-300 pour le parcours Power BI."
+    },
+    {
+      "eyebrow": "COMMUNAUTÉ",
+      "title": "Le réseau alumni, après la formation.",
+      "description": "Entraide, offres d'emploi data et ateliers entre anciens de toutes les cohortes."
+    }
+  ],
+  "enterprises": {
+    "eyebrow": "ENTREPRISES",
+    "title": "Rendez vos équipes autonomes sur la donnée.",
+    "description": "Un diagnostic gratuit, puis un programme construit sur vos fichiers et vos outils. En présentiel dans vos locaux ou à distance.",
+    "cta": {
+      "label": "Demander un diagnostic gratuit",
+      "href": "/entreprises"
+    },
+    "offers": [
+      {
+        "eyebrow": "MISE À NIVEAU EXCEL",
+        "title": "Un socle Excel commun pour toute l'entreprise",
+        "description": "Débutant, intermédiaire, avancé : chaque collaborateur au bon palier, après un test de positionnement."
+      },
+      {
+        "eyebrow": "POWER BI SUR MESURE",
+        "title": "Du tableur au tableau de bord interactif",
+        "description": "Modélisation, DAX, publication et gouvernance, sur vos propres rapports."
+      },
+      {
+        "eyebrow": "PARCOURS DATA SUR MESURE",
+        "title": "Toute la chaîne : collecte, nettoyage, analyse, restitution",
+        "description": "Adapté aux outils déjà en place, avec un projet réel de votre équipe comme fil rouge."
+      }
+    ],
+    "forWhomLabel": "Pour qui :",
+    "forWhom": [
+      "Directions financières",
+      "Audit & conformité",
+      "RH",
+      "Équipes commerciales",
+      "Institutions & ONG"
+    ],
+    "image": "/images/photos/picture-2.jpg",
+    "imageAlt": "Équipe d'une entreprise suivant une présentation de tableau de bord"
+  },
+  "closing": {
+    "title": "Prêt à gagner des heures chaque semaine ?",
+    "description": "Candidatez à la prochaine cohorte ou écrivez-nous sur WhatsApp : réponse sous 24h.",
+    "apply": "Candidater",
+    "whatsapp": "WhatsApp",
+    "faq": [
+      {
+        "question": "Je travaille à temps plein, est-ce compatible ?",
+        "answer": "Oui — les cohortes se déroulent le soir et le samedi, pensées pour les professionnels en poste."
+      },
+      {
+        "question": "Quel parcours choisir selon mon niveau ?",
+        "answer": "Chaque formation précise son niveau de prérequis. En cas de doute, faites le quiz d'orientation ou écrivez-nous."
+      },
+      {
+        "question": "Mon employeur peut-il financer la formation ?",
+        "answer": "Oui, nous émettons une facture ou un bon de commande entreprise sur demande."
+      },
+      {
+        "question": "Paiement : Wave, Orange Money, virement ?",
+        "answer": "Les trois sont acceptés, avec des facilités de paiement possibles selon le parcours."
+      }
+    ]
+  }
+}
