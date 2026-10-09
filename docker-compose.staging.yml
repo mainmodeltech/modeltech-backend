@@ -25,29 +25,40 @@ services:
       retries: 3
       start_period: 45s
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-staging}
       SERVER_PORT: "8080"
       DB_URL: jdbc:postgresql://db-staging:5432/${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      # 64 octets minimum (openssl rand -base64 64) : plus court, aucune connexion ne fonctionne
       JWT_SECRET: ${JWT_SECRET}
+      # Origine(s) du front staging, separees par des virgules (ex. https://staging.model-technologie.com)
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      # URL publique du front staging : base des liens des e-mails (paiement, mot de passe, certificat).
+      # Sans elle les liens pointent vers http://localhost:5173.
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:?APP_FRONTEND_URL est obligatoire (URL publique du front staging)}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Africa/Dakar}
       # ← réseau interne Docker : le backend contacte MinIO par son nom de service
       MINIO_ENDPOINT: http://minio-staging:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
       MINIO_BUCKET: ${MINIO_BUCKET:-media}
-      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
-      SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL: ${SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL:-}
       NOTIFICATION_EMAIL_TO: ${NOTIFICATION_EMAIL_TO}
-      NOTIFICATION_PHONE_TO: ${NOTIFICATION_PHONE_TO}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      MAIL_FROM: ${MAIL_FROM}
-      MAIL_HOST: ${MAIL_HOST}
-      MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK}
-      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
+      NOTIFICATION_PHONE_TO: ${NOTIFICATION_PHONE_TO:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      # Staging : redirige TOUS les e-mails vers cette adresse de recette (evite d'ecrire a de vrais candidats)
+      MAIL_REDIRECT_TO: ${MAIL_REDIRECT_TO:-}
+      MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK:-}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+      # Connexion Google (ID client OAuth Web) ; vide = bouton masque
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       - db-staging
       - minio-staging
@@ -63,7 +74,8 @@ services:
     restart: unless-stopped
 
   minio-staging:
-    image: minio/minio
+    # minio/minio n'est plus publie sur Docker Hub : build communautaire Chainguard (inclut aussi `mc`)
+    image: cgr.dev/chainguard/minio:latest
     container_name: modeltech_minio_staging
     command: server /data --console-address ":9001"
     environment:
@@ -77,6 +89,29 @@ services:
     networks:
       - dokploy-network
     restart: unless-stopped
+
+  # Cree le bucket et le passe en lecture anonyme (captures de paiement, logos, photos).
+  # Idempotent : sans lui, tous les envois de fichiers echouent ("The specified bucket does not exist").
+  minio-init-staging:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: modeltech_minio_init_staging
+    depends_on:
+      - minio-staging
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-media}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until mc alias set local http://minio-staging:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do
+          echo "MinIO pas encore pret..."; sleep 2
+        done
+        mc mb --ignore-existing "local/$$MINIO_BUCKET"
+        mc anonymous set public "local/$$MINIO_BUCKET"
+    networks:
+      - dokploy-network
+    restart: "no"
 
   dozzle-staging:
     image: amir20/dozzle:latest
