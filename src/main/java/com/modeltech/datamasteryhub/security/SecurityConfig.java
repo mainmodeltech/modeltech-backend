@@ -94,6 +94,7 @@ public class SecurityConfig {
                                 "/api/v1/testimonials/published",
                                 "/api/v1/payments/*",
                                 "/api/v1/payments/*/invoice",
+                                "/api/v1/payments/*/receipt",
                                 "/api/v1/certificates/*",
                                 "/api/v1/certificates/*/pdf",
                                 "/api/v1/site-settings",

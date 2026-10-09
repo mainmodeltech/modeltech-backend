@@ -53,6 +53,10 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
     private final LearnerAccess access;
     private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
     private final com.modeltech.datamasteryhub.modules.course.repository.CertificateRepository certificateRepository;
+    private final com.modeltech.datamasteryhub.modules.course.repository.QuizAttemptRepository quizAttemptRepository;
+    private final com.modeltech.datamasteryhub.modules.course.repository.CourseProjectRepository courseProjectRepository;
+    private final com.modeltech.datamasteryhub.modules.course.repository.ProjectSubmissionRepository projectSubmissionRepository;
+    private final com.modeltech.datamasteryhub.modules.training.repository.PaymentRepository paymentRepository;
 
     @Value("${app.timezone:Africa/Dakar}")
     private String timezone;
@@ -113,12 +117,12 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
                         .hoursWatched(Math.round(seconds / 360.0) / 10.0)
                         .lessonsDone(done)
                         .lessonsTotal(lessons.size())
-                        .averageQuizScore(null)
+                        .averageQuizScore(averageQuizScore(learner))
                         .certificates(certificates.size())
                         .build())
                 .resume(resume(enrollments, lessonsByFormation, progress))
                 .courses(courses)
-                .todos(List.of())
+                .todos(todos(learner, enrollments, lessonsByFormation, progress, today))
                 .certificateReady(certificates.stream()
                         .filter(c -> c.getIssuedAt().isAfter(LocalDateTime.now().minusDays(14))).findFirst()
                         .map(c -> LearnerPayloads.CertificateReady.builder().title(c.getFormationTitle()).build())
@@ -159,6 +163,72 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
                         ? enrollment.getSession().getTrainer().getFullName() : null)
                 .progress(progress)
                 .build();
+    }
+
+    // =========================================================================
+    //  CALENDRIER ET RESSOURCES
+    // =========================================================================
+
+    @Override
+    public List<LearnerPayloads.CalendarItem> getCalendar(String learnerEmail, LocalDate from, LocalDate to) {
+        Learner learner = access.requireLearner(learnerEmail);
+        LocalDate start = from != null ? from : access.today();
+        LocalDate end = to != null ? to : start.plusDays(60);
+        if (start.isAfter(end)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La date de début doit précéder la date de fin.");
+        if (start.plusDays(366).isBefore(end)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La période ne peut pas dépasser 366 jours.");
+
+        List<Enrollment> enrollments = distinctByFormation(enrollmentRepository.findAccessibleByLearner(learner.getId()));
+        List<UUID> formationIds = enrollments.stream().map(e -> e.getRegistration().getBootcamp().getId()).toList();
+        if (formationIds.isEmpty()) return List.of();
+
+        LocalDateTime now = LocalDateTime.now(ZoneId.of(timezone));
+        LocalDateTime lower = start.atStartOfDay();
+        LocalDateTime upper = end.plusDays(1).atStartOfDay();
+        return lessonRepository.findAllByBootcampIds(formationIds).stream()
+                .filter(l -> l.getStatus() != LessonStatus.DRAFT && l.getType() == LessonType.LIVE && l.getLiveAt() != null)
+                .filter(l -> !l.getLiveAt().isBefore(lower) && l.getLiveAt().isBefore(upper))
+                .sorted(Comparator.comparing(CourseLesson::getLiveAt))
+                .map(l -> LearnerPayloads.CalendarItem.builder()
+                        .id(l.getId().toString())
+                        .formationId(l.getModule().getBootcamp().getId().toString())
+                        .formationTitle(l.getModule().getBootcamp().getTitle())
+                        .title(l.getTitle())
+                        .startsAt(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(l.getLiveAt()))
+                        .timeLabel(String.format("%02dh%02d", l.getLiveAt().getHour(), l.getLiveAt().getMinute()))
+                        .place("En ligne")
+                        .joinUrl(l.getLiveUrl())
+                        .past(l.getLiveAt().isBefore(now))
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public List<LearnerPayloads.ResourceEntry> getResources(String learnerEmail) {
+        Learner learner = access.requireLearner(learnerEmail);
+        List<LearnerPayloads.ResourceEntry> library = new ArrayList<>();
+        for (Enrollment e : distinctByFormation(enrollmentRepository.findAccessibleByLearner(learner.getId()))) {
+            Bootcamp bootcamp = e.getRegistration().getBootcamp();
+            try {
+                access.requireAccess(learner, bootcamp.getId());   // accès ouvert et non expiré
+            } catch (ResponseStatusException notOpen) {
+                continue;
+            }
+            for (CourseContentPayload.ModuleItem module : assembler.assemble(bootcamp, true).getModules()) {
+                for (CourseContentPayload.LessonItem lesson : module.getLessons()) {
+                    for (CourseContentPayload.ResourceItem r : lesson.getResources()) {
+                        library.add(LearnerPayloads.ResourceEntry.builder()
+                                .id(r.getId()).name(r.getName()).fileType(r.getFileType())
+                                .sizeLabel(r.getSizeLabel()).note(r.getNote()).url(r.getUrl())
+                                .locked(r.getUrl() == null)
+                                .formationId(bootcamp.getId().toString()).formationTitle(bootcamp.getTitle())
+                                .moduleTitle(module.getTitle())
+                                .lessonId(lesson.getId()).lessonTitle(lesson.getTitle())
+                                .build());
+                    }
+                }
+            }
+        }
+        return library;
     }
 
     // =========================================================================
@@ -208,6 +278,67 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
     // =========================================================================
     //  CALCULS DU TABLEAU DE BORD
     // =========================================================================
+
+    /** Moyenne des meilleurs scores par quiz (une seule note par quiz), ou null sans tentative rendue. */
+    private Integer averageQuizScore(Learner learner) {
+        Map<UUID, Integer> best = new HashMap<>();
+        quizAttemptRepository.findAllByLearnerIdAndSubmittedAtNotNull(learner.getId()).stream()
+                .filter(a -> a.getScore() != null)
+                .forEach(a -> best.merge(a.getLesson().getId(), a.getScore(), Math::max));
+        if (best.isEmpty()) return null;
+        return (int) Math.round(best.values().stream().mapToInt(Integer::intValue).average().orElse(0));
+    }
+
+    /** À faire : échéances à régler, quiz à passer, projet final à rendre ou à corriger (6 au plus, urgents d'abord). */
+    private List<LearnerPayloads.TodoItem> todos(Learner learner, List<Enrollment> enrollments,
+                                                 Map<UUID, List<CourseLesson>> lessonsByFormation,
+                                                 Map<UUID, LessonProgress> progress, LocalDate today) {
+        List<LearnerPayloads.TodoItem> urgent = new ArrayList<>();
+        List<LearnerPayloads.TodoItem> normal = new ArrayList<>();
+
+        paymentRepository.findAllByLearner(learner.getId()).stream()
+                .filter(p -> p.getStatus() == com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus.PENDING)
+                .forEach(p -> {
+                    boolean late = p.getDueDate() != null && p.getDueDate().isBefore(today);
+                    urgent.add(LearnerPayloads.TodoItem.builder()
+                            .id("pay-" + p.getId())
+                            .title("Régler l'échéance " + p.getInstallmentNumber() + "/" + p.getInstallmentCount())
+                            .subtitle(p.getRegistration().getBootcampTitle()
+                                    + (p.getDueDate() != null ? " · avant le " + DAY.format(p.getDueDate()) : ""))
+                            .badge(late ? "En retard" : "À régler")
+                            .tone("warning")
+                            .build());
+                });
+
+        for (Enrollment e : enrollments) {
+            if (e.getAccessStartsAt() != null && today.isBefore(e.getAccessStartsAt())) continue;
+            Bootcamp b = e.getRegistration().getBootcamp();
+            lessonsByFormation.getOrDefault(b.getId(), List.of()).stream()
+                    .filter(l -> l.getType() == LessonType.QUIZ && l.getStatus() == LessonStatus.PUBLISHED && !isDone(l, progress))
+                    .limit(2)
+                    .forEach(l -> normal.add(LearnerPayloads.TodoItem.builder()
+                            .id("quiz-" + l.getId()).title(l.getTitle()).subtitle(b.getTitle())
+                            .badge("Quiz").tone("info").build()));
+
+            if (courseProjectRepository.findByBootcampId(b.getId()).isPresent()) {
+                var status = projectSubmissionRepository.findByLearnerIdAndBootcampId(learner.getId(), b.getId())
+                        .map(s -> s.getStatus()).orElse(com.modeltech.datamasteryhub.modules.course.enums.ProjectStatus.NOT_STARTED);
+                switch (status) {
+                    case CHANGES_REQUESTED -> urgent.add(LearnerPayloads.TodoItem.builder()
+                            .id("project-" + b.getId()).title("Corriger votre projet final").subtitle(b.getTitle())
+                            .badge("À corriger").tone("warning").build());
+                    case NOT_STARTED -> normal.add(LearnerPayloads.TodoItem.builder()
+                            .id("project-" + b.getId()).title("Rendre votre projet final").subtitle(b.getTitle())
+                            .badge("Projet").tone("info").build());
+                    default -> { }
+                }
+            }
+        }
+
+        List<LearnerPayloads.TodoItem> all = new ArrayList<>(urgent);
+        all.addAll(normal);
+        return all.size() > 6 ? new ArrayList<>(all.subList(0, 6)) : all;
+    }
 
     private LearnerPayloads.ResumeInfo resume(List<Enrollment> enrollments,
                                               Map<UUID, List<CourseLesson>> lessonsByFormation,

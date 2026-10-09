@@ -33,6 +33,16 @@ public interface PaymentRepository extends SoftDeleteRepository<Payment, UUID> {
                          @Param("registrationId") UUID registrationId,
                          Pageable pageable);
 
+    /** Échéances de l'apprenant (inscriptions rattachées à son compte), hors annulées. */
+    @Query("""
+            SELECT p FROM Payment p
+            JOIN FETCH p.registration r
+            WHERE p.isDeleted = false AND r.isDeleted = false AND r.learner.id = :learnerId
+              AND p.status <> com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus.CANCELLED
+            ORDER BY r.createdAt DESC, p.installmentNumber ASC
+            """)
+    List<Payment> findAllByLearner(@Param("learnerId") UUID learnerId);
+
     /** Échéances à relancer : en attente, sur une inscription encore active. */
     @Query("""
             SELECT p FROM Payment p

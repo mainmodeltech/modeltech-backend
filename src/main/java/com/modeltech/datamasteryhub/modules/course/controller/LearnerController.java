@@ -40,6 +40,19 @@ public class LearnerController {
         return learnerSpaceService.getDashboard(authentication.getName());
     }
 
+    @GetMapping("/calendar")
+    public java.util.List<LearnerPayloads.CalendarItem> calendar(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to,
+            Authentication authentication) {
+        return learnerSpaceService.getCalendar(authentication.getName(), from, to);
+    }
+
+    @GetMapping("/resources")
+    public java.util.List<LearnerPayloads.ResourceEntry> resources(Authentication authentication) {
+        return learnerSpaceService.getResources(authentication.getName());
+    }
+
     @GetMapping("/formations/{formationId}/course")
     public LearnerPayloads.LearnerCourse course(@PathVariable UUID formationId, Authentication authentication) {
         return learnerSpaceService.getCourse(authentication.getName(), formationId);

@@ -87,6 +87,40 @@ public final class LearnerPayloads {
         private String title;
     }
 
+    /** Un live du calendrier de l'apprenant (toutes ses formations). */
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CalendarItem {
+        private String id;
+        private String formationId;
+        private String formationTitle;
+        private String title;
+        /** Heure locale ISO du site (ex. {@code 2026-11-14T18:00:00}). */
+        private String startsAt;
+        private String timeLabel;
+        private String place;
+        private String joinUrl;
+        private boolean past;
+    }
+
+    /** Une ressource de la bibliothèque de l'apprenant (toutes ses formations ouvertes). */
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class ResourceEntry {
+        private String id;
+        private String name;
+        private String fileType;
+        private String sizeLabel;
+        private String note;
+        /** Nul tant que la ressource est verrouillée. */
+        private String url;
+        /** true = se débloque en réussissant le quiz du module. */
+        private boolean locked;
+        private String formationId;
+        private String formationTitle;
+        private String moduleTitle;
+        private String lessonId;
+        private String lessonTitle;
+    }
+
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class Dashboard {
         private String firstName;

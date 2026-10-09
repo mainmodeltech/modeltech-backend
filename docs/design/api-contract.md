@@ -385,6 +385,26 @@ Toutes ces routes sont publiques (limitées par IP) et renvoient, en cas de succ
 **Front à faire** : page de connexion avec « Recevoir un lien de connexion » (saisie e-mail → écran « code ou lien »), bouton Google (`@react-oauth/google` / Google Identity Services avec `googleClientId` issu de `/auth/options`), route `/connexion/lien?token=…` qui appelle `verify` puis redirige, message d'erreur 429.
 **Configuration Google (à faire par le propriétaire)** : console Google Cloud → API et services → Identifiants → « ID client OAuth » de type *Application Web* ; origines JavaScript autorisées = domaines du site (prod + `http://localhost:8080`) ; copier l'ID client dans `GOOGLE_CLIENT_ID` (aucun secret client n'est nécessaire côté serveur).
 
+### 3.D duodecies — Lot I livré (`feature/learner-api`) : compléments de l'espace apprenant
+
+JSON brut, rôle LEARNER. Les PDF s'ouvrent avec le jeton de l'apprenant (`fetch` + `Authorization`, puis `blob`), pas par simple lien.
+
+| Méthode | Chemin | Réponse |
+|---|---|---|
+| GET | `/learner/profile` | `{id, email, firstName, lastName, fullName, phone, country, emailVerified, hasPassword, lastLoginAt, createdAt}` |
+| PUT | `/learner/profile` | `{firstName*, lastName, phone, country}` → profil mis à jour ; l'e-mail est ignoré |
+| PUT | `/learner/password` | `{newPassword* (≥ 8)}` → 204 ; 409 si un mot de passe existe déjà (utiliser `PUT /auth/change-password`) |
+| GET | `/learner/payments` | `[{id, registrationId, formationTitle, sessionName, installmentNumber, installmentCount, amount, currency, totalAmount, dueDate, status (PENDING/DECLARED/CONFIRMED/REFUNDED), method, confirmedAt, payUrl, receiptUrl}]` |
+| GET | `/learner/payments/{id}/receipt` | PDF du reçu (échéance confirmée, la sienne) ; 404 sinon |
+| GET | `/payments/{token}/receipt` | idem depuis le lien de paiement (public) |
+| GET | `/learner/enrollments` | `[{formationId, title, sessionName, status, accessStartsAt, accessEndsAt, trainerName, attestationUrl}]` |
+| GET | `/learner/enrollments/{formationId}/attestation` | PDF de l'attestation d'inscription ; 404 sans inscription confirmée |
+| GET | `/learner/calendar?from&to` | `[{id, formationId, formationTitle, title, startsAt, timeLabel, place, joinUrl, past}]` ; 400 si période incohérente |
+| GET | `/learner/resources` | `[{id, name, fileType, sizeLabel, note, url, locked, formationId, formationTitle, moduleTitle, lessonId, lessonTitle}]` |
+
+`GET /learner/dashboard` : `todos` est désormais renseigné (`{id, title, subtitle, badge, tone}`) et `stats.averageQuizScore` calculé.
+**Front à faire** : page Profil (formulaire + « Définir un mot de passe » si `!hasPassword`), « Mes paiements » (liens `payUrl`, téléchargement des reçus), « Mes inscriptions » (attestation), Calendrier et Ressources alimentés par `/calendar` et `/resources` (plus de composition côté client), `todos` du tableau de bord.
+
 ### 3.E Formulaires du site (lot b)
 
 | # | Méthode | Chemin | Attendu par le front | Existant au back | Écart |

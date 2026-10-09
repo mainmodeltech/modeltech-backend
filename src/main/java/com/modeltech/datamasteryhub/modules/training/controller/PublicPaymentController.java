@@ -24,6 +24,7 @@ public class PublicPaymentController {
     private final PaymentService paymentService;
     private final IpRateLimiter rateLimiter;
     private final com.modeltech.datamasteryhub.modules.training.service.InvoiceService invoiceService;
+    private final com.modeltech.datamasteryhub.modules.training.service.LearnerBillingService billingService;
 
     @GetMapping("/{token}")
     public ResponseEntity<ApiResponse<PublicPaymentResponse>> get(@PathVariable String token) {
@@ -39,6 +40,17 @@ public class PublicPaymentController {
                 .header("Content-Disposition", "inline; filename=\"Facture.pdf\"")
                 .header("X-Content-Type-Options", "nosniff")
                 .body(invoiceService.pdfForPaymentToken(token));
+    }
+
+    /** Reçu d'une échéance confirmée, téléchargeable depuis le lien de paiement (candidat sans compte). */
+    @GetMapping("/{token}/receipt")
+    public ResponseEntity<byte[]> receipt(@PathVariable String token, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, "payment-invoice");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header("Content-Disposition", "inline; filename=\"Recu-de-paiement.pdf\"")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(billingService.receiptByToken(token));
     }
 
     @PostMapping("/{token}/declaration")

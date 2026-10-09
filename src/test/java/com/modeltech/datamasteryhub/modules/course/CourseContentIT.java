@@ -335,7 +335,8 @@ class CourseContentIT extends AbstractIntegrationTest {
         assertThat(dash.at("/lives/0/title").asText()).isEqualTo("1.4 Live");
         assertThat(dash.at("/lives/0/timeLabel").asText()).matches("\\d\\dh\\d\\d");
         assertThat(dash.at("/lives/0/joinUrl").asText()).isEqualTo("https://meet.example.com/live");
-        assertThat(dash.get("todos").size()).isZero();
+        assertThat(dash.at("/todos/0/title").asText()).isEqualTo("1.3 Quiz");   // le quiz à passer est la seule tâche
+        assertThat(dash.get("todos").size()).isEqualTo(1);
     }
 
     @Test

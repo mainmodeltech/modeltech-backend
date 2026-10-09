@@ -262,6 +262,14 @@ Conditions du certificat (`EvaluationServiceImpl`) : leçons ≥ `lessonsComplet
 `StorageService.uploadDocument(file, folder, extensions, maxBytes)` : documents hors images, stockés en `application/octet-stream`. `StorageException` → 400 (handler ajouté ; auparavant 500).
 Services partagés : `LearnerAccess` (accès apprenant, déblocage séquentiel), `CourseAccessPolicy` (qui édite le contenu : personnel + partenaire propriétaire).
 
+### Espace apprenant — compléments (sans migration)
+Tout est en **JSON brut** sous `/learner/**` (rôle LEARNER, limité aux données de l'apprenant connecté) :
+- **Profil** : `GET/PUT /learner/profile` (prénom, nom, téléphone, pays ; l'e-mail n'est jamais modifiable ; `hasPassword`, `emailVerified`) ; `PUT /learner/password {newPassword}` = **premier** mot de passe d'un compte sans mot de passe (409 s'il existe déjà : `PUT /auth/change-password`).
+- **Paiements** : `GET /learner/payments` (échéances de ses inscriptions, hors annulées ; `payUrl` seulement si à régler/à vérifier et lien non expiré ; `receiptUrl` si confirmée) ; **reçu PDF** `GET /learner/payments/{id}/receipt` (aussi `GET /payments/{token}/receipt` pour un candidat sans compte) — numéro `REC-{année}-{8 car. de l'id}`, mentions légales de `app.invoice.seller.*`, signataire = `app.certificate.signatory-*` ; **inscriptions** `GET /learner/enrollments` et **attestation d'inscription PDF** `GET /learner/enrollments/{formationId}/attestation` (`LearnerDocumentPdfGenerator`, aperçus `docs/design/recu-apercu.png` / `attestation-apercu.png`).
+- **Calendrier** `GET /learner/calendar?from&to` (lives de toutes ses formations, défaut 60 jours, 366 max) ; **bibliothèque** `GET /learner/resources` (ressources publiées des formations ouvertes ; `locked` + `url` nul tant que verrouillée).
+- **Tableau de bord** : `todos` (échéance à régler/en retard, quiz à passer, projet à rendre/corriger ; 6 max, urgents d'abord) et `stats.averageQuizScore` (moyenne des meilleurs scores par quiz) sont désormais renseignés.
+Documents PDF existants : certificat, facture (entreprises), reçu, attestation.
+
 ### Connexions avancées (V29)
 - **Verrouillage** : `app.auth.lockout.max-attempts` (5) échecs de mot de passe consécutifs → connexion par mot de passe refusée **429** pendant `minutes` (15), même avec le bon mot de passe ; compteur remis à zéro à la connexion réussie. Le lien/code et Google restent utilisables.
 - **Lien + code** (`PasswordlessLoginService`) : `POST /auth/passwordless/request {email}` (toujours 200, envoi en tâche de fond, 1 demande/minute/adresse, limité par IP) envoie **un lien et un code à 6 chiffres** (valables `app.auth.passwordless.minutes` = 10, usage unique, une nouvelle demande annule la précédente) via `MessageDispatcher` (type `LOGIN_LINK`, `toPhone` renseigné pour un futur canal WhatsApp) ; `POST /auth/passwordless/verify {token}` ou `{email, code}` → même réponse que `/auth/login`. Le code est annulé après 5 essais ratés. Seules des empreintes SHA-256 sont stockées. Lien = `{app.frontend.url}{app.frontend.magic-link-path=/connexion/lien}?token=…`.
@@ -390,6 +398,7 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS school TEXT;
 | GET | `/api/v1/certificates/{publicId}` et `/pdf` | Non | Vérification publique et PDF (limités par IP ; PDF 410 si révoqué) |
 | GET | `/api/v1/learner/certificates` | JWT LEARNER | Mes certificats (+ lien de vérification, PDF, LinkedIn) |
 | POST/GET | `/api/v1/admin/sessions/{id}/messages`, `GET …/questions?open=`, `POST …/questions/{qid}/answer` | JWT ADMIN / TRAINER de la session | Messages aux apprenants, questions (ApiResponse) |
+| GET/PUT | `/api/v1/learner/profile`, `PUT /learner/password`, `GET /learner/payments`, `/payments/{id}/receipt`, `/enrollments`, `/enrollments/{formationId}/attestation`, `/calendar`, `/resources` | JWT LEARNER | Profil, paiements, reçus et attestations PDF, calendrier, ressources (JSON brut) |
 | POST/GET | `/api/v1/auth/passwordless/request`, `/passwordless/verify`, `/google`, `GET /auth/options` | Non (limités par IP) | Connexion par lien/code, par Google, modes disponibles |
 | GET | `/api/v1/admin/stats/actions`, `/overview?from&to` | JWT ADMIN | Tableau de bord : à traiter + indicateurs de période (ApiResponse) |
 | GET/POST | `/api/v1/learner/lessons/{id}/questions` | JWT LEARNER | Poser / relire ses questions (JSON brut) |
