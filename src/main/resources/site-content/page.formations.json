@@ -3,8 +3,8 @@
     "eyebrow": "CATALOGUE DES FORMATIONS",
     "title": "Les compétences qui font gagner du temps.",
     "description": "Formations dispensées par nos formateurs ou par des partenaires experts — inscription, paiement et suivi toujours gérés par Model Technologie.",
-    "image": "/images/photos/picture-4.jpg",
-    "imageAlt": "Apprenants en séance de formation à Dakar"
+    "image": "/images/photos/cohorte-salle.jpg",
+    "imageAlt": "Apprenants attentifs pendant une séance de formation"
   },
   "domains": {
     "eyebrow": "NOS DOMAINES",
@@ -23,26 +23,56 @@
     "eyebrow": "LE PARCOURS",
     "title": "Comment ça se passe",
     "steps": [
-      { "title": "Candidature", "description": "Remplissez le formulaire en quelques minutes." },
-      { "title": "Test de positionnement", "description": "Un court test pour valider votre niveau." },
-      { "title": "La formation", "description": "Cohorte intensive, le soir et le week-end." },
-      { "title": "Projet & certificat", "description": "Un projet final évalué par un jury." }
+      {
+        "title": "Candidature",
+        "description": "Remplissez le formulaire en quelques minutes."
+      },
+      {
+        "title": "Test de positionnement",
+        "description": "Un court test pour valider votre niveau."
+      },
+      {
+        "title": "La formation",
+        "description": "Cohorte intensive, le soir et le week-end."
+      },
+      {
+        "title": "Projet & certificat",
+        "description": "Un projet final évalué par un jury."
+      }
     ]
   },
   "quiz": {
     "title": "Vous ne savez pas quelle formation choisir ?",
     "description": "Faites notre quiz d'orientation en 2 minutes.",
-    "cta": { "label": "Faire le quiz", "href": "/orientation" }
+    "cta": {
+      "label": "Faire le quiz",
+      "href": "/orientation"
+    }
   },
   "faq": {
     "eyebrow": "QUESTIONS FRÉQUENTES",
     "title": "Tout ce qu'il faut savoir",
     "items": [
-      { "question": "Comment fonctionnent les formations en partenariat ?", "answer": "Le contenu et l'animation sont assurés par le partenaire ; l'inscription, le paiement et le suivi restent gérés par Model Technologie." },
-      { "question": "Compatible avec un emploi à temps plein ?", "answer": "Oui — nos cohortes se déroulent le soir et le week-end." },
-      { "question": "Les frais d'examen sont-ils inclus ?", "answer": "Cela dépend de la formation — le détail est indiqué sur chaque fiche formation." },
-      { "question": "Mon employeur peut-il payer la formation ?", "answer": "Oui, nous émettons un bon de commande / facture entreprise sur demande." },
-      { "question": "Quels moyens de paiement acceptez-vous ?", "answer": "Wave, Orange Money et virement bancaire." }
+      {
+        "question": "Comment fonctionnent les formations en partenariat ?",
+        "answer": "Le contenu et l'animation sont assurés par le partenaire ; l'inscription, le paiement et le suivi restent gérés par Model Technologie."
+      },
+      {
+        "question": "Compatible avec un emploi à temps plein ?",
+        "answer": "Oui — nos cohortes se déroulent le soir et le week-end."
+      },
+      {
+        "question": "Les frais d'examen sont-ils inclus ?",
+        "answer": "Cela dépend de la formation — le détail est indiqué sur chaque fiche formation."
+      },
+      {
+        "question": "Mon employeur peut-il payer la formation ?",
+        "answer": "Oui, nous émettons un bon de commande / facture entreprise sur demande."
+      },
+      {
+        "question": "Quels moyens de paiement acceptez-vous ?",
+        "answer": "Wave, Orange Money et virement bancaire."
+      }
     ]
   }
 }
