@@ -268,6 +268,37 @@ class LearnerApiIT extends AbstractIntegrationTest {
         assertThat(todos.get(0).get("title").asText()).isEqualTo("Régler l'échéance 2/2");
     }
 
+    // ── Notes personnelles ───────────────────────────────────────────
+
+    @Test
+    void notes_areSavedPerLesson_updatedInPlace_andClosedToOtherLearners() throws Exception {
+        JsonNode course = json(mockMvc.perform(get("/api/v1/learner/formations/" + bootcamp.getId() + "/course").with(asAwa))
+                .andExpect(status().isOk()));
+        String lessonId = course.at("/content/modules/0/lessons/0/id").asText();
+        String url = "/api/v1/learner/lessons/" + lessonId + "/note";
+
+        mockMvc.perform(get(url).with(asAwa)).andExpect(status().isOk()).andExpect(jsonPath("$.content").value(""));
+
+        mockMvc.perform(put(url).with(asAwa).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"DAX : CALCULATE filtre le contexte\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content").value("DAX : CALCULATE filtre le contexte"));
+        mockMvc.perform(put(url).with(asAwa).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"Version 2\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get(url).with(asAwa)).andExpect(jsonPath("$.content").value("Version 2"))
+                .andExpect(jsonPath("$.lessonId").value(lessonId));
+
+        // une note vide efface le contenu ; absente ou trop longue : refusée
+        mockMvc.perform(put(url).with(asAwa).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"\"}")).andExpect(status().isOk());
+        mockMvc.perform(put(url).with(asAwa).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
+        mockMvc.perform(put(url).with(asAwa).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"" + "x".repeat(10001) + "\"}")).andExpect(status().isBadRequest());
+
+        // un apprenant sans accès à la formation ne lit ni n'écrit
+        mockMvc.perform(get(url).with(asMoussa)).andExpect(status().isForbidden());
+        mockMvc.perform(put(url).with(asMoussa).contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"x\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get(url)).andExpect(status().isUnauthorized());
+    }
+
     // ── Données ──────────────────────────────────────────────────────
 
     private Payment payment(Registration reg, int number, long amount, PaymentStatus status, LocalDate dueDate) {
