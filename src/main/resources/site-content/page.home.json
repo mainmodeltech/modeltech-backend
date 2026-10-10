@@ -65,9 +65,7 @@
       "prerequisites": "Prérequis",
       "price": "Tarif",
       "spots": "Places restantes"
-    },
-    "image": "/images/photos/picture-4.jpg",
-    "imageAlt": ""
+    }
   },
   "byRole": {
     "eyebrow": "PAR MÉTIER",

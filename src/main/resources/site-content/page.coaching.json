@@ -19,38 +19,7 @@
     "title": "Créneaux cette semaine",
     "badge": "3 places / semaine",
     "bookHref": "/contact?sujet=coaching",
-    "items": [
-      {
-        "day": "Lun",
-        "time": "18h",
-        "available": true
-      },
-      {
-        "day": "Mar",
-        "time": "18h",
-        "available": false
-      },
-      {
-        "day": "Mer",
-        "time": "20h",
-        "available": true
-      },
-      {
-        "day": "Jeu",
-        "time": "18h",
-        "available": true
-      },
-      {
-        "day": "Sam",
-        "time": "10h",
-        "available": true
-      },
-      {
-        "day": "Sam",
-        "time": "14h",
-        "available": false
-      }
-    ],
+    "items": [],
     "formatNote": "Visio ou présentiel à Dakar",
     "durationNote": "1h30 par séance"
   },
