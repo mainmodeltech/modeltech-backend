@@ -154,7 +154,12 @@ public class CommunityService {
 
     /** « Awa D. » : prénom et initiale du nom. */
     static String publicName(Learner learner) {
+        String first = capitalize(learner.getFirstName() == null ? "" : learner.getFirstName().trim());
         String last = learner.getLastName() == null ? "" : learner.getLastName().trim();
-        return last.isEmpty() ? learner.getFirstName() : learner.getFirstName() + " " + last.charAt(0) + ".";
+        return last.isEmpty() ? first : first + " " + Character.toUpperCase(last.charAt(0)) + ".";
+    }
+
+    private static String capitalize(String value) {
+        return value.isEmpty() ? value : Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 }
