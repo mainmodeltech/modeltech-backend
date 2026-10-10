@@ -122,7 +122,7 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
                         .build())
                 .resume(resume(enrollments, lessonsByFormation, progress))
                 .courses(courses)
-                .todos(todos(learner, enrollments, lessonsByFormation, progress, today))
+                .todos(todos(learner, enrollments, lessonsByFormation, progress, certifiedFormations, today))
                 .certificateReady(certificates.stream()
                         .filter(c -> c.getIssuedAt().isAfter(LocalDateTime.now().minusDays(14))).findFirst()
                         .map(c -> LearnerPayloads.CertificateReady.builder().title(c.getFormationTitle()).build())
@@ -289,10 +289,11 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         return (int) Math.round(best.values().stream().mapToInt(Integer::intValue).average().orElse(0));
     }
 
-    /** À faire : échéances à régler, quiz à passer, projet final à rendre ou à corriger (6 au plus, urgents d'abord). */
+    /** À faire : échéances à régler, quiz à passer, projet final à rendre ou à corriger (6 au plus, urgents d'abord) ; rien pour une formation certifiée. */
     private List<LearnerPayloads.TodoItem> todos(Learner learner, List<Enrollment> enrollments,
                                                  Map<UUID, List<CourseLesson>> lessonsByFormation,
-                                                 Map<UUID, LessonProgress> progress, LocalDate today) {
+                                                 Map<UUID, LessonProgress> progress, Set<UUID> certifiedFormations,
+                                                 LocalDate today) {
         List<LearnerPayloads.TodoItem> urgent = new ArrayList<>();
         List<LearnerPayloads.TodoItem> normal = new ArrayList<>();
 
@@ -313,6 +314,8 @@ public class LearnerSpaceServiceImpl implements LearnerSpaceService {
         for (Enrollment e : enrollments) {
             if (e.getAccessStartsAt() != null && today.isBefore(e.getAccessStartsAt())) continue;
             Bootcamp b = e.getRegistration().getBootcamp();
+            // Formation déjà certifiée (y compris par dérogation) : plus rien à faire dessus
+            if (certifiedFormations.contains(b.getId())) continue;
             lessonsByFormation.getOrDefault(b.getId(), List.of()).stream()
                     .filter(l -> l.getType() == LessonType.QUIZ && l.getStatus() == LessonStatus.PUBLISHED && !isDone(l, progress))
                     .limit(2)

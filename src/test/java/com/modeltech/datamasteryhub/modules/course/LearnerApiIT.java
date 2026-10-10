@@ -40,6 +40,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -250,6 +251,21 @@ class LearnerApiIT extends AbstractIntegrationTest {
         boolean quiz = false;
         for (JsonNode t : todos) quiz |= "1.2 Quiz".equals(t.get("title").asText());
         assertThat(quiz).isTrue();
+    }
+
+    @Test
+    void dashboard_todosForgetAFormationOnceItIsCertified() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/sessions/" + session.getId() + "/learners/" + awa.getId() + "/certificate")
+                        .with(user("staff@test.local", "ADMIN")).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"force\":true,\"reason\":\"Dérogation de test\"}"))
+                .andExpect(status().isCreated());
+
+        JsonNode todos = json(mockMvc.perform(get("/api/v1/learner/dashboard").with(asAwa)).andExpect(status().isOk())).get("todos");
+        for (JsonNode t : todos) {
+            assertThat(t.get("id").asText()).doesNotStartWith("quiz-").doesNotStartWith("project-");
+        }
+        // l'échéance à régler reste, elle, à faire
+        assertThat(todos.get(0).get("title").asText()).isEqualTo("Régler l'échéance 2/2");
     }
 
     // ── Données ──────────────────────────────────────────────────────
