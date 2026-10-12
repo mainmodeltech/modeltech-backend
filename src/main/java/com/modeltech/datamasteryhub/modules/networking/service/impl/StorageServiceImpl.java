@@ -105,17 +105,81 @@ public class StorageServiceImpl implements StorageService {
         }
     }
 
+    private static final long PRIVATE_IMAGE_MAX_BYTES = 5L * 1024 * 1024;
+
+    @Override
+    public UploadResult uploadPrivateImage(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) {
+            throw new StorageException("Le fichier est vide ou absent.");
+        }
+        if (file.getSize() > PRIVATE_IMAGE_MAX_BYTES) {
+            throw new StorageException("Fichier trop volumineux (max 5 Mo).");
+        }
+        String extension;
+        try {
+            extension = imageExtension(file.getBytes());
+        } catch (java.io.IOException e) {
+            throw new StorageException("Impossible de lire le fichier.");
+        }
+        if (extension == null) {
+            throw new StorageException("Seules les images JPEG, PNG, WebP ou GIF sont autorisées.");
+        }
+        String objectKey = folder + "/" + UUID.randomUUID() + "." + extension;
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioProperties.getBucket())
+                            .object(objectKey)
+                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .contentType("application/octet-stream")
+                            .build()
+            );
+            log.info("Image privée uploadée : {}", objectKey);
+            return new UploadResult(objectKey, null);
+        } catch (Exception e) {
+            log.error("Erreur upload MinIO [{}] : {}", objectKey, e.getMessage(), e);
+            throw new StorageException("Impossible d'uploader le fichier.");
+        }
+    }
+
+    /** Extension déduite de la signature du fichier (JPEG, PNG, WebP, GIF) ; null si ce n'est pas une de ces images. */
+    static String imageExtension(byte[] b) {
+        if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) return "jpg";
+        if (b.length >= 8 && (b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G'
+                && b[4] == 0x0D && b[5] == 0x0A && b[6] == 0x1A && b[7] == 0x0A) return "png";
+        if (b.length >= 12 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
+                && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') return "webp";
+        if (b.length >= 6 && b[0] == 'G' && b[1] == 'I' && b[2] == 'F' && b[3] == '8'
+                && (b[4] == '7' || b[4] == '9') && b[5] == 'a') return "gif";
+        return null;
+    }
+
+    /** Client de signature, créé une fois : en construire un par lien alourdit inutilement les listes. */
+    private volatile MinioClient signer;
+
+    private MinioClient signer() {
+        MinioClient s = signer;
+        if (s == null) {
+            synchronized (this) {
+                if (signer == null) {
+                    // Le lien est signé pour l'adresse publique de MinIO (celle que voit le navigateur).
+                    // La région est fixée pour éviter tout appel réseau au moment de signer.
+                    signer = MinioClient.builder()
+                            .endpoint(minioProperties.getEffectivePublicUrl())
+                            .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
+                            .region("us-east-1")
+                            .build();
+                }
+                s = signer;
+            }
+        }
+        return s;
+    }
+
     @Override
     public String presignedGetUrl(String objectKey, int validMinutes) {
         try {
-            // Le lien est signé pour l'adresse publique de MinIO (celle que voit le navigateur).
-            // La région est fixée pour éviter tout appel réseau au moment de signer.
-            MinioClient signer = MinioClient.builder()
-                    .endpoint(minioProperties.getEffectivePublicUrl())
-                    .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
-                    .region("us-east-1")
-                    .build();
-            return signer.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            return signer().getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .method(Method.GET)
                     .bucket(minioProperties.getBucket())
                     .object(objectKey)

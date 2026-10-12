@@ -66,13 +66,6 @@ services:
       - dokploy-network
     restart: unless-stopped
 
-  adminer-staging:
-    image: adminer
-    container_name: modeltech_staging_adminer
-    networks:
-      - dokploy-network
-    restart: unless-stopped
-
   minio-staging:
     # minio/minio n'est plus publie sur Docker Hub : build communautaire Chainguard (inclut aussi `mc`)
     image: cgr.dev/chainguard/minio:latest
@@ -90,7 +83,8 @@ services:
       - dokploy-network
     restart: unless-stopped
 
-  # Cree le bucket et le passe en lecture anonyme (captures de paiement, logos, photos).
+  # Cree le bucket et applique la lecture anonyme limitee aux images publiques (logos, photos, visuels de projets).
+  # Les justificatifs de paiement et les rendus d'apprenants restent prives (liens signes).
   # Idempotent : sans lui, tous les envois de fichiers echouent ("The specified bucket does not exist").
   minio-init-staging:
     image: cgr.dev/chainguard/minio:latest
@@ -108,19 +102,16 @@ services:
           echo "MinIO pas encore pret..."; sleep 2
         done
         mc mb --ignore-existing "local/$$MINIO_BUCKET"
-        mc anonymous set public "local/$$MINIO_BUCKET"
+        # Lecture anonyme LIMITEE aux images publiques (jamais `mc anonymous set public` : il ouvre aussi
+        # la liste, l'ecriture et la suppression). Meme liste que scripts/minio/apply-public-policy.sh.
+        cat > /tmp/public-read-policy.json <<POLICY
+        {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::$$MINIO_BUCKET/alumni/*","arn:aws:s3:::$$MINIO_BUCKET/partners/*","arn:aws:s3:::$$MINIO_BUCKET/projects/screenshots/*","arn:aws:s3:::$$MINIO_BUCKET/projects/covers/*"]}]}
+        POLICY
+        mc anonymous set-json /tmp/public-read-policy.json "local/$$MINIO_BUCKET"
     networks:
       - dokploy-network
     restart: "no"
 
-  dozzle-staging:
-    image: amir20/dozzle:latest
-    container_name: modeltech_staging_dozzle
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - dokploy-network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
