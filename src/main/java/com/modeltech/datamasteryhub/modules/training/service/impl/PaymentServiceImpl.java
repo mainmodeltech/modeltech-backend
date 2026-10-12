@@ -386,9 +386,10 @@ public class PaymentServiceImpl implements PaymentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce paiement n'accepte plus de justificatif.");
         }
         String previousKey = payment.getProofObjectKey();
-        StorageService.UploadResult result = storageService.upload(file, "payment-proofs");
+        // Pièce privée : pas d'URL publique en base, le lien est signé (courte durée) à chaque consultation admin.
+        StorageService.UploadResult result = storageService.uploadPrivateImage(file, "payment-proofs");
         payment.setProofObjectKey(result.objectKey());
-        payment.setProofUrl(result.url());
+        payment.setProofUrl(null);
         paymentRepository.save(payment);
         if (previousKey != null && !previousKey.isBlank()) {
             try {

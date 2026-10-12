@@ -271,10 +271,12 @@ class PaymentFlowIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void uploadProof_isStoredAndReplacesThePreviousOne() throws Exception {
-        when(storageService.upload(any(), eq("payment-proofs")))
-                .thenReturn(new StorageService.UploadResult("payment-proofs/a.png", "http://minio/a.png"))
-                .thenReturn(new StorageService.UploadResult("payment-proofs/b.png", "http://minio/b.png"));
+    void uploadProof_isStoredPrivately_replacesThePreviousOne_andAdminsGetASignedLink() throws Exception {
+        when(storageService.uploadPrivateImage(any(), eq("payment-proofs")))
+                .thenReturn(new StorageService.UploadResult("payment-proofs/a.png", null))
+                .thenReturn(new StorageService.UploadResult("payment-proofs/b.png", null));
+        when(storageService.presignedGetUrl(eq("payment-proofs/b.png"), anyInt()))
+                .thenReturn("https://files.example.com/media/payment-proofs/b.png?X-Amz-Signature=abc");
         Registration reg = newRegistration("awa@example.com", null);
         accept(reg, "{}").andExpect(status().isOk());
         String token = firstToken(reg);
@@ -286,7 +288,13 @@ class PaymentFlowIT extends AbstractIntegrationTest {
         mockMvc.perform(multipart(PUBLIC_PAYMENTS + "/" + token + "/proof").file(file)).andExpect(status().isOk());
 
         verify(storageService).delete("payment-proofs/a.png");
-        assertThat(paymentRepository.findAll().get(0).getProofObjectKey()).isEqualTo("payment-proofs/b.png");
+        Payment stored = paymentRepository.findAll().get(0);
+        assertThat(stored.getProofObjectKey()).isEqualTo("payment-proofs/b.png");
+        assertThat(stored.getProofUrl()).isNull();   // aucune URL publique conservee
+
+        mockMvc.perform(get(ADMIN_PAYMENTS).with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].proofUrl").value(org.hamcrest.Matchers.containsString("X-Amz-Signature")));
     }
 
     // ── Confirmation : compte et accès ───────────────────────────────

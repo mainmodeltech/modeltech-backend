@@ -1,0 +1,39 @@
+# Outils d'exploitation — A LANCER A LA DEMANDE, JAMAIS DEPLOYES NI EXPOSES SUR UN DOMAINE.
+#
+# Adminer (acces direct a la base) et Dozzle (journaux + socket Docker) etaient deployes avec la stack et
+# joignables depuis Internet : ils sont retires des compose de staging/production. Si un besoin ponctuel
+# se presente, les demarrer ici : ils n'ecoutent que sur 127.0.0.1 du serveur et s'atteignent par un
+# tunnel SSH depuis votre poste.
+#
+#   Sur le VPS :   docker compose -f docker-compose.tools.yml up -d
+#   Sur le poste : ssh -L 8088:127.0.0.1:8088 -L 8089:127.0.0.1:8089 utilisateur@ip-du-vps
+#                  puis http://localhost:8088 (Adminer) et http://localhost:8089 (Dozzle)
+#   Apres usage :  docker compose -f docker-compose.tools.yml down
+#
+# Ne creer AUCUN domaine Dokploy/Traefik pour ces services.
+
+services:
+
+  adminer:
+    image: adminer
+    container_name: modeltech_tools_adminer
+    ports:
+      - "127.0.0.1:8088:8080"
+    networks:
+      - dokploy-network
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: modeltech_tools_dozzle
+    ports:
+      - "127.0.0.1:8089:8080"
+    environment:
+      DOZZLE_NO_ANALYTICS: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true

@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training.mapper;
 
+import com.modeltech.datamasteryhub.modules.networking.service.StorageService;
 import com.modeltech.datamasteryhub.modules.training.dto.response.AdminPaymentResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.EnrollmentResponse;
 import com.modeltech.datamasteryhub.modules.training.dto.response.PaymentSummaryResponse;
@@ -21,6 +22,15 @@ import java.util.List;
 @Component
 public class PaymentMapper {
 
+    /** Durée de validité du lien de consultation d'un justificatif (le personnel l'ouvre aussitôt). */
+    private static final int PROOF_LINK_MINUTES = 15;
+
+    private final StorageService storageService;
+
+    public PaymentMapper(StorageService storageService) {
+        this.storageService = storageService;
+    }
+
     private static final List<PaymentMethod> PUBLIC_METHODS =
             List.of(PaymentMethod.WAVE, PaymentMethod.ORANGE_MONEY, PaymentMethod.VIREMENT);
 
@@ -35,6 +45,13 @@ public class PaymentMapper {
 
     public String paymentLink(Payment payment) {
         return frontendUrl + paymentPath + "/" + payment.getPublicToken();
+    }
+
+    /** Lien signé et temporaire vers le justificatif (le bucket n'est pas lisible anonymement sur ce dossier). */
+    private String proofLink(Payment p) {
+        String key = p.getProofObjectKey();
+        if (key == null || key.isBlank()) return p.getProofUrl();
+        return storageService.presignedGetUrl(key, PROOF_LINK_MINUTES);
     }
 
     public boolean isPublicMethod(PaymentMethod method) {
@@ -64,7 +81,7 @@ public class PaymentMapper {
                 .confirmedAt(p.getConfirmedAt())
                 .confirmedBy(p.getConfirmedBy())
                 .rejectionReason(p.getRejectionReason())
-                .proofUrl(p.getProofUrl())
+                .proofUrl(proofLink(p))
                 .invoiceRef(p.getInvoiceRef())
                 .purchaseOrderRef(p.getPurchaseOrderRef())
                 .notes(p.getNotes())

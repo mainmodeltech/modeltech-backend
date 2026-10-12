@@ -69,24 +69,6 @@ services:
       - dokploy-network
     restart: unless-stopped
 
-
-  adminer:
-    image: adminer
-    container_name: modeltech_prod_adminer
-    networks:
-      - dokploy-network
-    restart: unless-stopped
-
-
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: modeltech_prod_dozzle
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - dokploy-network
-    restart: unless-stopped
-
 volumes:
   postgres_data:
   minio_data:
