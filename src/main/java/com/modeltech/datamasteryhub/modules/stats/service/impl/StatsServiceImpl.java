@@ -1,6 +1,8 @@
 package com.modeltech.datamasteryhub.modules.stats.service.impl;
 
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.modeltech.datamasteryhub.modules.stats.dto.StatsPayloads;
+import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.modules.stats.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,22 +50,27 @@ public class StatsServiceImpl implements StatsService {
         MapSqlParameterSource p = new MapSqlParameterSource()
                 .addValue("now", now).addValue("in7days", now.plusDays(7)).addValue("ago7days", now.minusDays(7));
         return StatsPayloads.Actions.builder()
-                .newApplications(count("SELECT count(*) FROM registrations WHERE is_deleted = false AND status = 'PENDING'", p))
-                .paymentsToConfirm(count("SELECT count(*) FROM payments WHERE is_deleted = false AND status = 'DECLARED'", p))
-                .overdueInstallments(count("""
+                .newApplications(visible(Permission.APPLICATIONS_VIEW, () -> count("SELECT count(*) FROM registrations WHERE is_deleted = false AND status = 'PENDING'", p)))
+                .paymentsToConfirm(visible(Permission.PAYMENTS_MANAGE, () -> count("SELECT count(*) FROM payments WHERE is_deleted = false AND status = 'DECLARED'", p)))
+                .overdueInstallments(visible(Permission.PAYMENTS_VIEW, () -> count("""
                         SELECT count(*) FROM payments p JOIN registrations r ON r.id = p.registration_id
                         WHERE p.is_deleted = false AND p.status = 'PENDING' AND p.due_date < CURRENT_DATE
                           AND r.is_deleted = false AND r.status IN ('PAYMENT_PENDING','CONFIRMED')
-                        """, p))
-                .unreadMessages(count("SELECT count(*) FROM contact_messages WHERE is_deleted = false AND status = 'unread'", p))
-                .openQuestions(count("SELECT count(*) FROM lesson_questions WHERE is_deleted = false AND answer IS NULL AND session_id IS NOT NULL", p))
-                .projectsToReview(count("SELECT count(*) FROM project_submissions WHERE is_deleted = false AND status = 'SUBMITTED'", p))
-                .upcomingLives(count("""
+                        """, p)))
+                .unreadMessages(visible(Permission.MESSAGES_MANAGE, () -> count("SELECT count(*) FROM contact_messages WHERE is_deleted = false AND status = 'unread'", p)))
+                .openQuestions(visible(Permission.SESSIONS_TRACK, () -> count("SELECT count(*) FROM lesson_questions WHERE is_deleted = false AND answer IS NULL AND session_id IS NOT NULL", p)))
+                .projectsToReview(visible(Permission.SESSIONS_TRACK, () -> count("SELECT count(*) FROM project_submissions WHERE is_deleted = false AND status = 'SUBMITTED'", p)))
+                .upcomingLives(visible(Permission.SESSIONS_VIEW, () -> count("""
                         SELECT count(*) FROM course_lessons
                         WHERE is_deleted = false AND type = 'LIVE' AND status <> 'DRAFT' AND live_at BETWEEN :now AND :in7days
-                        """, p))
-                .failedEmails(count("SELECT count(*) FROM email_logs WHERE status = 'FAILED' AND created_at >= :ago7days", p))
+                        """, p)))
+                .failedEmails(visible(Permission.EMAIL_LOGS_VIEW, () -> count("SELECT count(*) FROM email_logs WHERE status = 'FAILED' AND created_at >= :ago7days", p)))
                 .build();
+    }
+
+    /** Compteur calculé seulement si la personne a le droit de traiter cette file (sinon absent : pas de pastille). */
+    private static Long visible(Permission permission, java.util.function.Supplier<Long> counter) {
+        return Actor.has(permission) ? counter.get() : null;
     }
 
     // =========================================================================
@@ -82,14 +89,25 @@ public class StatsServiceImpl implements StatsService {
                 .addValue("from", start.atStartOfDay())
                 .addValue("to", end.plusDays(1).atStartOfDay());
 
+        // Le tableau d'activité (candidatures, remplissage, apprenants) est pour toute l'équipe qui en a le droit ; les montants
+        // ne sont renvoyés qu'avec « Tableau de bord financier » : sans lui, ils sont absents de la réponse (pas seulement masqués).
+        boolean finance = Actor.has(Permission.DASHBOARD_FINANCE);
+        List<StatsPayloads.MonthlyPoint> monthly = monthly(start, end, p);
+        List<StatsPayloads.FormationStat> top = topFormations(p);
+        if (!finance) {
+            monthly.forEach(m -> m.setCollected(null));
+            top.forEach(f -> f.setCollected(null));
+        }
+
         return StatsPayloads.Overview.builder()
+                .financeVisible(finance)
                 .from(start).to(end).currency("XOF")
                 .registrations(registrations(p))
                 .funnel(funnel(p))
-                .revenue(revenue(p))
-                .monthly(monthly(start, end, p))
+                .revenue(finance ? revenue(p) : null)
+                .monthly(monthly)
                 .sessions(sessions())
-                .topFormations(topFormations(p))
+                .topFormations(top)
                 .breakdowns(breakdowns(p))
                 .learners(learners(p))
                 .audience(audience(p))

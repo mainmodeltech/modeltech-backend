@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.notification;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.modules.notification.entity.EmailLog;
 import com.modeltech.datamasteryhub.modules.notification.repository.EmailLogRepository;
@@ -206,6 +207,6 @@ class MailDeliveryIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor user(String role) {
-        return SecurityMockMvcRequestPostProcessors.user("staff@test.local").roles(role);
+        return TestAuth.as("staff@test.local", role);
     }
 }

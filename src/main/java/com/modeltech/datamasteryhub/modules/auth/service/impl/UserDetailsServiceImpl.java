@@ -3,6 +3,8 @@ package com.modeltech.datamasteryhub.modules.auth.service.impl;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.entity.Role;
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
+import com.modeltech.datamasteryhub.modules.auth.permission.PermissionService;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.security.AppUserDetails;
@@ -35,6 +37,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final AdminUserRepository adminUserRepository;
     private final LearnerRepository learnerRepository;
+    private final PermissionService permissionService;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -45,7 +48,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     private UserDetails toUserDetails(AdminUser admin) {
-        return new AppUserDetails(admin.getEmail(), admin.getPasswordHash(), admin.isActive(), authorities(admin.getRoles()),
+        return new AppUserDetails(admin.getEmail(), admin.getPasswordHash(), admin.isActive(), staffAuthorities(admin.getRoles()),
                 admin.getId(), admin.getFullName(), JwtTokenProvider.USER_TYPE_ADMIN, admin.getSecurityVersion(), admin.isMfaEnabled());
     }
 
@@ -53,6 +56,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new AppUserDetails(learner.getEmail(), learner.getPasswordHash() != null ? learner.getPasswordHash() : NO_PASSWORD,
                 learner.isActive(), authorities(learner.getRoles()),
                 learner.getId(), learner.getFullName(), JwtTokenProvider.USER_TYPE_LEARNER, learner.getSecurityVersion(), false);
+    }
+
+    /** Profils (ROLE_*), droits qu'ils portent (PAYMENTS_MANAGE…) et accès au back-office : tout ce que les règles d'accès testent. */
+    private List<SimpleGrantedAuthority> staffAuthorities(Set<Role> roles) {
+        List<SimpleGrantedAuthority> all = new java.util.ArrayList<>(authorities(roles));
+        permissionService.effective(roles).forEach(p -> all.add(new SimpleGrantedAuthority(p)));
+        all.add(new SimpleGrantedAuthority(Permission.BACKOFFICE_ACCESS));
+        return all;
     }
 
     private List<SimpleGrantedAuthority> authorities(Set<Role> roles) {

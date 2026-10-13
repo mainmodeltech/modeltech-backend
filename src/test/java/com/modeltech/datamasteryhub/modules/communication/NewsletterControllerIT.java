@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.communication;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.modules.communication.entity.NewsletterSubscription;
 import com.modeltech.datamasteryhub.modules.communication.enums.NewsletterStatus;
@@ -233,6 +234,6 @@ class NewsletterControllerIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor admin() {
-        return SecurityMockMvcRequestPostProcessors.user("admin@test.local").roles("ADMIN");
+        return TestAuth.as("admin@test.local", "ADMIN");
     }
 }

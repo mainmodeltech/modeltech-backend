@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.TestData;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
@@ -123,6 +124,6 @@ class AdminMeIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor user(String email, String role) {
-        return SecurityMockMvcRequestPostProcessors.user(email).roles(role);
+        return TestAuth.as(email, role);
     }
 }

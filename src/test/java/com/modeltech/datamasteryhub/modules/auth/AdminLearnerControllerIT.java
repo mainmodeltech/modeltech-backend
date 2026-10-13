@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.auth;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
@@ -199,6 +200,6 @@ class AdminLearnerControllerIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor asRole(String role) {
-        return SecurityMockMvcRequestPostProcessors.user("tester@test.local").roles(role);
+        return TestAuth.as("tester@test.local", role);
     }
 }

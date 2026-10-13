@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-/** Comptes de back-office (SUPER_ADMIN, ADMIN, EDITOR, TRAINER, PARTNER) — réservé aux SUPER_ADMIN. */
+/** Comptes de back-office (un ou plusieurs profils par personne) — droit « Comptes et accès ». */
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
@@ -42,9 +42,9 @@ public class AdminUserController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<AdminUserSummaryResponse>> create(
-            @Valid @RequestBody CreateAdminUserRequest req) {
+            @Valid @RequestBody CreateAdminUserRequest req, Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Compte créé, invitation envoyée", adminAccountService.create(req)));
+                .body(ApiResponse.ok("Compte créé, invitation envoyée", adminAccountService.create(req, authentication.getName())));
     }
 
     @PutMapping("/{id}")

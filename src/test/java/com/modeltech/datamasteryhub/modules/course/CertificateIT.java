@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.course;
 
+import com.modeltech.datamasteryhub.TestAuth;
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
@@ -139,7 +141,7 @@ class CertificateIT extends AbstractIntegrationTest {
         certificateRepository.findAll().forEach(c -> { c.setStatus(Certificate.REVOKED); certificateRepository.save(c); });
         bootcamp.setCertificateCode("XL");
         bootcampRepository.save(bootcamp);
-        mockMvc.perform(post(sessionUrl() + "/learners/" + awa.getId() + "/certificate").with(staff("TRAINER"))
+        mockMvc.perform(post(sessionUrl() + "/learners/" + awa.getId() + "/certificate").with(staff("PEDAGOGY"))
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.publicId").value(org.hamcrest.Matchers.containsString("-XL-")));   // code saisi
@@ -216,10 +218,16 @@ class CertificateIT extends AbstractIntegrationTest {
     void manualIssue_requiresMetConditions_orAMotivatedAdminOverride() throws Exception {
         String url = sessionUrl() + "/learners/" + awa.getId() + "/certificate";
 
-        mockMvc.perform(post(url).with(staff("TRAINER")).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(post(url).with(staff("PEDAGOGY")).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Leçons terminées")));
-        mockMvc.perform(post(url).with(staff("TRAINER")).contentType(MediaType.APPLICATION_JSON).content("{\"force\":true,\"reason\":\"x\"}"))
+        // Délivrer est un droit, déroger (certificat sans conditions remplies) en est un autre
+        var withoutOverride = TestAuth.withPermissions("pedago2@test.local", Permission.CERTIFICATES_MANAGE,
+                Permission.SESSIONS_TRACK, Permission.SCOPE_ALL_SESSIONS);
+        mockMvc.perform(post(url).with(withoutOverride).contentType(MediaType.APPLICATION_JSON).content("{\"force\":true,\"reason\":\"x\"}"))
+                .andExpect(status().isForbidden());
+        // Le formateur ne délivre pas de certificat (décision pédagogique)
+        mockMvc.perform(post(url).with(staff("TRAINER")).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post(url).with(staff("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{\"force\":true}"))
                 .andExpect(status().isBadRequest());
@@ -347,6 +355,6 @@ class CertificateIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor user(String email, String role) {
-        return SecurityMockMvcRequestPostProcessors.user(email).roles(role);
+        return TestAuth.as(email, role);
     }
 }

@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
+import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.common.util.TokenUtils;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
@@ -451,6 +453,11 @@ public class PaymentServiceImpl implements PaymentService {
         long total;
         if (req.getTotalAmount() != null) {
             total = req.getTotalAmount();
+            // Un montant différent du tarif (remise, accord commercial) est une dérogation de prix : droit dédié
+            Long quoted = pricing.quote(reg).map(RegistrationPricing.Quote::total).orElse(null);
+            if (quoted == null || quoted != total) {
+                Actor.require(Permission.PRICE_OVERRIDE, "le montant d'une inscription par rapport au tarif");
+            }
         } else {
             total = pricing.quote(reg).map(RegistrationPricing.Quote::total)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,

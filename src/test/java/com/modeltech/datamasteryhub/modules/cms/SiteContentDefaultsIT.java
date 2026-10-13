@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.cms;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.modules.cms.service.SiteContentDefaults;
 import org.junit.jupiter.api.Test;
@@ -73,6 +74,6 @@ class SiteContentDefaultsIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor admin(String role) {
-        return SecurityMockMvcRequestPostProcessors.user("staff@test.local").roles(role);
+        return TestAuth.as("staff@test.local", role);
     }
 }
