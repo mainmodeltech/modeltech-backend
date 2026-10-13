@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
+import com.modeltech.datamasteryhub.common.util.LogMask;
 import com.modeltech.datamasteryhub.common.util.TokenUtils;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ChangePasswordRequest;
@@ -8,6 +9,7 @@ import com.modeltech.datamasteryhub.modules.auth.dto.request.LoginRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ResetPasswordRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
+import com.modeltech.datamasteryhub.modules.auth.entity.AuthSession;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.entity.PasswordResetToken;
 import com.modeltech.datamasteryhub.modules.auth.entity.Role;
@@ -17,8 +19,17 @@ import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.PasswordResetTokenRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.TokenBlacklistRepository;
+import com.modeltech.datamasteryhub.modules.auth.service.AccountSecurityService;
+import com.modeltech.datamasteryhub.modules.auth.service.AuthOutcome;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
+import com.modeltech.datamasteryhub.modules.auth.service.AuthSessionService;
+import com.modeltech.datamasteryhub.modules.auth.service.ClientInfo;
+import com.modeltech.datamasteryhub.modules.auth.service.LoginThrottle;
+import com.modeltech.datamasteryhub.modules.auth.service.MfaPolicy;
+import com.modeltech.datamasteryhub.modules.auth.service.MfaService;
+import com.modeltech.datamasteryhub.modules.auth.service.PasswordPolicy;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
+import com.modeltech.datamasteryhub.security.AppUserDetails;
 import com.modeltech.datamasteryhub.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +75,12 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder              passwordEncoder;
     private final NotificationService          notificationService;
     private final UserDetailsServiceImpl       userDetailsService;
+    private final AuthSessionService           sessions;
+    private final AccountSecurityService       accountSecurity;
+    private final MfaPolicy                    mfaPolicy;
+    private final MfaService                   mfaService;
+    private final LoginThrottle                throttle;
+    private final PasswordPolicy               passwordPolicy;
 
     @Value("${app.password-reset.expiration-minutes:15}")
     private int resetTokenExpirationMinutes;
@@ -71,8 +88,12 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    /** Echecs de mot de passe consecutifs avant verrouillage temporaire de la connexion par mot de passe. */
-    @Value("${app.auth.lockout.max-attempts:5}")
+    /**
+     * Echecs de mot de passe consecutifs sur un meme compte (toutes adresses IP confondues) avant verrouillage
+     * temporaire. Volontairement eleve : le frein principal est le couple (e-mail, IP) de {@link LoginThrottle} et le
+     * second facteur ; ce seuil ne vise que les attaques reparties sur de nombreuses adresses.
+     */
+    @Value("${app.auth.lockout.max-attempts:20}")
     private int lockoutMaxAttempts;
 
     @Value("${app.auth.lockout.minutes:15}")
@@ -89,25 +110,32 @@ public class AuthServiceImpl implements AuthService {
     // Les echecs sont comptes : la transaction ne doit pas etre annulee par l'exception qui remonte au client.
     @Override
     @Transactional(noRollbackFor = {BadCredentialsException.class, ResponseStatusException.class})
-    public AuthResponse login(LoginRequest request) {
-        log.info("Tentative de connexion: {}", request.getEmail());
-        requireNotLocked(request.getEmail());
+    public AuthOutcome login(LoginRequest request, ClientInfo client) {
+        String email = request.getEmail();
+        log.info("Tentative de connexion: {}", LogMask.email(email));
+
+        long blocked = throttle.blockedMinutes(email, client.ip());
+        if (blocked > 0) throw tooManyAttempts(blocked);
+        requireNotLocked(email);
 
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                    new UsernamePasswordAuthenticationToken(email, request.getPassword()));
         } catch (BadCredentialsException e) {
-            registerFailedAttempt(request.getEmail());
+            throttle.recordFailure(email, client.ip());
+            registerFailedAttempt(email);
             throw e;
         }
-        return completeLogin(authentication);
+        throttle.reset(email, client.ip());
+        resetFailedAttempts(email);
+        return completeLogin((AppUserDetails) authentication.getPrincipal(), client);
     }
 
     @Override
     @Transactional
-    public AuthResponse loginWithoutPassword(String email) {
-        UserDetails details = userDetailsService.loadUserByUsername(email);
+    public AuthOutcome loginWithoutPassword(String email, ClientInfo client) {
+        AppUserDetails details = (AppUserDetails) userDetailsService.loadUserByUsername(email);
         if (!details.isAccountNonLocked()) throw new LockedException("Compte désactivé");
         learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).ifPresent(learner -> {
             if (learner.getEmailVerifiedAt() == null) {
@@ -115,15 +143,49 @@ public class AuthServiceImpl implements AuthService {
                 learnerRepository.save(learner);
             }
         });
-        return completeLogin(new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
+        return completeLogin(details, client);
     }
 
-    /** Jeton + profil + horodatage de connexion ; remet le compteur d'échecs à zéro. */
-    private AuthResponse completeLogin(Authentication authentication) {
-        String token = jwtTokenProvider.generateToken(authentication);
-        String email = authentication.getName();
+    /** Premier facteur validé : session tout de suite, ou défi MFA pour le personnel. */
+    private AuthOutcome completeLogin(AppUserDetails user, ClientInfo client) {
+        if (mfaPolicy.enforcedFor(user)) {
+            if (!mfaService.available()) {
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "La double authentification n'est pas configurée sur ce serveur. Contactez l'administrateur.");
+            }
+            boolean enrolled = user.mfaEnabled();
+            String challenge = jwtTokenProvider.generateMfaChallengeToken(user,
+                    enrolled ? JwtTokenProvider.PURPOSE_VERIFY : JwtTokenProvider.PURPOSE_ENROLL);
+            log.info("Second facteur requis ({}) pour {}", enrolled ? "vérification" : "enrôlement", LogMask.email(user.getUsername()));
+            return AuthOutcome.withoutCookie(AuthResponse.builder()
+                    .tokenType("Bearer")
+                    .mfaRequired(enrolled)
+                    .mfaEnrollmentRequired(!enrolled)
+                    .mfaToken(challenge)
+                    .build());
+        }
+        return startSession(user, false, client);
+    }
 
-        AuthResponse.AdminUserResponse profile = adminUserRepository.findByEmailAndIsDeletedFalse(email)
+    @Override
+    @Transactional
+    public AuthOutcome startSession(AppUserDetails user, boolean mfaVerified, ClientInfo client) {
+        AuthResponse.AdminUserResponse profile = recordLoginAndProfile(user.getUsername());
+        String type = user.isStaff() ? AuthSession.ADMIN : AuthSession.LEARNER;
+        AuthSessionService.Issued issued = sessions.start(type, user.id(), mfaVerified, client);
+        String accessToken = jwtTokenProvider.generateAccessToken(user, issued.sessionId(), mfaVerified);
+        log.info("Connexion réussie: {}", LogMask.email(user.getUsername()));
+        return new AuthOutcome(AuthResponse.builder()
+                .accessToken(accessToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtTokenProvider.getExpiration())
+                .user(profile)
+                .build(), issued.refreshToken(), Duration.between(LocalDateTime.now(), issued.expiresAt()));
+    }
+
+    /** Horodatage de connexion et remise à zéro du compteur d'échecs ; renvoie le profil. */
+    private AuthResponse.AdminUserResponse recordLoginAndProfile(String email) {
+        return adminUserRepository.findByEmailAndIsDeletedFalse(email)
                 .map(admin -> {
                     admin.setLastLoginAt(LocalDateTime.now());
                     admin.setFailedLoginAttempts(0);
@@ -139,14 +201,41 @@ public class AuthServiceImpl implements AuthService {
                     return toProfile(learner);
                 }))
                 .orElseThrow(() -> new ResourceNotFoundException("Compte", "email", email));
+    }
 
-        log.info("Connexion réussie: {}", email);
-        return AuthResponse.builder()
-                .accessToken(token)
+    // ─────────────────────────────────────────────────────────────────────
+    // RAFRAÎCHISSEMENT
+    // ─────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public Optional<AuthOutcome> refresh(String refreshToken) {
+        Optional<AuthSessionService.Refreshed> refreshed = sessions.refresh(refreshToken);
+        if (refreshed.isEmpty()) return Optional.empty();
+        AuthSession session = refreshed.get().session();
+
+        String email = AuthSession.ADMIN.equals(session.getSubjectType())
+                ? adminUserRepository.findByIdAndIsDeletedFalse(session.getSubjectId()).map(AdminUser::getEmail).orElse(null)
+                : learnerRepository.findByIdAndIsDeletedFalse(session.getSubjectId()).map(Learner::getEmail).orElse(null);
+        if (email == null) return Optional.empty();
+
+        AppUserDetails user = (AppUserDetails) userDetailsService.loadUserByUsername(email);
+        boolean staffWithoutSecondFactor = mfaPolicy.enforcedFor(user) && !session.isMfaVerified();
+        if (!user.isAccountNonLocked() || staffWithoutSecondFactor) {
+            sessions.revokeAllFor(session.getSubjectType(), session.getSubjectId());
+            return Optional.empty();
+        }
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user, session.getId(), session.isMfaVerified());
+        AuthResponse body = AuthResponse.builder()
+                .accessToken(accessToken)
                 .tokenType("Bearer")
                 .expiresIn(jwtTokenProvider.getExpiration())
-                .user(profile)
+                .user(me(email))
                 .build();
+        String newToken = refreshed.get().newRefreshToken();
+        return Optional.of(new AuthOutcome(body, newToken,
+                newToken == null ? null : Duration.between(LocalDateTime.now(), session.getExpiresAt())));
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -162,32 +251,28 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // LOGOUT — révocation JWT via blacklist
+    // LOGOUT — fin de session + révocation du jeton d'accès
     // ─────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
-    public void logout(String token) {
-        if (token == null || token.isBlank()) return;
-
+    public void logout(String accessToken, String refreshToken) {
+        sessions.revoke(refreshToken);
+        if (accessToken == null || accessToken.isBlank()) return;
         try {
-            String email     = jwtTokenProvider.getEmailFromToken(token);
-            String tokenHash = sha256(token);
-            long   expiresIn = jwtTokenProvider.getExpiration(); // ms
-
-            // Éviter les doublons
+            String email = jwtTokenProvider.getEmailFromToken(accessToken);
+            String tokenHash = sha256(accessToken);
             if (!tokenBlacklistRepository.existsByTokenHash(tokenHash)) {
                 tokenBlacklistRepository.save(TokenBlacklist.builder()
                         .tokenHash(tokenHash)
                         .email(email)
-                        .expiresAt(LocalDateTime.now().plusNanos(expiresIn * 1_000_000L))
+                        .expiresAt(LocalDateTime.now().plusNanos(jwtTokenProvider.getExpiration() * 1_000_000L))
                         .build());
             }
-            log.info("Token révoqué pour: {}", email);
-
+            log.info("Session terminée pour: {}", LogMask.email(email));
         } catch (Exception e) {
-            // Token malformé / déjà expiré — on ignore
-            log.warn("Logout: token invalide ou déjà expiré — {}", e.getMessage());
+            // Jeton d'accès déjà expiré ou malformé : la session, elle, est terminée
+            log.debug("Logout : jeton d'accès non exploitable ({})", e.getClass().getSimpleName());
         }
     }
 
@@ -201,16 +286,18 @@ public class AuthServiceImpl implements AuthService {
         Optional<AdminUser> admin = adminUserRepository.findByEmailAndIsDeletedFalse(email);
         if (admin.isPresent()) {
             requireCurrentPassword(request.getCurrentPassword(), admin.get().getPasswordHash());
+            passwordPolicy.validate(request.getNewPassword(), email, true);
             admin.get().setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-            adminUserRepository.save(admin.get());
+            accountSecurity.invalidateSessions(admin.get());
         } else {
             Learner learner = learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email)
                     .orElseThrow(() -> new ResourceNotFoundException("Compte", "email", email));
             requireCurrentPassword(request.getCurrentPassword(), learner.getPasswordHash());
+            passwordPolicy.validate(request.getNewPassword(), email, false);
             learner.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-            learnerRepository.save(learner);
+            accountSecurity.invalidateSessions(learner);
         }
-        log.info("Mot de passe modifié pour: {}", email);
+        log.info("Mot de passe modifié pour: {}", LogMask.email(email));
     }
 
     private void requireCurrentPassword(String provided, String currentHash) {
@@ -237,7 +324,7 @@ public class AuthServiceImpl implements AuthService {
         boolean activeAccount = admin.map(AdminUser::isActive).orElse(false)
                 || learner.map(Learner::isActive).orElse(false);
         if (!activeAccount) {
-            log.warn("Forgot password: email inconnu ou compte désactivé (silencieux) — {}", email);
+            log.warn("Forgot password: email inconnu ou compte désactivé (silencieux) — {}", LogMask.email(email));
             return;
         }
 
@@ -245,7 +332,7 @@ public class AuthServiceImpl implements AuthService {
         String link = passwordSetupLink(rawToken, learner.isPresent());
         notificationService.notifyPasswordResetEmail(email, link, resetTokenExpirationMinutes);
 
-        log.info("Token de réinitialisation créé pour: {} (expire dans {} min)", email, resetTokenExpirationMinutes);
+        log.info("Token de réinitialisation créé pour: {} (expire dans {} min)", LogMask.email(email), resetTokenExpirationMinutes);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -262,12 +349,15 @@ public class AuthServiceImpl implements AuthService {
                         HttpStatus.BAD_REQUEST, "Lien de réinitialisation invalide ou expiré."));
 
         String email = resetToken.getEmail();
-        String newHash = passwordEncoder.encode(request.getNewPassword());
 
         Optional<AdminUser> admin = adminUserRepository.findByEmailAndIsDeletedFalse(email);
+        // Le jeton n'est consommé que si le mot de passe est accepté : un refus de la politique laisse le lien utilisable
+        passwordPolicy.validate(request.getNewPassword(), email, admin.isPresent());
+        String newHash = passwordEncoder.encode(request.getNewPassword());
+
         if (admin.isPresent()) {
             admin.get().setPasswordHash(newHash);
-            adminUserRepository.save(admin.get());
+            accountSecurity.invalidateSessions(admin.get());
         } else {
             Learner learner = learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email)
                     .orElseThrow(() -> new ResponseStatusException(
@@ -276,7 +366,7 @@ public class AuthServiceImpl implements AuthService {
             if (learner.getEmailVerifiedAt() == null) {
                 learner.setEmailVerifiedAt(LocalDateTime.now()); // le lien reçu par e-mail le prouve
             }
-            learnerRepository.save(learner);
+            accountSecurity.invalidateSessions(learner);
         }
 
         // Marquer le token comme utilisé
@@ -284,7 +374,7 @@ public class AuthServiceImpl implements AuthService {
         resetToken.setUsedAt(LocalDateTime.now());
         passwordResetTokenRepository.save(resetToken);
 
-        log.info("Mot de passe réinitialisé pour: {}", email);
+        log.info("Mot de passe réinitialisé pour: {}", LogMask.email(email));
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -321,16 +411,36 @@ public class AuthServiceImpl implements AuthService {
 
     // ── Verrouillage temporaire après échecs ─────────────────────────
 
+    private ResponseStatusException tooManyAttempts(long minutes) {
+        return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "Trop de tentatives échouées. Réessayez dans " + minutes
+                        + " minute(s), ou connectez-vous avec un lien envoyé par e-mail.");
+    }
+
     private void requireNotLocked(String email) {
         LocalDateTime until = adminUserRepository.findByEmailAndIsDeletedFalse(email).map(AdminUser::getLockedUntil)
                 .or(() -> learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).map(Learner::getLockedUntil))
                 .orElse(null);
         if (until != null && until.isAfter(LocalDateTime.now())) {
-            long minutes = Math.max(1, Duration.between(LocalDateTime.now(), until).toMinutes() + 1);
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                    "Trop de tentatives échouées. Réessayez dans " + minutes
-                            + " minute(s), ou connectez-vous avec un lien envoyé par e-mail.");
+            throw tooManyAttempts(Math.max(1, Duration.between(LocalDateTime.now(), until).toMinutes() + 1));
         }
+    }
+
+    private void resetFailedAttempts(String email) {
+        adminUserRepository.findByEmailAndIsDeletedFalse(email).ifPresent(a -> {
+            if (a.getFailedLoginAttempts() != 0 || a.getLockedUntil() != null) {
+                a.setFailedLoginAttempts(0);
+                a.setLockedUntil(null);
+                adminUserRepository.save(a);
+            }
+        });
+        learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).ifPresent(l -> {
+            if (l.getFailedLoginAttempts() != 0 || l.getLockedUntil() != null) {
+                l.setFailedLoginAttempts(0);
+                l.setLockedUntil(null);
+                learnerRepository.save(l);
+            }
+        });
     }
 
     private void registerFailedAttempt(String email) {
@@ -362,6 +472,7 @@ public class AuthServiceImpl implements AuthService {
                 .primaryRole(admin.getPrimaryRole())
                 .roles(roleNames(admin.getRoles()))
                 .userType(JwtTokenProvider.USER_TYPE_ADMIN)
+                .mfaEnabled(admin.isMfaEnabled())
                 .partnerId(admin.getPartner() != null ? admin.getPartner().getId() : null)
                 .build();
     }

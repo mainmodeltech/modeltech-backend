@@ -53,4 +53,10 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.ok("Compte mis à jour",
                 adminAccountService.update(id, req, authentication.getName())));
     }
+
+    @PostMapping("/{id}/mfa/reset")
+    public ResponseEntity<ApiResponse<AdminUserSummaryResponse>> resetMfa(@PathVariable UUID id, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Double authentification réinitialisée",
+                adminAccountService.resetMfa(id, authentication.getName())));
+    }
 }

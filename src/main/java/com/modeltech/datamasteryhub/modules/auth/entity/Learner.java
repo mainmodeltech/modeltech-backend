@@ -53,6 +53,10 @@ public class Learner extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    /** Incrementee a chaque evenement de securite (mot de passe, desactivation) : invalide les jetons deja emis. */
+    @Column(name = "security_version", nullable = false)
+    private int securityVersion = 0;
+
     /** Echecs de mot de passe consecutifs ; remis a zero a la connexion reussie. */
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts = 0;

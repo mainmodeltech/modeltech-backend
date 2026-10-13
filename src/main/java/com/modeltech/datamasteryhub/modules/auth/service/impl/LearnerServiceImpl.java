@@ -9,6 +9,7 @@ import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.RoleRepository;
+import com.modeltech.datamasteryhub.modules.auth.service.AccountSecurityService;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
 import com.modeltech.datamasteryhub.modules.auth.service.LearnerService;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
@@ -38,6 +39,7 @@ public class LearnerServiceImpl implements LearnerService {
     private final RoleRepository roleRepository;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final AccountSecurityService accountSecurity;
 
     // ── Admin ───────────────────────────────────────────────────────
 
@@ -69,8 +71,12 @@ public class LearnerServiceImpl implements LearnerService {
     @Transactional
     public LearnerResponse setActive(UUID id, boolean active) {
         Learner learner = getOrThrow(id);
+        boolean changed = learner.isActive() != active;
         learner.setActive(active);
-        return toResponse(learnerRepository.save(learner));
+        Learner saved = learnerRepository.save(learner);
+        // Désactivation : les jetons et sessions déjà émis ne valent plus
+        if (changed && !active) accountSecurity.invalidateSessions(saved);
+        return toResponse(saved);
     }
 
     @Override

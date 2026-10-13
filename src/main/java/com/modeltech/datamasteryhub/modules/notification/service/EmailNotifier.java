@@ -217,6 +217,19 @@ public class EmailNotifier {
         mailer.send(to, learner ? "Votre accès à la plateforme de formation" : "Votre compte du back-office", b.build(), "ACCOUNT_INVITATION");
     }
 
+    /** Prévient le titulaire que son second facteur a été retiré (perte d'appareil) : à signaler s'il n'est pas à l'origine de la demande. */
+    public void sendMfaResetEmail(String to, String fullName) {
+        EmailContent content = EmailContent.builder("Votre double authentification a été réinitialisée")
+                .preheader("Vous devrez la configurer de nouveau à votre prochaine connexion")
+                .greeting(fullName != null && !fullName.isBlank() ? "Bonjour " + fullName.trim() + "," : "Bonjour,")
+                .paragraph("Un administrateur a **réinitialisé la double authentification** de votre compte du back-office. "
+                        + "Toutes vos sessions ont été fermées : à votre prochaine connexion, vous configurerez l'application d'authentification sur votre appareil.")
+                .button("Me connecter", admin("/connexion"))
+                .footnote("Vous n'avez rien demandé ? Prévenez immédiatement un administrateur : quelqu'un a peut-être accès à votre compte.")
+                .build();
+        mailer.send(to, "Votre double authentification a été réinitialisée", content, "MFA_RESET");
+    }
+
     public void sendNewsletterConfirmationEmail(String to, String confirmLink, int validDays) {
         EmailContent content = EmailContent.builder("Confirmez votre inscription")
                 .preheader("Un dernier clic pour recevoir la newsletter")

@@ -1,6 +1,5 @@
 package com.modeltech.datamasteryhub.modules.auth.service;
 
-import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 
 /**
  * Connexion sans mot de passe : un lien et un code à 6 chiffres, envoyés par les canaux de messagerie
@@ -15,8 +14,8 @@ public interface PasswordlessLoginService {
     void request(String email);
 
     /** Échange le jeton du lien contre une session. 400 si invalide, expiré ou déjà utilisé. */
-    AuthResponse verifyLink(String token);
+    AuthOutcome verifyLink(String token, ClientInfo client);
 
     /** Échange le code contre une session. 5 essais au plus par demande, puis la demande est annulée. */
-    AuthResponse verifyCode(String email, String code);
+    AuthOutcome verifyCode(String email, String code, ClientInfo client);
 }

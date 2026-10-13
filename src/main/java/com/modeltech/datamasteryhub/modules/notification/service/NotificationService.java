@@ -55,5 +55,8 @@ public interface NotificationService {
      *
      * @param learner true pour un apprenant, false pour un compte de back-office
      */
+    /** Prévient un compte du personnel que sa double authentification a été réinitialisée par un administrateur. */
+    void sendMfaResetEmail(String to, String fullName);
+
     void sendAccountInvitationEmail(String to, String firstName, String setupLink, int validHours, boolean learner);
 }

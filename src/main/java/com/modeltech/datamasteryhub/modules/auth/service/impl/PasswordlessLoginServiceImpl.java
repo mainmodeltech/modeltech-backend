@@ -1,14 +1,15 @@
 package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
 import com.modeltech.datamasteryhub.common.util.TokenUtils;
-import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.entity.LoginChallenge;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LoginChallengeRepository;
+import com.modeltech.datamasteryhub.modules.auth.service.AuthOutcome;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
+import com.modeltech.datamasteryhub.modules.auth.service.ClientInfo;
 import com.modeltech.datamasteryhub.modules.auth.service.PasswordlessLoginService;
 import com.modeltech.datamasteryhub.modules.notification.channel.MessageDispatcher;
 import com.modeltech.datamasteryhub.modules.notification.channel.OutboundMessage;
@@ -47,6 +48,9 @@ public class PasswordlessLoginServiceImpl implements PasswordlessLoginService {
     private final LearnerRepository learnerRepository;
     private final AuthService authService;
     private final MessageDispatcher dispatcher;
+
+    @Value("${app.jwt.secret}")
+    private String jwtSecret;
 
     @Value("${app.auth.passwordless.minutes:10}")
     private int validityMinutes;
@@ -116,20 +120,20 @@ public class PasswordlessLoginServiceImpl implements PasswordlessLoginService {
 
     @Override
     @Transactional
-    public AuthResponse verifyLink(String token) {
+    public AuthOutcome verifyLink(String token, ClientInfo client) {
         if (token == null || token.isBlank()) throw invalid();
         LoginChallenge challenge = challengeRepository.findByTokenHash(sha256(token.trim()))
                 .filter(LoginChallenge::isUsable)
                 .orElseThrow(PasswordlessLoginServiceImpl::invalid);
         challenge.setConsumed(true);
         challengeRepository.save(challenge);
-        return open(challenge.getEmail());
+        return open(challenge.getEmail(), client);
     }
 
     // Le compteur d'essais doit survivre à l'échec renvoyé au client.
     @Override
     @Transactional(noRollbackFor = ResponseStatusException.class)
-    public AuthResponse verifyCode(String rawEmail, String code) {
+    public AuthOutcome verifyCode(String rawEmail, String code, ClientInfo client) {
         String email = normalize(rawEmail);
         LoginChallenge challenge = challengeRepository.findFirstByEmailAndConsumedFalseOrderByCreatedAtDesc(email)
                 .filter(LoginChallenge::isUsable)
@@ -148,14 +152,14 @@ public class PasswordlessLoginServiceImpl implements PasswordlessLoginService {
         }
         challenge.setConsumed(true);
         challengeRepository.save(challenge);
-        return open(email);
+        return open(email, client);
     }
 
     // ── Outils ───────────────────────────────────────────────────────
 
-    private AuthResponse open(String email) {
+    private AuthOutcome open(String email, ClientInfo client) {
         try {
-            return authService.loginWithoutPassword(email);
+            return authService.loginWithoutPassword(email, client);
         } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
             throw invalid();   // compte supprimé entre la demande et la validation
         }
@@ -178,8 +182,15 @@ public class PasswordlessLoginServiceImpl implements PasswordlessLoginService {
         return email == null ? "" : email.toLowerCase(Locale.ROOT).trim();
     }
 
-    private static String codeHash(String email, String code) {
-        return sha256(email + ":" + code);
+    /** Empreinte à clé secrète : sans la clé du serveur, une fuite de la table ne permet pas de retrouver un code à 6 chiffres. */
+    private String codeHash(String email, String code) {
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(jwtSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return HexFormat.of().formatHex(mac.doFinal((email + ":" + code).getBytes(StandardCharsets.UTF_8)));
+        } catch (java.security.GeneralSecurityException e) {
+            throw new IllegalStateException("HMAC-SHA256 non disponible", e);
+        }
     }
 
     private static String sha256(String input) {

@@ -32,6 +32,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       # 64 octets minimum (openssl rand -base64 64) : plus court, aucune connexion ne fonctionne
       JWT_SECRET: ${JWT_SECRET}
+      # Rotation de cle : l'ancien secret reste accepte en lecture le temps de la transition (laisser vide sinon)
+      JWT_PREVIOUS_SECRET: ${JWT_PREVIOUS_SECRET:-}
+      # OBLIGATOIRE : chiffre les secrets de la double authentification (openssl rand -base64 32). Sans elle, le personnel ne peut pas se connecter.
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY est obligatoire (openssl rand -base64 32)}
       # Origine(s) du front staging, separees par des virgules (ex. https://staging.model-technologie.com)
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
       # URL publique du front staging : base des liens des e-mails (paiement, mot de passe, certificat).

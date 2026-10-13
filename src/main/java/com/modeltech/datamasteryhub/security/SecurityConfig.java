@@ -79,6 +79,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/passwordless/request",
                                 "/api/v1/auth/passwordless/verify",
                                 "/api/v1/auth/google",
+                                // Session par cookie HttpOnly (origine controlee par le controleur) et seconde etape du personnel
+                                // (defi MFA signe porte par le corps de la requete)
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/logout",
+                                "/api/v1/auth/mfa/verify",
+                                "/api/v1/auth/mfa/enroll/start",
+                                "/api/v1/auth/mfa/enroll/confirm",
                                 "/api/v1/masterclass/register",
                                 "/api/v1/contact-messages",
                                 "/api/v1/diagnostic-requests",

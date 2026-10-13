@@ -2,6 +2,7 @@ package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
 import com.modeltech.datamasteryhub.common.util.TokenUtils;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
+import com.modeltech.datamasteryhub.common.util.LogMask;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.CreateAdminUserRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.UpdateAdminUserRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AdminUserSummaryResponse;
@@ -12,7 +13,9 @@ import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.RoleRepository;
 import com.modeltech.datamasteryhub.modules.auth.service.AdminAccountService;
+import com.modeltech.datamasteryhub.modules.auth.service.AccountSecurityService;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
+import com.modeltech.datamasteryhub.modules.auth.service.MfaService;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import com.modeltech.datamasteryhub.modules.training.entity.Partner;
 import com.modeltech.datamasteryhub.modules.training.repository.PartnerRepository;
@@ -48,6 +51,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final MfaService mfaService;
+    private final AccountSecurityService accountSecurity;
 
     @Override
     public Page<AdminUserSummaryResponse> findAll(Pageable pageable) {
@@ -113,11 +118,30 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             admin.setFullName(request.getFullName().trim());
         }
+        boolean securityRelevant = !newRoles.equals(admin.getRoles()) || newActive != admin.isActive();
         admin.setRoles(newRoles);
         admin.setActive(newActive);
         admin.setPartner(resolvePartner(newRoles, request.getPartnerId(), admin.getPartner()));
 
-        return toResponse(adminUserRepository.save(admin));
+        AdminUser saved = adminUserRepository.save(admin);
+        // Changement de rôle ou désactivation : les jetons et sessions déjà émis ne valent plus, la personne se reconnecte
+        if (securityRelevant) accountSecurity.invalidateSessions(saved);
+        return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public AdminUserSummaryResponse resetMfa(UUID id, String actingEmail) {
+        AdminUser admin = getOrThrow(id);
+        if (admin.getEmail().equalsIgnoreCase(actingEmail)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Vous ne pouvez pas réinitialiser votre propre double authentification : demandez à un autre SUPER_ADMIN.");
+        }
+        mfaService.reset(admin);
+        accountSecurity.invalidateSessions(admin);
+        notificationService.sendMfaResetEmail(admin.getEmail(), admin.getFullName());
+        log.warn("Double authentification réinitialisée pour {} par {}", LogMask.email(admin.getEmail()), LogMask.email(actingEmail));
+        return toResponse(admin);
     }
 
     // ── Privé ───────────────────────────────────────────────────────
@@ -174,6 +198,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
                 .roles(a.getRoles().stream().map(Role::getName).collect(Collectors.toCollection(java.util.TreeSet::new)))
                 .active(a.isActive())
                 .partnerId(a.getPartner() != null ? a.getPartner().getId() : null)
+                .mfaEnabled(a.isMfaEnabled())
                 .lastLoginAt(a.getLastLoginAt())
                 .createdAt(a.getCreatedAt())
                 .build();

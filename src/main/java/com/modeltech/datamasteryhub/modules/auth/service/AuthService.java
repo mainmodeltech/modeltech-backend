@@ -5,27 +5,45 @@ import com.modeltech.datamasteryhub.modules.auth.dto.request.ForgotPasswordReque
 import com.modeltech.datamasteryhub.modules.auth.dto.request.LoginRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.ResetPasswordRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
+import com.modeltech.datamasteryhub.security.AppUserDetails;
 
-/** Authentification des comptes de back-office ({@code admin_users}) et des apprenants ({@code learners}). */
+import java.util.Optional;
+
+/**
+ * Authentification des comptes de back-office ({@code admin_users}) et des apprenants ({@code learners}).
+ *
+ * <p>Une session = un jeton d'accès de 15 minutes (en mémoire du navigateur) + un jeton de rafraîchissement dans un cookie
+ * {@code HttpOnly}. Les comptes du personnel passent en plus par un second facteur (TOTP) : tant qu'il n'est pas validé,
+ * la connexion ne renvoie qu'un défi ({@code mfaRequired} / {@code mfaEnrollmentRequired}) et aucun jeton d'accès.
+ */
 public interface AuthService {
 
-    AuthResponse login(LoginRequest request);
+    AuthOutcome login(LoginRequest request, ClientInfo client);
 
     AuthResponse.AdminUserResponse me(String email);
 
     /**
      * Ouvre une session pour un compte actif dont l'identité vient d'être prouvée autrement que par mot de passe
      * (lien/code reçu, jeton Google vérifié). Compte inconnu : {@code UsernameNotFoundException}.
+     * Le personnel passe quand même par le second facteur.
      */
-    AuthResponse loginWithoutPassword(String email);
+    AuthOutcome loginWithoutPassword(String email, ClientInfo client);
+
+    /** Ouvre la session proprement dite (jetons) une fois tous les facteurs validés. */
+    AuthOutcome startSession(AppUserDetails user, boolean mfaVerified, ClientInfo client);
+
+    /** Échange un jeton de rafraîchissement contre un nouveau jeton d'accès ; vide si inconnu, expiré, révoqué ou rejoué. */
+    Optional<AuthOutcome> refresh(String refreshToken);
 
     /**
-     * Déconnexion : révoque le token JWT en le mettant en blacklist.
+     * Déconnexion : met fin à la session du jeton de rafraîchissement et révoque le jeton d'accès présenté.
      *
-     * @param token le Bearer token extrait du header Authorization
+     * @param accessToken  le Bearer token (peut être absent ou expiré)
+     * @param refreshToken le contenu du cookie (peut être absent)
      */
-    void logout(String token);
+    void logout(String accessToken, String refreshToken);
 
+    /** Change le mot de passe ; toutes les sessions du compte (y compris celle-ci) sont terminées. */
     void changePassword(String email, ChangePasswordRequest request);
 
     /**
@@ -35,7 +53,7 @@ public interface AuthService {
     void forgotPassword(ForgotPasswordRequest request);
 
     /**
-     * Valide le token de réinitialisation et change le mot de passe.
+     * Valide le token de réinitialisation et change le mot de passe (les sessions ouvertes sont terminées).
      */
     void resetPassword(ResetPasswordRequest request);
 
