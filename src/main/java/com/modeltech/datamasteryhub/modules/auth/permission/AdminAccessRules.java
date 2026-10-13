@@ -32,6 +32,7 @@ public final class AdminAccessRules {
 
         // ── Administration ───────────────────────────────────────────────────
         rule(null, "/api/v1/admin/users/**", ACCOUNTS_MANAGE);
+        rule(GET, "/api/v1/admin/profiles", PROFILES_MANAGE, ACCOUNTS_MANAGE);             // choisir les profils d'un compte
         rule(null, "/api/v1/admin/profiles/**", PROFILES_MANAGE);
         rule(null, "/api/v1/admin/audit/**", AUDIT_VIEW);
         rule(POST, "/api/v1/admin/email-logs/test", SYSTEM_MANAGE);

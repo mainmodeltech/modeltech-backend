@@ -135,6 +135,15 @@ class ProfilesAndGuardsIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void accountManagersCanListProfilesToAssignThemButNotEditThem() throws Exception {
+        var accountsOnly = TestAuth.withPermissions("rh@test.local", Permission.ACCOUNTS_MANAGE);
+        mockMvc.perform(get(PROFILES).with(accountsOnly)).andExpect(status().isOk());
+        mockMvc.perform(get(PROFILES + "/permissions").with(accountsOnly)).andExpect(status().isForbidden());
+        mockMvc.perform(post(PROFILES).with(accountsOnly).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"label\":\"Nouveau profil\",\"permissions\":[]}")).andExpect(status().isForbidden());
+    }
+
+    @Test
     void accountsCanOnlyReceiveProfilesWithinTheGrantersOwnRights() throws Exception {
         var accountsOnly = TestAuth.withPermissions("rh@test.local", Permission.ACCOUNTS_MANAGE, Permission.SESSIONS_VIEW);
         // Formateur = SESSIONS_VIEW + SESSIONS_TRACK : SESSIONS_TRACK manque
