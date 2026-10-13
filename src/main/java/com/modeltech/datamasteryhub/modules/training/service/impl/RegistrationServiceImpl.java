@@ -270,6 +270,10 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .findByCodeAndIsActiveTrueAndIsDeletedFalse(request.getPromoCode().trim().toUpperCase())
                 .ifPresent(promo -> {
                     if (isPromoExpired(promo) || isPromoExhausted(promo)) return;
+                    if (promo.isOverLimit()) {
+                        log.warn("Code promo {} ignoré : remise {} % au-dessus du plafond {} %", promo.getCode(), promo.getDiscountPercent(), com.modeltech.datamasteryhub.modules.training.entity.PromoCode.MAX_DISCOUNT_PERCENT);
+                        return;
+                    }
 
                     registration.setPromoCodeId(promo.getId());
                     registration.setPromoCodeUsed(promo.getCode());

@@ -27,6 +27,10 @@ public class PromoCodeResponse {
     private LocalDateTime expiresAt;
     private Boolean expired;        // calcule
 
+    /** Vrai : la remise dépasse le plafond (30 %) ; le code est refusé aux candidats tant qu'elle n'est pas corrigée. */
+    private Boolean overLimit;
+    private Integer maxDiscountPercent;
+
     // Etat
     private Boolean isActive;
 

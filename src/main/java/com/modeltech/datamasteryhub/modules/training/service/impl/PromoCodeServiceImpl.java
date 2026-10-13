@@ -83,6 +83,11 @@ public class PromoCodeServiceImpl implements PromoCodeService {
 
         return promoCodeRepository.findByCodeAndIsActiveTrueAndIsDeletedFalse(code.trim().toUpperCase())
                 .filter(promo -> {
+                    // Au-dessus du plafond : refusé tant que la direction ne l'a pas corrigé
+                    if (promo.isOverLimit()) {
+                        log.warn("Code promo {} refusé : remise {} % au-dessus du plafond {} %", promo.getCode(), promo.getDiscountPercent(), PromoCode.MAX_DISCOUNT_PERCENT);
+                        return false;
+                    }
                     // Non expire
                     if (promo.getExpiresAt() != null && promo.getExpiresAt().isBefore(LocalDateTime.now())) {
                         return false;

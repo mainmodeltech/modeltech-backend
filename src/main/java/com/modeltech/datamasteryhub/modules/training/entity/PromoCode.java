@@ -17,6 +17,10 @@ import java.util.UUID;
 @Getter @Setter @NoArgsConstructor
 public class PromoCode extends BaseEntity {
 
+    /** Remise maximale d'un code de parrainage (décision de la direction). Un code au-dessus n'est plus utilisable tant qu'il n'est pas corrigé. */
+    public static final int MAX_DISCOUNT_PERCENT = 30;
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -53,4 +57,9 @@ public class PromoCode extends BaseEntity {
     // Etat
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    /** Vrai pour un code créé avant le plafond : il est signalé et refusé aux candidats jusqu'à sa correction. */
+    public boolean isOverLimit() {
+        return discountPercent != null && discountPercent > MAX_DISCOUNT_PERCENT;
+    }
 }

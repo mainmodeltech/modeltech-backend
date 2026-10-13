@@ -24,7 +24,7 @@ public class CreatePromoCodeRequest {
 
     @NotNull(message = "Le pourcentage de reduction est obligatoire")
     @Min(value = 0, message = "Le pourcentage doit etre >= 0")
-    @Max(value = 100, message = "Le pourcentage doit etre <= 100")
+    @Max(value = 30, message = "Un code de parrainage ne peut pas dépasser 30 % de remise")
     private Integer discountPercent;
 
     /** Nombre max d'utilisations (null = illimite) */

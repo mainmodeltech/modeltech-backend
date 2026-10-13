@@ -13,6 +13,8 @@ public interface PromoCodeMapper {
 
     @Mapping(target = "remainingUses", expression = "java(calcRemainingUses(entity))")
     @Mapping(target = "expired", expression = "java(isExpired(entity))")
+    @Mapping(target = "overLimit", expression = "java(entity.isOverLimit())")
+    @Mapping(target = "maxDiscountPercent", constant = "30")
     PromoCodeResponse toResponse(PromoCode entity);
 
     @Mapping(target = "id", ignore = true)
