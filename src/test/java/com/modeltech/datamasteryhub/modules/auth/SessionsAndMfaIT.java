@@ -320,6 +320,23 @@ class SessionsAndMfaIT extends AbstractIntegrationTest {
         assertThat(stored.getIp()).isEqualTo("127.0.0.1");
     }
 
+    @Test
+    void aSessionAndItsTokens_doNotSurviveTheDisappearanceOfTheAccountsSecondFactor() throws Exception {
+        MvcResult session = openSession(staff);
+        String access = json(session).get("accessToken").asText();
+        String cookie = cookieValue(session);
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + access)).andExpect(status().isOk());
+
+        // Le second facteur disparaît sans passer par la réinitialisation officielle (intervention directe en base)
+        AdminUser stored = adminUserRepository.findById(staff.getId()).orElseThrow();
+        stored.setMfaSecretEnc(null);
+        stored.setMfaEnabledAt(null);
+        adminUserRepository.saveAndFlush(stored);
+
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + access)).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/auth/refresh").header("Origin", ORIGIN).cookie(new Cookie(COOKIE, cookie))).andExpect(status().isUnauthorized());
+    }
+
     // ── Déconnexion et événements de sécurité ────────────────────────
 
     @Test
