@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
+import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.common.util.SlugUtils;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.communication.repository.TestimonialRepository;
@@ -119,6 +121,9 @@ public class BootcampServiceImpl implements BootcampService {
     @Transactional
     public BootcampResponse create(CreateBootcampRequest request) {
         Bootcamp bootcamp = mapper.toEntity(request);
+        if (bootcamp.getPrice() != null || bootcamp.getPriceAmount() != null) {
+            Actor.require(Permission.PRICING_MANAGE, "le prix d'une formation");
+        }
         if (bootcamp.getDeliveredBy() == null) bootcamp.setDeliveredBy(DeliveredBy.INTERNAL);
 
         bootcamp.setSlug(resolveNewSlug(request.getSlug(), bootcamp.getTitle()));
@@ -132,8 +137,15 @@ public class BootcampServiceImpl implements BootcampService {
     @Override
     @Transactional
     public BootcampResponse update(UUID id, UpdateBootcampRequest request) {
+        if (!Actor.has(Permission.CATALOG_MANAGE)) request = pricesOnly(request);   // « Tarifs » seul : on ne retient que les prix
         Bootcamp bootcamp = getBootcampOrThrow(id);
+        String priceBefore = bootcamp.getPrice();
+        Long priceAmountBefore = bootcamp.getPriceAmount();
         mapper.updateEntity(request, bootcamp);
+        if (!java.util.Objects.equals(priceBefore, bootcamp.getPrice()) || !java.util.Objects.equals(priceAmountBefore, bootcamp.getPriceAmount())) {
+            // Un formulaire renvoie le prix inchangé : seul un changement réel exige le droit « Tarifs »
+            Actor.require(Permission.PRICING_MANAGE, "le prix d'une formation");
+        }
 
         if (request.getSlug() != null && !request.getSlug().equals(bootcamp.getSlug())) {
             bootcamp.setSlug(resolveChangedSlug(request.getSlug(), id));
@@ -178,11 +190,38 @@ public class BootcampServiceImpl implements BootcampService {
         return mapper.toSessionResponse(getSessionOrThrow(sessionId));
     }
 
+    /** Le droit « Tarifs » ne permet de modifier que les prix : tout autre champ envoyé par le formulaire est ignoré. */
+    private static UpdateBootcampRequest pricesOnly(UpdateBootcampRequest request) {
+        UpdateBootcampRequest only = new UpdateBootcampRequest();
+        only.setPrice(request.getPrice());
+        only.setPriceAmount(request.getPriceAmount());
+        return only;
+    }
+
+    private static UpdateBootcampSessionRequest pricesOnly(UpdateBootcampSessionRequest request) {
+        UpdateBootcampSessionRequest only = new UpdateBootcampSessionRequest();
+        only.setPriceOverride(request.getPriceOverride());
+        only.setPriceOverrideAmount(request.getPriceOverrideAmount());
+        only.setEarlyBirdPrice(request.getEarlyBirdPrice());
+        only.setEarlyBirdAmount(request.getEarlyBirdAmount());
+        only.setEarlyBirdDeadline(request.getEarlyBirdDeadline());
+        return only;
+    }
+
+    private static List<Object> sessionPrices(BootcampSession s) {
+        return java.util.Arrays.asList(s.getPriceOverride(), s.getPriceOverrideAmount(), s.getEarlyBirdPrice(),
+                s.getEarlyBirdAmount(), s.getEarlyBirdDeadline());
+    }
+
     @Override
     @Transactional
     public BootcampSessionResponse createSession(UUID bootcampId, CreateBootcampSessionRequest request) {
         Bootcamp bootcamp = getBootcampOrThrow(bootcampId);
         BootcampSession session = mapper.toSessionEntity(request);
+        if (session.getPriceOverride() != null || session.getPriceOverrideAmount() != null
+                || session.getEarlyBirdPrice() != null || session.getEarlyBirdAmount() != null) {
+            Actor.require(Permission.PRICING_MANAGE, "le prix d'une session");
+        }
         session.setBootcamp(bootcamp);
         return mapper.toSessionResponse(sessionRepository.save(session));
     }
@@ -190,8 +229,13 @@ public class BootcampServiceImpl implements BootcampService {
     @Override
     @Transactional
     public BootcampSessionResponse updateSession(UUID sessionId, UpdateBootcampSessionRequest request) {
+        if (!Actor.has(Permission.CATALOG_MANAGE)) request = pricesOnly(request);
         BootcampSession session = getSessionOrThrow(sessionId);
+        List<Object> pricesBefore = sessionPrices(session);
         mapper.updateSessionEntity(request, session);
+        if (!pricesBefore.equals(sessionPrices(session))) {
+            Actor.require(Permission.PRICING_MANAGE, "le prix d'une session");
+        }
         // Recalcule isFull si currentParticipants ou max ont changé
         if (session.getMaxParticipants() != null && session.getCurrentParticipants() != null) {
             session.setIsFull(session.getCurrentParticipants() >= session.getMaxParticipants());

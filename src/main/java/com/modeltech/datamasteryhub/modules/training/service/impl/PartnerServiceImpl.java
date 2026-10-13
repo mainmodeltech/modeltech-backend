@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
+import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.common.util.SlugUtils;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.networking.service.StorageService;
@@ -61,6 +63,9 @@ public class PartnerServiceImpl implements PartnerService {
     public AdminPartnerResponse create(CreatePartnerRequest request) {
         log.info("Création partenaire: {}", request.getName());
         Partner partner = partnerMapper.toEntity(request);
+        if (partner.getRevenueSharePercent() != null) {
+            Actor.require(Permission.PARTNERS_REVENUE, "la part de revenu d'un partenaire");
+        }
         partner.setSlug(hasText(request.getSlug())
                 ? requireFreeSlug(request.getSlug(), partnerRepository.existsBySlug(request.getSlug()))
                 : SlugUtils.unique(request.getName(), "partenaire", partnerRepository::existsBySlug));
@@ -75,7 +80,12 @@ public class PartnerServiceImpl implements PartnerService {
             partner.setSlug(requireFreeSlug(request.getSlug(),
                     partnerRepository.existsBySlugAndIdNot(request.getSlug(), id)));
         }
+        java.math.BigDecimal shareBefore = partner.getRevenueSharePercent();
         partnerMapper.updateEntity(request, partner);
+        if (shareBefore == null ? partner.getRevenueSharePercent() != null
+                : partner.getRevenueSharePercent() == null || shareBefore.compareTo(partner.getRevenueSharePercent()) != 0) {
+            Actor.require(Permission.PARTNERS_REVENUE, "la part de revenu d'un partenaire");
+        }
         return partnerMapper.toAdminResponse(partnerRepository.save(partner));
     }
 

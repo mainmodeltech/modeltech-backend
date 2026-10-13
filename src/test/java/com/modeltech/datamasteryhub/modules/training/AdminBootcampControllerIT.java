@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
@@ -220,6 +221,6 @@ class AdminBootcampControllerIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor admin() {
-        return SecurityMockMvcRequestPostProcessors.user("admin@test.local").roles("ADMIN");
+        return TestAuth.as("admin@test.local", "ADMIN");
     }
 }

@@ -3,6 +3,7 @@ package com.modeltech.datamasteryhub.modules.training.controller;
 import com.modeltech.datamasteryhub.common.dto.ApiResponse;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
 import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
@@ -62,19 +63,18 @@ public class AdminMeController {
     public ResponseEntity<ApiResponse<List<MyFormation>>> formations(Authentication auth) {
         Collection<String> roles = roles(auth);
         List<Bootcamp> formations;
-        if (roles.contains(RoleNames.SUPER_ADMIN) || roles.contains(RoleNames.ADMIN) || roles.contains(RoleNames.EDITOR)) {
+        if (roles.contains(Permission.SCOPE_ALL_FORMATIONS.name())) {
             formations = bootcampRepository.findAllByIsDeletedFalseOrderByDisplayOrderAscCreatedAtDesc();
         } else if (roles.contains(RoleNames.PARTNER)) {
             UUID partnerId = adminUserRepository.findByEmailAndIsDeletedFalse(auth.getName())
                     .map(AdminUser::getPartner).map(p -> p.getId()).orElse(null);
             formations = partnerId == null ? List.of()
                     : bootcampRepository.findAllByPartnerIdAndIsDeletedFalseOrderByDisplayOrderAscCreatedAtDesc(partnerId);
-        } else if (roles.contains(RoleNames.TRAINER)) {
+        } else {
+            // Formations des sessions confiées à la personne (formateur ou toute autre personne désignée sur une session)
             Map<UUID, Bootcamp> byId = new LinkedHashMap<>();
             visibleSessions(auth).forEach(s -> byId.putIfAbsent(s.getBootcamp().getId(), s.getBootcamp()));
             formations = List.copyOf(byId.values());
-        } else {
-            formations = List.of();
         }
         List<MyFormation> list = formations.stream().map(this::toFormation).toList();
         return ResponseEntity.ok(ApiResponse.ok(list.size() + " formation(s)", list));
@@ -82,13 +82,10 @@ public class AdminMeController {
 
     private List<BootcampSession> visibleSessions(Authentication auth) {
         Collection<String> roles = roles(auth);
-        if (roles.contains(RoleNames.SUPER_ADMIN) || roles.contains(RoleNames.ADMIN)) {
+        if (roles.contains(Permission.SCOPE_ALL_SESSIONS.name())) {
             return sessionRepository.findAllByIsDeletedFalseOrderByStartDateDesc();
         }
-        if (roles.contains(RoleNames.TRAINER)) {
-            return sessionRepository.findAllByTrainerEmailIgnoreCaseAndIsDeletedFalseOrderByStartDateDesc(auth.getName());
-        }
-        return List.of();
+        return sessionRepository.findAllByTrainerEmailIgnoreCaseAndIsDeletedFalseOrderByStartDateDesc(auth.getName());
     }
 
     private Collection<String> roles(Authentication auth) {

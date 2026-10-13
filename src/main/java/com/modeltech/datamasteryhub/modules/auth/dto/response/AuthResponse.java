@@ -54,6 +54,14 @@ public class AuthResponse {
         /** « ADMIN » (back-office) ou « LEARNER » (apprenant). */
         private String userType;
 
+        /** Libellés des profils (« Finance », « Pédagogie »…), dans l'ordre des rôles. */
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private java.util.List<String> profileLabels;
+
+        /** Personnel : droits effectifs (union de ceux de ses profils) ; sert à n'afficher que ce que la personne peut faire. */
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Set<String> permissions;
+
         /** Personnel : la double authentification est activée. */
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private Boolean mfaEnabled;

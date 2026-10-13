@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.TestData;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
@@ -54,7 +55,7 @@ class TrainerAssignmentIT extends AbstractIntegrationTest {
         inactive.setActive(false);
         adminUserRepository.save(inactive);
 
-        mockMvc.perform(get("/api/v1/admin/trainers").with(user("e@test.local", "EDITOR")))
+        mockMvc.perform(get("/api/v1/admin/trainers").with(user("p@test.local", "PEDAGOGY")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].fullName").value("Moussa Fall"));
@@ -113,6 +114,6 @@ class TrainerAssignmentIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor user(String email, String role) {
-        return SecurityMockMvcRequestPostProcessors.user(email).roles(role);
+        return TestAuth.as(email, role);
     }
 }

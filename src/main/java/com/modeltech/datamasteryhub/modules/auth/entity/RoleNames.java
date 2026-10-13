@@ -12,8 +12,19 @@ public final class RoleNames {
     public static final String PARTNER = "ROLE_PARTNER";
     public static final String LEARNER = "ROLE_LEARNER";
 
-    /** Rôles des comptes de back-office (table admin_users). */
-    public static final Set<String> STAFF = Set.of(SUPER_ADMIN, ADMIN, EDITOR, TRAINER, PARTNER);
+    // Profils par métier (migration V33)
+    public static final String FINANCE = "ROLE_FINANCE";
+    public static final String ADMISSIONS = "ROLE_ADMISSIONS";
+    public static final String PEDAGOGY = "ROLE_PEDAGOGY";
+    public static final String COMMUNICATION = "ROLE_COMMUNICATION";
+    public static final String AUDITOR = "ROLE_AUDITOR";
+
+    /**
+     * Profils livrés pour le back-office. Ce n'est PLUS la liste des profils du personnel : le SUPER_ADMIN peut en créer
+     * d'autres (colonne {@code roles.is_staff}) ; utiliser {@code Role#isStaff()}.
+     */
+    public static final Set<String> STAFF = Set.of(SUPER_ADMIN, ADMIN, EDITOR, TRAINER, PARTNER,
+            FINANCE, ADMISSIONS, PEDAGOGY, COMMUNICATION, AUDITOR);
 
     private RoleNames() {}
 

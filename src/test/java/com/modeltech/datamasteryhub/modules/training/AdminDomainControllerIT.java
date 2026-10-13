@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.TestData;
 import com.modeltech.datamasteryhub.modules.training.entity.Domain;
@@ -119,6 +120,6 @@ class AdminDomainControllerIT extends AbstractIntegrationTest {
     }
 
     private static org.springframework.test.web.servlet.request.RequestPostProcessor admin() {
-        return SecurityMockMvcRequestPostProcessors.user("admin@test.local").roles("ADMIN");
+        return TestAuth.as("admin@test.local", "ADMIN");
     }
 }

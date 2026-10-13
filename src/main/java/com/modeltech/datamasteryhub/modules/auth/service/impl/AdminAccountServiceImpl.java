@@ -8,6 +8,7 @@ import com.modeltech.datamasteryhub.modules.auth.dto.request.UpdateAdminUserRequ
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AdminUserSummaryResponse;
 import com.modeltech.datamasteryhub.modules.auth.entity.AdminUser;
 import com.modeltech.datamasteryhub.modules.auth.entity.Role;
+import com.modeltech.datamasteryhub.modules.auth.permission.ProfileService;
 import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
@@ -53,6 +54,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     private final NotificationService notificationService;
     private final MfaService mfaService;
     private final AccountSecurityService accountSecurity;
+    private final ProfileService profileService;
 
     @Override
     public Page<AdminUserSummaryResponse> findAll(Pageable pageable) {
@@ -66,7 +68,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
     @Override
     @Transactional
-    public AdminUserSummaryResponse create(CreateAdminUserRequest request) {
+    public AdminUserSummaryResponse create(CreateAdminUserRequest request, String actingEmail) {
         String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
         if (adminUserRepository.existsByEmailAndIsDeletedFalse(email)
                 || learnerRepository.existsByEmailIgnoreCaseAndIsDeletedFalse(email)) {
@@ -74,6 +76,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         }
 
         Set<Role> roles = resolveRoles(request.getRoles());
+        profileService.requireCanAssign(roles);
         AdminUser admin = new AdminUser();
         admin.setEmail(email);
         admin.setFullName(request.getFullName().trim());
@@ -98,6 +101,11 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         boolean wasActiveSuperAdmin = admin.isActive() && admin.hasRole(RoleNames.SUPER_ADMIN);
 
         Set<Role> newRoles = request.getRoles() != null ? resolveRoles(request.getRoles()) : admin.getRoles();
+        if (request.getRoles() != null) {
+            // Anti-élévation : on ne donne ni ne retire que des profils dont les droits sont inclus dans les siens
+            profileService.requireCanAssign(newRoles);
+            profileService.requireCanAssign(admin.getRoles());
+        }
         boolean newActive = request.getActive() != null ? request.getActive() : admin.isActive();
         boolean willBeActiveSuperAdmin = newActive
                 && newRoles.stream().anyMatch(r -> RoleNames.SUPER_ADMIN.equals(r.getName()));
@@ -159,12 +167,12 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         Set<Role> roles = new HashSet<>();
         for (String name : requested) {
             String normalized = RoleNames.normalize(name);
-            if (!RoleNames.STAFF.contains(normalized)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Rôle invalide pour un compte de back-office : " + name);
-            }
-            roles.add(roleRepository.findByName(normalized)
-                    .orElseThrow(() -> new IllegalStateException("Rôle " + normalized + " absent (migration V20 ?)")));
+            // Tout profil du back-office (livré ou créé par la direction) ; jamais « apprenant »
+            Role role = roleRepository.findByNameAndIsDeletedFalse(normalized)
+                    .filter(Role::isStaff)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Profil invalide pour un compte de back-office : " + name));
+            roles.add(role);
         }
         return roles;
     }

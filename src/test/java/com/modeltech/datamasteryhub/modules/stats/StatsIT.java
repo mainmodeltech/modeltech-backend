@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.stats;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.TestData;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
@@ -123,10 +124,12 @@ class StatsIT extends AbstractIntegrationTest {
     @Test
     void stats_are_reserved_to_administrators() throws Exception {
         mockMvc.perform(get("/api/v1/admin/stats/overview")).andExpect(status().isUnauthorized());
-        for (String role : new String[]{"EDITOR", "TRAINER", "PARTNER", "LEARNER"}) {
+        for (String role : new String[]{"EDITOR", "TRAINER", "PARTNER", "COMMUNICATION", "LEARNER"}) {
             mockMvc.perform(get("/api/v1/admin/stats/overview").with(user("x@test.local", role))).andExpect(status().isForbidden());
-            mockMvc.perform(get("/api/v1/admin/stats/actions").with(user("x@test.local", role))).andExpect(status().isForbidden());
         }
+        // Les pastilles du menu sont pour tout le personnel (chacun ne voit que ses files), pas pour un apprenant
+        mockMvc.perform(get("/api/v1/admin/stats/actions").with(user("x@test.local", "TRAINER"))).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/admin/stats/actions").with(user("x@test.local", "LEARNER"))).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/admin/stats/actions").with(user("root@test.local", "SUPER_ADMIN"))).andExpect(status().isOk());
     }
 
@@ -158,6 +161,6 @@ class StatsIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor user(String email, String role) {
-        return SecurityMockMvcRequestPostProcessors.user(email).roles(role);
+        return TestAuth.as(email, role);
     }
 }

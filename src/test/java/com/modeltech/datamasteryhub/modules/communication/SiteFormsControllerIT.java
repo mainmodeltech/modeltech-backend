@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.communication;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessage;
 import com.modeltech.datamasteryhub.modules.communication.enums.ContactType;
@@ -237,6 +238,6 @@ class SiteFormsControllerIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor admin() {
-        return SecurityMockMvcRequestPostProcessors.user("admin@test.local").roles("ADMIN");
+        return TestAuth.as("admin@test.local", "ADMIN");
     }
 }

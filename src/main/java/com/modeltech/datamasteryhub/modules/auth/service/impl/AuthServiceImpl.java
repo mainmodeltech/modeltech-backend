@@ -15,6 +15,7 @@ import com.modeltech.datamasteryhub.modules.auth.entity.PasswordResetToken;
 import com.modeltech.datamasteryhub.modules.auth.entity.Role;
 import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
 import com.modeltech.datamasteryhub.modules.auth.entity.TokenBlacklist;
+import com.modeltech.datamasteryhub.modules.auth.permission.PermissionService;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.PasswordResetTokenRepository;
@@ -81,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
     private final MfaService                   mfaService;
     private final LoginThrottle                throttle;
     private final PasswordPolicy               passwordPolicy;
+    private final PermissionService            permissionService;
 
     @Value("${app.password-reset.expiration-minutes:15}")
     private int resetTokenExpirationMinutes;
@@ -474,6 +476,8 @@ public class AuthServiceImpl implements AuthService {
                 .roles(roleNames(admin.getRoles()))
                 .userType(JwtTokenProvider.USER_TYPE_ADMIN)
                 .mfaEnabled(admin.isMfaEnabled())
+                .permissions(permissionService.effective(admin.getRoles()))
+                .profileLabels(admin.getRoles().stream().map(Role::displayName).sorted().toList())
                 .partnerId(admin.getPartner() != null ? admin.getPartner().getId() : null)
                 .build();
     }

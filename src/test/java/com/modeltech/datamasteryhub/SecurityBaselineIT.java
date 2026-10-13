@@ -61,7 +61,7 @@ class SecurityBaselineIT extends AbstractIntegrationTest {
 
     @Test
     void unknownRoute_is404_notAnInternalError() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/route-inexistante").with(admin()))
+        mockMvc.perform(get("/api/v1/admin/payments/route-inexistante").with(admin()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -89,6 +89,6 @@ class SecurityBaselineIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor admin() {
-        return SecurityMockMvcRequestPostProcessors.user("admin@test.local").roles("ADMIN");
+        return TestAuth.as("admin@test.local", "ADMIN");
     }
 }

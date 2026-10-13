@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.course;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.TestData;
@@ -44,9 +45,9 @@ class CommunityIT extends AbstractIntegrationTest {
     @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     private Bootcamp bootcamp;
-    private final RequestPostProcessor asAwa = user("awa@example.com").roles("LEARNER");
-    private final RequestPostProcessor asMoussa = user("moussa@example.com").roles("LEARNER");
-    private final RequestPostProcessor asOutsider = user("autre@example.com").roles("LEARNER");
+    private final RequestPostProcessor asAwa = TestAuth.as("awa@example.com", "LEARNER");
+    private final RequestPostProcessor asMoussa = TestAuth.as("moussa@example.com", "LEARNER");
+    private final RequestPostProcessor asOutsider = TestAuth.as("autre@example.com", "LEARNER");
 
     @BeforeEach
     void setUp() {
@@ -107,13 +108,13 @@ class CommunityIT extends AbstractIntegrationTest {
         String url = "/api/v1/learner/formations/" + bootcamp.getId() + "/community";
         String rootId = id(send(url, asAwa, "{\"content\":\"Message à modérer\"}").andExpect(status().isCreated()));
 
-        RequestPostProcessor admin = user("staff@test.local").roles("ADMIN");
+        RequestPostProcessor admin = TestAuth.as("staff@test.local", "ADMIN");
         mockMvc.perform(get("/api/v1/admin/community").param("formationId", bootcamp.getId().toString()).with(admin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].authorName").value("Awa Diop"))
                 .andExpect(jsonPath("$.data[0].authorEmail").value("awa@example.com"));
 
-        mockMvc.perform(delete("/api/v1/admin/community/" + rootId).with(user("editor@test.local").roles("EDITOR"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/admin/community/" + rootId).with(TestAuth.as("editor@test.local", "EDITOR"))).andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/v1/admin/community/" + rootId).with(asAwa)).andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/v1/admin/community/" + rootId)).andExpect(status().isUnauthorized());
         mockMvc.perform(delete("/api/v1/admin/community/" + rootId).with(admin)).andExpect(status().isNoContent());

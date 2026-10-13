@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.modules.training;
 
+import com.modeltech.datamasteryhub.TestAuth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
@@ -587,6 +588,6 @@ class PaymentFlowIT extends AbstractIntegrationTest {
     }
 
     private static RequestPostProcessor user(String email, String role) {
-        return SecurityMockMvcRequestPostProcessors.user(email).roles(role);
+        return TestAuth.as(email, role);
     }
 }

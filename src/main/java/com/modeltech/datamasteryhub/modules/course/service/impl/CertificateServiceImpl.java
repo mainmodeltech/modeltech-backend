@@ -2,7 +2,7 @@ package com.modeltech.datamasteryhub.modules.course.service.impl;
 
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
-import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
+import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.course.dto.CertificatePayloads;
 import com.modeltech.datamasteryhub.modules.course.entity.Certificate;
@@ -138,8 +138,8 @@ public class CertificateServiceImpl implements CertificateService {
                         "Conditions non remplies : " + (missing.isEmpty() ? "programme vide" : missing)
                                 + ". Utilisez force avec un motif pour déroger.");
             }
-            if (!actorRoles.contains(RoleNames.ADMIN) && !actorRoles.contains(RoleNames.SUPER_ADMIN)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Seule l'administration peut délivrer un certificat par dérogation.");
+            if (!actorRoles.contains(Permission.CERTIFICATES_OVERRIDE.name())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'avez pas le droit de délivrer un certificat par dérogation.");
             }
             if (reason == null || reason.isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le motif de la dérogation est obligatoire.");

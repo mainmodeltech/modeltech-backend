@@ -1,5 +1,6 @@
 package com.modeltech.datamasteryhub.security;
 
+import com.modeltech.datamasteryhub.modules.auth.permission.AdminAccessRules;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -68,7 +69,8 @@ public class SecurityConfig {
                             + "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Authentification requise ou session expirée.\",\"path\":\""
                             + path + "\"}");
                 }))
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
+                    auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         // ── Routes publiques ────────────────────────────────────────
@@ -127,41 +129,16 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
-                        // ── Back-office : contrôle par rôle (les règles les plus précises d'abord) ──
-                        .requestMatchers("/api/v1/admin/users/**", "/api/v1/admin/email-logs/test")
-                                .hasRole("SUPER_ADMIN")
-                        .requestMatchers(
-                                "/api/v1/admin/registrations/**",
-                                "/api/v1/admin/promo-codes/**",
-                                "/api/v1/admin/learners/**",
-                                "/api/v1/admin/payments/**",
-                                "/api/v1/admin/email-logs/**",
-                                "/api/v1/admin/certificates/**",
-                                "/api/v1/admin/invoices/**",
-                                "/api/v1/admin/community/**",
-                                "/api/v1/admin/stats/**",
-                                "/api/v1/admin/bootcamps/sessions/*/trainer",
-                                "/api/v1/admin/enrollments/**")
-                                .hasAnyRole("SUPER_ADMIN", "ADMIN")
-                        // Programme d'une formation : le personnel, et un partenaire pour SES formations (vérifié par le service)
-                        .requestMatchers("/api/v1/admin/formations/*/content",
-                                "/api/v1/admin/formations/*/project",
-                                "/api/v1/admin/lessons/*/quiz")
-                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR", "PARTNER")
-                        // Suivi de session, appel et correction : équipe pédagogique (le formateur n'a pas d'autre accès au back-office)
-                        .requestMatchers("/api/v1/admin/sessions/**")
-                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "TRAINER")
-                        // « Mon espace » : chaque compte du back-office voit ce qui le concerne (filtré par le contrôleur)
-                        .requestMatchers("/api/v1/admin/me/**")
-                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR", "TRAINER", "PARTNER")
-                        .requestMatchers("/api/v1/admin/**")
-                                .hasAnyRole("SUPER_ADMIN", "ADMIN", "EDITOR")
+                        ;
+                // ── Back-office : contrôle par DROIT (table unique AdminAccessRules, refus par défaut) ──
+                AdminAccessRules.apply(auth);
+                auth
                         // ── Espace apprenant ──────────────────────────────────────
                         .requestMatchers("/api/v1/learner/**")
                                 .hasRole("LEARNER")
                         // ── Toutes les autres routes → authentification requise ─────
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated();
+                })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

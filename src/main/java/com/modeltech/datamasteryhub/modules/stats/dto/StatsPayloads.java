@@ -15,29 +15,36 @@ public final class StatsPayloads {
 
     private StatsPayloads() {}
 
-    /** Ce qui attend l'équipe aujourd'hui : un compteur par file de travail. */
+    /**
+     * Ce qui attend l'équipe aujourd'hui : un compteur par file de travail. Un compteur est absent (null) quand la
+     * personne n'a pas le droit de traiter cette file : le menu n'affiche alors pas de pastille.
+     */
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class Actions {
         /** Candidatures à examiner (PENDING). */
-        private long newApplications;
+        private Long newApplications;
         /** Paiements déclarés à vérifier (DECLARED). */
-        private long paymentsToConfirm;
+        private Long paymentsToConfirm;
         /** Échéances en attente dont la date est dépassée. */
-        private long overdueInstallments;
+        private Long overdueInstallments;
         /** Messages de contact et demandes non lus. */
-        private long unreadMessages;
+        private Long unreadMessages;
         /** Questions d'apprenants sans réponse. */
-        private long openQuestions;
+        private Long openQuestions;
         /** Projets finaux rendus, à corriger. */
-        private long projectsToReview;
+        private Long projectsToReview;
         /** Lives dans les 7 prochains jours. */
-        private long upcomingLives;
+        private Long upcomingLives;
         /** E-mails en échec ces 7 derniers jours. */
-        private long failedEmails;
+        private Long failedEmails;
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
     public static class Overview {
+        /** Faux : la personne voit l'activité mais pas les montants (revenue absent, encaissé masqué). */
+        private boolean financeVisible;
         private LocalDate from;
         private LocalDate to;
         private String currency;
@@ -95,7 +102,8 @@ public final class StatsPayloads {
         /** {@code yyyy-MM}. */
         private String month;
         private long registrations;
-        private long collected;
+        /** Absent sans le droit « Tableau de bord financier ». */
+        private Long collected;
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -120,7 +128,8 @@ public final class StatsPayloads {
         private String title;
         private long registrations;
         private long paid;
-        private long collected;
+        /** Absent sans le droit « Tableau de bord financier ». */
+        private Long collected;
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor

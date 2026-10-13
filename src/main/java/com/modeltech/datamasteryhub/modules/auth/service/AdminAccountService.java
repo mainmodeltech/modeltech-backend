@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
-/** Gestion des comptes de back-office (réservée aux SUPER_ADMIN). */
+/** Gestion des comptes de back-office (droit « Comptes et accès »). */
 public interface AdminAccountService {
 
     Page<AdminUserSummaryResponse> findAll(Pageable pageable);
@@ -16,7 +16,7 @@ public interface AdminAccountService {
     AdminUserSummaryResponse findById(UUID id);
 
     /** Crée le compte (sans mot de passe utilisable) et envoie l'invitation « définir mon mot de passe ». */
-    AdminUserSummaryResponse create(CreateAdminUserRequest request);
+    AdminUserSummaryResponse create(CreateAdminUserRequest request, String actingEmail);
 
     /**
      * Met à jour le compte. Garde-fous : on ne peut ni se désactiver, ni se retirer le rôle
