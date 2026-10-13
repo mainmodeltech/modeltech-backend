@@ -22,6 +22,7 @@ import com.modeltech.datamasteryhub.modules.training.repository.BootcampReposito
 import com.modeltech.datamasteryhub.modules.training.repository.BootcampSessionRepository;
 import com.modeltech.datamasteryhub.modules.training.repository.PromoCodeRepository;
 import com.modeltech.datamasteryhub.modules.training.repository.RegistrationRepository;
+import com.modeltech.datamasteryhub.modules.training.service.RegistrationFilter;
 import com.modeltech.datamasteryhub.modules.training.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -137,6 +138,28 @@ public class RegistrationServiceImpl implements RegistrationService {
         Page<RegistrationResponse> result = page.map(registrationMapper::toResponse);
         attachPaymentSummaries(result.getContent());
         return result;
+    }
+
+    @Override
+    public Page<RegistrationResponse> search(Pageable pageable, RegistrationFilter filter) {
+        Page<RegistrationResponse> result = registrationRepository.findAll(filter.toSpecification(), pageable)
+                .map(registrationMapper::toResponse);
+        attachPaymentSummaries(result.getContent());
+        return result;
+    }
+
+    @Override
+    public java.util.Map<String, Long> stageCounts(RegistrationFilter filter) {
+        RegistrationFilter base = filter.withoutStage();
+        java.util.Map<String, Long> counts = new java.util.LinkedHashMap<>();
+        long total = 0;
+        for (RegistrationFilter.Stage stage : RegistrationFilter.Stage.values()) {
+            long n = registrationRepository.count(new RegistrationFilter(stage, null, base.q(), base.bootcampId(), base.sessionId()).toSpecification());
+            counts.put(stage.name(), n);
+            total += n;
+        }
+        counts.put("ALL", total);
+        return counts;
     }
 
     @Override

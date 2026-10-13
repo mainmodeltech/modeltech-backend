@@ -10,7 +10,8 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface RegistrationRepository extends SoftDeleteRepository<Registration, UUID> {
+public interface RegistrationRepository extends SoftDeleteRepository<Registration, UUID>,
+        org.springframework.data.jpa.repository.JpaSpecificationExecutor<Registration> {
 
     Page<Registration> findAllByStatusAndIsDeletedFalse(RegistrationStatus status, Pageable pageable);
 
