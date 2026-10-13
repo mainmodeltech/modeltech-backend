@@ -41,6 +41,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final QuizQuestionRepository questionRepository;
     private final QuizChoiceRepository choiceRepository;
     private final QuizAttemptRepository attemptRepository;
+    private final com.modeltech.datamasteryhub.modules.course.repository.QuizAttemptGrantRepository grantRepository;
     private final LessonProgressRepository progressRepository;
     private final LearnerAccess access;
     private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
@@ -74,8 +75,17 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         return toStart(attempt, lesson);
     }
 
+    /** Limite du quiz, augmentée des tentatives accordées à cet apprenant ; null = illimité. */
+    private Integer effectiveMax(UUID learnerId, CourseLesson lesson) {
+        Integer base = lesson.getQuizMaxAttempts();
+        if (base == null) return null;
+        int extra = grantRepository.findAllByLearnerIdAndLessonIdAndIsDeletedFalse(learnerId, lesson.getId()).stream()
+                .mapToInt(com.modeltech.datamasteryhub.modules.course.entity.QuizAttemptGrant::getExtraAttempts).sum();
+        return base + extra;
+    }
+
     private QuizAttempt openNewAttempt(Learner learner, CourseLesson lesson, int previousAttempts) {
-        Integer max = lesson.getQuizMaxAttempts();
+        Integer max = effectiveMax(learner.getId(), lesson);
         if (max != null && previousAttempts >= max) throw conflict("Vous avez utilisé toutes vos tentatives.");
 
         List<QuizQuestion> bank = new ArrayList<>(questionRepository
@@ -119,7 +129,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .quizId(lesson.getId().toString())
                 .title(lesson.getTitle())
                 .attemptNumber(attempt.getAttemptNumber())
-                .maxAttempts(lesson.getQuizMaxAttempts())
+                .maxAttempts(effectiveMax(attempt.getLearner().getId(), lesson))
                 .passThreshold(lesson.getQuizPassThreshold())
                 .timeLimitMinutes(null)
                 .startedAt(attempt.getStartedAt())
@@ -184,7 +194,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             certificateService.issueIfEligible(learner.getId(), lesson.getModule().getBootcamp().getId());
         }
 
-        Integer max = lesson.getQuizMaxAttempts();
+        Integer max = effectiveMax(learner.getId(), lesson);
         Integer remaining = max == null ? null : Math.max(0, max - attempt.getAttemptNumber());
         // La correction n'est donnée que lorsqu'elle ne permet plus de « jouer » la banque : réussite ou dernière tentative
         boolean revealAnswers = passed || (remaining != null && remaining == 0);

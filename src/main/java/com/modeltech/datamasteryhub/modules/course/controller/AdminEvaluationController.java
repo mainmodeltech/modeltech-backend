@@ -46,6 +46,22 @@ public class AdminEvaluationController {
         return evaluationService.saveAttendance(sessionId, liveId, update, authentication.getName(), roles(authentication));
     }
 
+    /** Les quiz d'un apprenant : tentatives utilisées, limite effective, tentatives accordées. */
+    @GetMapping("/sessions/{sessionId}/learners/{learnerId}/quizzes")
+    public List<EvaluationPayloads.QuizSummary> learnerQuizzes(@PathVariable UUID sessionId, @PathVariable UUID learnerId,
+                                                               Authentication authentication) {
+        return evaluationService.learnerQuizzes(sessionId, learnerId, authentication.getName(), roles(authentication));
+    }
+
+    /** Accorde des tentatives supplémentaires à un apprenant (motif obligatoire). */
+    @PostMapping("/sessions/{sessionId}/learners/{learnerId}/quizzes/{quizId}/attempts")
+    public EvaluationPayloads.QuizSummary grantAttempts(@PathVariable UUID sessionId, @PathVariable UUID learnerId,
+                                                        @PathVariable UUID quizId,
+                                                        @jakarta.validation.Valid @RequestBody EvaluationPayloads.GrantAttemptsRequest request,
+                                                        Authentication authentication) {
+        return evaluationService.grantAttempts(sessionId, learnerId, quizId, request, authentication.getName(), roles(authentication));
+    }
+
     @GetMapping("/sessions/{sessionId}/learners/{learnerId}/project/files")
     public List<EvaluationPayloads.ProjectFileLink> projectFiles(@PathVariable UUID sessionId, @PathVariable UUID learnerId,
                                                                  Authentication authentication) {

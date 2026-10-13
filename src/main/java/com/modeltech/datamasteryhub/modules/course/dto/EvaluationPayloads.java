@@ -28,7 +28,10 @@ public final class EvaluationPayloads {
         private int questionCount;
         private Integer timeLimitMinutes;
         private int passThreshold;
+        /** Limite effective pour cet apprenant (limite du quiz + tentatives accordées) ; null = illimité. */
         private Integer maxAttempts;
+        /** Tentatives supplémentaires accordées par l'équipe. */
+        private int extraAttempts;
         private int attemptsUsed;
         private Integer bestScore;
         /** PASSED, FAILED (tentatives épuisées), LOCKED (module pas encore ouvert), TO_DO (jamais tenté), AVAILABLE (à retenter). */
@@ -253,5 +256,16 @@ public final class EvaluationPayloads {
         /** Lien de téléchargement temporaire (15 minutes). */
         private String downloadUrl;
         private LocalDateTime uploadedAt;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class GrantAttemptsRequest {
+        @jakarta.validation.constraints.Min(value = 1, message = "Au moins une tentative")
+        @jakarta.validation.constraints.Max(value = 10, message = "10 tentatives au plus par octroi")
+        private int extraAttempts;
+
+        @jakarta.validation.constraints.NotBlank(message = "Le motif est obligatoire")
+        @jakarta.validation.constraints.Size(max = 1000)
+        private String reason;
     }
 }
