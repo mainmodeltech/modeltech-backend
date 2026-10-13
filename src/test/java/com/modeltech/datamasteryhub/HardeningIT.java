@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -36,7 +37,7 @@ class HardeningIT extends AbstractIntegrationTest {
 
     @Test
     void registration_isRefusedWhenTheRecaptchaCheckFails() throws Exception {
-        when(recaptchaService.verify("jeton")).thenReturn(false);
+        when(recaptchaService.verify(eq("jeton"), anyString())).thenReturn(false);
 
         mockMvc.perform(post("/api/v1/registrations").contentType(MediaType.APPLICATION_JSON).content(REGISTRATION))
                 .andExpect(status().isForbidden())
@@ -46,7 +47,7 @@ class HardeningIT extends AbstractIntegrationTest {
 
     @Test
     void registration_goesThroughWhenTheRecaptchaCheckPasses() throws Exception {
-        when(recaptchaService.verify("jeton")).thenReturn(true);
+        when(recaptchaService.verify(eq("jeton"), anyString())).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/registrations").contentType(MediaType.APPLICATION_JSON).content(REGISTRATION))
                 .andExpect(status().is2xxSuccessful());

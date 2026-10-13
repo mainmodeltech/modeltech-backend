@@ -51,6 +51,8 @@ app:
   recaptcha:
     secret-key: ${RECAPTCHA_SECRET_KEY:}
     enabled: true   # false en dev local
+    # Domaines du site autorises dans la reponse de Google (ex. model-technologie.com,www.model-technologie.com) ; vide = pas de controle
+    allowed-hostnames: ${RECAPTCHA_ALLOWED_HOSTNAMES:}
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
   invoice:

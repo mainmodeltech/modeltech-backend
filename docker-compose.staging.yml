@@ -57,6 +57,8 @@ services:
       MAIL_REDIRECT_TO: ${MAIL_REDIRECT_TO:-}
       MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK:-}
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+      # Domaine(s) du front staging, separes par des virgules : refuse un jeton genere ailleurs. Vide = pas de controle
+      RECAPTCHA_ALLOWED_HOSTNAMES: ${RECAPTCHA_ALLOWED_HOSTNAMES:-}
       # Connexion Google (ID client OAuth Web) ; vide = bouton masque
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:

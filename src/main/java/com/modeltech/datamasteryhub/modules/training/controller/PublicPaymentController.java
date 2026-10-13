@@ -27,7 +27,8 @@ public class PublicPaymentController {
     private final com.modeltech.datamasteryhub.modules.training.service.LearnerBillingService billingService;
 
     @GetMapping("/{token}")
-    public ResponseEntity<ApiResponse<PublicPaymentResponse>> get(@PathVariable String token) {
+    public ResponseEntity<ApiResponse<PublicPaymentResponse>> get(@PathVariable String token, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, IpRateLimiter.TOKEN_VIEW_SCOPE);   // freine le balayage de jetons
         return ResponseEntity.ok(ApiResponse.ok("Paiement", paymentService.getByToken(token)));
     }
 

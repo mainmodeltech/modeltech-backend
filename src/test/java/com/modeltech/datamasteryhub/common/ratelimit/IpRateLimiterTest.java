@@ -82,4 +82,16 @@ class IpRateLimiterTest {
             assertThatCode(() -> limiter.check(request, "contact")).doesNotThrowAnyException();
         }
     }
+
+    @Test
+    void tokenViewScope_hasItsOwnGenerousBudget() {
+        IpRateLimiter limiter = new IpRateLimiter(1, 1, 1, 3);
+
+        assertThat(limiter.tryAcquire(IpRateLimiter.TOKEN_VIEW_SCOPE, "10.0.0.1")).isTrue();
+        assertThat(limiter.tryAcquire(IpRateLimiter.TOKEN_VIEW_SCOPE, "10.0.0.1")).isTrue();
+        assertThat(limiter.tryAcquire(IpRateLimiter.TOKEN_VIEW_SCOPE, "10.0.0.1")).isTrue();
+        assertThat(limiter.tryAcquire(IpRateLimiter.TOKEN_VIEW_SCOPE, "10.0.0.1")).isFalse();   // 4e consultation
+        assertThat(limiter.tryAcquire("contact", "10.0.0.1")).isTrue();                          // formulaires : budget propre
+        assertThat(limiter.tryAcquire("contact", "10.0.0.1")).isFalse();
+    }
 }

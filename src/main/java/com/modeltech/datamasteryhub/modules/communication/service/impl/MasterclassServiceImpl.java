@@ -49,7 +49,7 @@ public class MasterclassServiceImpl implements MasterclassService  {
     public MasterclassRegistrationResponseDTO register(MasterclassRegistrationRequestDTO req) {
 
         // 1. Vérification reCAPTCHA — avant tout traitement BDD
-        if (!recaptchaService.verify(req.getRecaptchaToken())) {
+        if (!recaptchaService.verify(req.getRecaptchaToken(), "masterclass_register")) {
             log.error("Échec vérification reCAPTCHA pour email {} et masterclassId {}",
                     req.getEmail(), req.getMasterclassId());
             throw new SecurityException("Vérification anti-bot échouée. Veuillez réessayer.");

@@ -64,7 +64,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public RegistrationResponse register(CreateRegistrationRequest request) {
-        if (!recaptchaService.verify(request.getRecaptchaToken())) {
+        if (!recaptchaService.verify(request.getRecaptchaToken(), "bootcamp_register")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vérification anti-robot échouée. Veuillez réessayer.");
         }
         Registration saved = persistNew(request, "WEBSITE");
