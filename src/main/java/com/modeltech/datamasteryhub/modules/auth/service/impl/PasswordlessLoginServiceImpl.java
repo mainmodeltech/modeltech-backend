@@ -12,6 +12,7 @@ import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
 import com.modeltech.datamasteryhub.modules.auth.service.PasswordlessLoginService;
 import com.modeltech.datamasteryhub.modules.notification.channel.MessageDispatcher;
 import com.modeltech.datamasteryhub.modules.notification.channel.OutboundMessage;
+import com.modeltech.datamasteryhub.modules.notification.template.EmailContent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -85,6 +86,7 @@ public class PasswordlessLoginServiceImpl implements PasswordlessLoginService {
         challengeRepository.save(challenge);
 
         String link = frontendUrl + magicLinkPath + "?token=" + token;
+        String name = recipient.get().name();
         String body = """
                 Bonjour %s,
 
@@ -98,9 +100,18 @@ public class PasswordlessLoginServiceImpl implements PasswordlessLoginService {
                 Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : personne ne peut se connecter sans lui.
 
                 L'équipe Model Technologie
-                """.formatted(recipient.get().name(), validityMinutes, link, code);
-        dispatcher.sendAll(List.of(new OutboundMessage("LOGIN_LINK", email, recipient.get().phone(), recipient.get().name(),
-                "Votre lien de connexion Model Technologie", body, null)), null);
+                """.formatted(name, validityMinutes, link, code);
+        EmailContent rich = EmailContent.builder("Votre lien de connexion")
+                .preheader("Valable " + validityMinutes + " minutes, une seule fois")
+                .greeting(name != null && !name.isBlank() ? "Bonjour " + name.trim() + "," : "Bonjour,")
+                .paragraph("Utilisez l'une de ces deux méthodes pour vous connecter. Elles sont valables **" + validityMinutes + " minutes** et ne servent qu'une fois.")
+                .button("Me connecter", link)
+                .paragraph("Ou saisissez ce code sur la page de connexion :")
+                .code(null, code)
+                .footnote("Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : personne ne peut se connecter sans lui.")
+                .build();
+        dispatcher.sendAll(List.of(new OutboundMessage("LOGIN_LINK", email, recipient.get().phone(), name,
+                "Votre lien de connexion Model Technologie", body, null).withEmail(rich)), null);
     }
 
     @Override

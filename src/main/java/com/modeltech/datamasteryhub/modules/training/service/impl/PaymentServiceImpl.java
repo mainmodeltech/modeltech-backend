@@ -555,7 +555,8 @@ public class PaymentServiceImpl implements PaymentService {
             }
             enrollmentRepository.save(enrollment);
         }
-        notificationService.sendRegistrationConfirmedEmail(reg);
+        // Compte déjà actif : une confirmation (les nouveaux comptes reçoivent l'invitation, qui vaut confirmation)
+        if (learner.getPasswordHash() != null) notificationService.sendEnrollmentConfirmedEmail(reg);
         log.info("Inscription {} confirmée : compte apprenant {} et accès ouverts", reg.getId(), learner.getEmail());
     }
 

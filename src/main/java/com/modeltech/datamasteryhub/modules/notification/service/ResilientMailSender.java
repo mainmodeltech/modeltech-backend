@@ -46,6 +46,10 @@ public class ResilientMailSender {
     @Value("${app.mail.from:}")
     private String from;
 
+    /** Nom affiché de l'expéditeur (« Model Technologie <noreply@…> ») : la marque apparaît dans la boîte de réception. */
+    @Value("${app.mail.from-name:Model Technologie}")
+    private String fromName;
+
     @Value("${app.mail.redirect-to:}")
     private String redirectTo;
 
@@ -62,6 +66,10 @@ public class ResilientMailSender {
     /** Expéditeur à utiliser : {@code app.mail.from}, sinon le compte SMTP (Gmail exige que ce soit le même). */
     public String fromAddress() {
         return from != null && !from.isBlank() ? from : username;
+    }
+
+    public String fromName() {
+        return fromName;
     }
 
     public boolean isConfigured() {

@@ -42,7 +42,7 @@ cible la précédente tant qu'elle n'est pas fusionnée, puis `develop`.
 | `JWT_SECRET` | oui | **64 octets minimum** (HS512). Plus court : le démarrage journalise une erreur et aucune connexion ne fonctionne. `openssl rand -base64 64` |
 | `APP_FRONTEND_URL` | **oui** | URL publique du site (ex. `https://www.model-technologie.com`) : base des liens des e-mails (paiement, définition de mot de passe). Défaut `http://localhost:5173` → liens inutilisables en production |
 | `MAIL_USERNAME`, `MAIL_PASSWORD` | oui | Compte SMTP (Gmail : mot de passe d'application). Vides : aucun e-mail ne part (tracé `SKIPPED`) |
-| `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM` | non | Défaut `smtp.gmail.com:587` ; `MAIL_FROM` vide = le compte SMTP |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM`, `MAIL_FROM_NAME` | non | Défaut `smtp.gmail.com:587` ; `MAIL_FROM` vide = le compte SMTP ; `MAIL_FROM_NAME` = nom affiché de l'expéditeur (défaut « Model Technologie ») |
 | `MAIL_REDIRECT_TO` | **jamais en production** | Redirige tous les e-mails vers une adresse de recette (staging) |
 | `NOTIFICATION_EMAIL_TO`, `SLACK_WEBHOOK_URL`, `SLACK_BOOTCAMP_SUBSCRIPTION_WEBHOOK_URL` | selon besoin | Notifications internes |
 | `RECAPTCHA_SECRET_KEY` | oui | Désormais **appliqué** à l'inscription (403 si échec) ; le front doit envoyer `recaptchaToken` |
@@ -77,9 +77,20 @@ statuts ; les ramener d'abord à `PENDING` / `CANCELLED`. Le plus sûr reste la 
 ## 6. Points d'attention connus
 
 - Le journal d'e-mails ne contient jamais le corps des messages (certains portent un lien de mot de passe).
-- Les rendus de projet sont stockés sous une clé aléatoire ; seul un lien signé de 15 minutes permet de les télécharger. Les captures de paiement, elles, sont dans le bucket public sous une clé aléatoire.
+- Les rendus de projet sont stockés sous une clé aléatoire ; seul un lien signé de 15 minutes permet de les télécharger. Les captures de paiement sont également privées (lien signé de 15 minutes pour le personnel) ; seules les images publiques (alumni, partenaires, visuels de projets) sont lisibles anonymement.
 - La limitation de débit est en mémoire (une instance). À remplacer par un stockage partagé si le backend est répliqué.
 - `docker-compose` de staging / production : l'image MinIO `minio/minio` n'est plus tirable depuis Docker Hub ; épingler une image disponible avant le prochain déploiement.
+
+### E-mails : un seul circuit, une seule charte
+
+Tous les e-mails de la plateforme (candidats, apprenants, équipe) passent par le même circuit : `TemplatedMailer` compose un message
+HTML + texte avec la charte de la marque (`src/main/resources/email/layout.html`, rendu par `EmailRenderer`), puis `ResilientMailSender`
+l'envoie par SMTP (reprises, journal, redirection de recette). Le fournisseur n'a aucune incidence sur la mise en page : Gmail ou Brevo
+ne sont que le relais SMTP choisi par `MAIL_HOST`. Les anciens e-mails « Inscription reçue » et « Place confirmée » (gabarits séparés,
+envoyés à l'inscription et au changement de statut) ont été supprimés ; un e-mail « Inscription confirmée » n'est envoyé qu'aux
+personnes qui ont déjà un compte actif (les nouveaux comptes reçoivent l'invitation à définir leur mot de passe).
+Aperçus : `docs/ops/emails/*.html` (régénérés par `EmailNotifierTest` dans `target/email-previews/`).
+Pour modifier un texte : `EmailNotifier` ; pour modifier l'habillage : `email/layout.html` et `EmailRenderer`.
 
 ### Passer à Brevo (fournisseur d'e-mails transactionnels)
 

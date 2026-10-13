@@ -70,7 +70,6 @@ public class RegistrationServiceImpl implements RegistrationService {
         Registration saved = persistNew(request, "WEBSITE");
 
         notificationService.notifyNewRegistration(saved);
-        notificationService.sendRegistrationPendingEmail(saved);
 
         return registrationMapper.toResponse(saved);
     }
@@ -165,8 +164,6 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         Registration saved = registrationRepository.save(registration);
-
-        sendConfirmationEmailIfNeeded(saved, oldStatus, newStatus);
 
         RegistrationResponse response = registrationMapper.toResponse(saved);
         attachPaymentSummaries(List.of(response));
@@ -318,18 +315,6 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         if (isConfirming)   incrementParticipants(registration.getSession());
         if (isUnconfirming) decrementParticipants(registration.getSession());
-    }
-
-    private void sendConfirmationEmailIfNeeded(Registration saved,
-                                               RegistrationStatus oldStatus,
-                                               RegistrationStatus newStatus) {
-        boolean isFirstConfirmation = newStatus == RegistrationStatus.CONFIRMED
-                && oldStatus != RegistrationStatus.CONFIRMED;
-        if (!isFirstConfirmation) return;
-
-        notificationService.sendRegistrationConfirmedEmail(saved);
-        log.info("Email 'place confirmée' déclenché pour {} ({})",
-                saved.getFirstName(), saved.getEmail());
     }
 
     // =========================================================================

@@ -11,18 +11,10 @@ public interface NotificationService {
     void notifyNewRegistration(Registration registration);
 
     /**
-     * Envoie un email au CANDIDAT pour confirmer la réception de son inscription
-     * et lui communiquer les instructions de paiement.
-     * Déclenché immédiatement après la sauvegarde (statut PENDING).
+     * Inscription confirmée par le paiement, pour une personne qui a déjà un compte actif (les nouveaux
+     * comptes reçoivent l'invitation à définir leur mot de passe, qui vaut confirmation).
      */
-    void sendRegistrationPendingEmail(Registration registration);
-
-    /**
-     * Envoie un email au CANDIDAT pour lui confirmer que sa place est
-     * définitivement réservée suite à la validation de son paiement.
-     * Déclenché quand le backoffice passe le statut à CONFIRMED.
-     */
-    void sendRegistrationConfirmedEmail(Registration registration);
+    void sendEnrollmentConfirmedEmail(Registration registration);
 
     // ── Paiements ──────────────────────────────────────────────────────────
 
