@@ -167,4 +167,11 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Email d'invitation ({}) → {}", learner ? "apprenant" : "back-office", to);
         emailNotifier.sendAccountInvitationEmail(to, firstName, setupLink, validHours, learner);
     }
+
+    @Override
+    @Async
+    public void sendMfaResetEmail(String to, String fullName) {
+        log.info("Email de réinitialisation du MFA → {}", com.modeltech.datamasteryhub.common.util.LogMask.email(to));
+        emailNotifier.sendMfaResetEmail(to, fullName);
+    }
 }

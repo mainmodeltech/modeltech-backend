@@ -11,43 +11,55 @@ import com.modeltech.datamasteryhub.modules.auth.dto.request.ResetPasswordReques
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthOptionsResponse;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.MessageResponse;
+import com.modeltech.datamasteryhub.modules.auth.service.AuthOutcome;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
+import com.modeltech.datamasteryhub.modules.auth.service.ClientInfo;
 import com.modeltech.datamasteryhub.modules.auth.service.GoogleLoginService;
 import com.modeltech.datamasteryhub.modules.auth.service.PasswordlessLoginService;
+import com.modeltech.datamasteryhub.security.RefreshCookie;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentification", description = "Login, logout et gestion du compte admin")
+@Tag(name = "Authentification", description = "Connexion, double authentification, session, mot de passe")
 public class AuthController {
 
     private final AuthService authService;
     private final IpRateLimiter rateLimiter;
     private final PasswordlessLoginService passwordlessLoginService;
     private final GoogleLoginService googleLoginService;
+    private final RefreshCookie refreshCookie;
 
     // ─────────────────────────────────────────────────────────────────────
     // LOGIN
     // ─────────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    @Operation(summary = "Connexion (back-office ou apprenant)", description = "Retourne un JWT valide 24h ; le jeton porte les claims roles et uty")
-    @ApiResponse(responseCode = "200", description = "Connexion réussie")
+    @Operation(summary = "Connexion (back-office ou apprenant)",
+            description = "Apprenant : jeton d'accès de 15 min + cookie de session. Personnel : défi de double authentification "
+                    + "(mfaRequired / mfaEnrollmentRequired + mfaToken) à valider sur /auth/mfa/*.")
+    @ApiResponse(responseCode = "200", description = "Connexion réussie ou second facteur requis")
     @ApiResponse(responseCode = "401", description = "Identifiants invalides")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+                                              HttpServletRequest httpRequest, HttpServletResponse response) {
         rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);   // freine la force brute
-        return ResponseEntity.ok(authService.login(request));
+        return respond(authService.login(request, ClientInfo.from(httpRequest)), response);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -73,26 +85,62 @@ public class AuthController {
 
     @PostMapping("/passwordless/verify")
     @Operation(summary = "Se connecter avec le lien ou le code reçu")
-    @ApiResponse(responseCode = "200", description = "Connexion réussie")
+    @ApiResponse(responseCode = "200", description = "Connexion réussie ou second facteur requis")
     @ApiResponse(responseCode = "400", description = "Lien ou code invalide, expiré ou déjà utilisé")
     public ResponseEntity<AuthResponse> passwordlessVerify(
-            @Valid @RequestBody PasswordlessVerifyRequest request, HttpServletRequest httpRequest) {
+            @Valid @RequestBody PasswordlessVerifyRequest request,
+            HttpServletRequest httpRequest, HttpServletResponse response) {
         rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);
+        ClientInfo client = ClientInfo.from(httpRequest);
         boolean byLink = request.getToken() != null && !request.getToken().isBlank();
-        return ResponseEntity.ok(byLink
-                ? passwordlessLoginService.verifyLink(request.getToken())
-                : passwordlessLoginService.verifyCode(request.getEmail(), request.getCode()));
+        return respond(byLink
+                ? passwordlessLoginService.verifyLink(request.getToken(), client)
+                : passwordlessLoginService.verifyCode(request.getEmail(), request.getCode(), client), response);
     }
 
     @PostMapping("/google")
     @Operation(summary = "Se connecter avec Google",
             description = "Le compte doit déjà exister et être actif ; aucun compte n'est créé par cette route.")
-    @ApiResponse(responseCode = "200", description = "Connexion réussie")
+    @ApiResponse(responseCode = "200", description = "Connexion réussie ou second facteur requis")
     @ApiResponse(responseCode = "401", description = "Jeton Google invalide ou aucun compte correspondant")
     @ApiResponse(responseCode = "404", description = "Connexion Google non activée sur ce serveur")
-    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request,
+                                               HttpServletRequest httpRequest, HttpServletResponse response) {
         rateLimiter.check(httpRequest, IpRateLimiter.LOGIN_SCOPE);
-        return ResponseEntity.ok(googleLoginService.login(request.getCredential()));
+        return respond(googleLoginService.login(request.getCredential(), ClientInfo.from(httpRequest)), response);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // SESSION : rafraîchissement et déconnexion (cookie HttpOnly)
+    // ─────────────────────────────────────────────────────────────────────
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Nouveau jeton d'accès à partir du cookie de session",
+            description = "Le jeton de rafraîchissement (cookie HttpOnly) change à chaque appel. 401 : session absente, expirée, révoquée ou rejouée.")
+    @ApiResponse(responseCode = "200", description = "Nouveau jeton d'accès")
+    @ApiResponse(responseCode = "401", description = "Aucune session valide")
+    public ResponseEntity<?> refresh(HttpServletRequest httpRequest, HttpServletResponse response) {
+        refreshCookie.requireTrustedOrigin(httpRequest);
+        rateLimiter.check(httpRequest, IpRateLimiter.REFRESH_SCOPE);
+        String token = refreshCookie.read(httpRequest);
+        Optional<AuthOutcome> outcome = token == null ? Optional.empty() : authService.refresh(token);
+        if (outcome.isEmpty()) {
+            if (token != null) refreshCookie.clear(response);
+            return ResponseEntity.status(401).cacheControl(CacheControl.noStore()).body(Map.of("message", "Session expirée."));
+        }
+        return respond(outcome.get(), response);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Déconnexion — termine la session et révoque le jeton d'accès")
+    @ApiResponse(responseCode = "200", description = "Déconnecté")
+    public ResponseEntity<MessageResponse> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            HttpServletRequest httpRequest, HttpServletResponse response) {
+        refreshCookie.requireTrustedOrigin(httpRequest);
+        authService.logout(extractBearerToken(authHeader), refreshCookie.read(httpRequest));
+        refreshCookie.clear(response);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(new MessageResponse("Déconnecté avec succès"));
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -100,7 +148,7 @@ public class AuthController {
     // ─────────────────────────────────────────────────────────────────────
 
     @GetMapping("/me")
-    @Operation(summary = "Profil de l'administrateur connecté",
+    @Operation(summary = "Profil du compte connecté",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponse(responseCode = "200", description = "Profil récupéré")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
@@ -109,32 +157,19 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // LOGOUT — révoque le token JWT
-    // ─────────────────────────────────────────────────────────────────────
-
-    @PostMapping("/logout")
-    @Operation(summary = "Déconnexion — révoque le JWT",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponse(responseCode = "200", description = "Déconnecté avec succès")
-    public ResponseEntity<MessageResponse> logout(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        String token = extractBearerToken(authHeader);
-        authService.logout(token);
-        return ResponseEntity.ok(new MessageResponse("Déconnecté avec succès"));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
     // CHANGE PASSWORD (utilisateur connecté)
     // ─────────────────────────────────────────────────────────────────────
 
     @PutMapping("/change-password")
     @Operation(summary = "Changer le mot de passe",
+            description = "Toutes les sessions du compte sont terminées : il faut se reconnecter.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponse(responseCode = "204", description = "Mot de passe modifié")
-    @ApiResponse(responseCode = "400", description = "Mot de passe actuel incorrect")
-    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+    @ApiResponse(responseCode = "400", description = "Mot de passe actuel incorrect ou nouveau mot de passe refusé")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                               HttpServletResponse response) {
         authService.changePassword(getAuthenticatedEmail(), request);
+        refreshCookie.clear(response);
         return ResponseEntity.noContent().build();
     }
 
@@ -165,7 +200,7 @@ public class AuthController {
     @PostMapping("/reset-password")
     @Operation(summary = "Réinitialiser le mot de passe avec un token")
     @ApiResponse(responseCode = "200", description = "Mot de passe réinitialisé")
-    @ApiResponse(responseCode = "400", description = "Token invalide ou expiré")
+    @ApiResponse(responseCode = "400", description = "Token invalide ou expiré, ou mot de passe refusé")
     public ResponseEntity<MessageResponse> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request,
             HttpServletRequest httpRequest) {
@@ -178,6 +213,14 @@ public class AuthController {
     // ─────────────────────────────────────────────────────────────────────
     // HELPERS PRIVÉS
     // ─────────────────────────────────────────────────────────────────────
+
+    /** Réponse d'ouverture de session : jamais mise en cache, cookie de session déposé si le serveur en a émis un. */
+    private ResponseEntity<AuthResponse> respond(AuthOutcome outcome, HttpServletResponse response) {
+        if (outcome.refreshToken() != null) {
+            refreshCookie.write(response, outcome.refreshToken(), outcome.refreshMaxAge());
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(outcome.body());
+    }
 
     private String getAuthenticatedEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

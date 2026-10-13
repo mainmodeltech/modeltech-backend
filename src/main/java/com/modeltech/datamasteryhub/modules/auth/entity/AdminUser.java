@@ -65,10 +65,37 @@ public class AdminUser extends BaseEntity {
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    /** Incrementee a chaque evenement de securite (mot de passe, role, desactivation, MFA) : invalide les jetons deja emis. */
+    @Column(name = "security_version", nullable = false)
+    @Builder.Default
+    private int securityVersion = 0;
+
+    /** Secret TOTP chiffre ; le MFA n'est actif que si {@link #mfaEnabledAt} est renseigne. */
+    @Column(name = "mfa_secret_enc")
+    private String mfaSecretEnc;
+
+    @Column(name = "mfa_enabled_at")
+    private LocalDateTime mfaEnabledAt;
+
+    /** Dernier pas de temps TOTP accepte : un code deja utilise ne sert pas deux fois. */
+    @Column(name = "mfa_last_step")
+    private Long mfaLastStep;
+
+    @Column(name = "mfa_failed_attempts", nullable = false)
+    @Builder.Default
+    private int mfaFailedAttempts = 0;
+
+    @Column(name = "mfa_locked_until")
+    private LocalDateTime mfaLockedUntil;
+
     /** Partenaire rattaché (comptes ROLE_PARTNER : limités à leurs propres formations). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id")
     private Partner partner;
+
+    public boolean isMfaEnabled() {
+        return mfaEnabledAt != null && mfaSecretEnc != null;
+    }
 
     // ─── Helpers ──────────────────────────────────────────────────────────
 

@@ -11,6 +11,9 @@ import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LoginChallengeRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.RoleRepository;
 import com.modeltech.datamasteryhub.modules.auth.service.GoogleIdTokenVerifier;
+import com.modeltech.datamasteryhub.modules.auth.service.LoginThrottle;
+import com.modeltech.datamasteryhub.modules.auth.service.impl.AuthServiceImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 import com.modeltech.datamasteryhub.modules.notification.channel.MessageDispatcher;
 import com.modeltech.datamasteryhub.modules.notification.channel.OutboundMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** Connexion par lien/code, par Google, et verrouillage après échecs de mot de passe. */
 class AdvancedAuthIT extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "MotDePasse#2026";
+    private static final String PASSWORD = "Cormoran-Biscuit-2026";
 
     @MockBean private MessageDispatcher dispatcher;
     @MockBean private GoogleIdTokenVerifier googleVerifier;
@@ -59,6 +62,8 @@ class AdvancedAuthIT extends AbstractIntegrationTest {
     @Autowired private RoleRepository roleRepository;
     @Autowired private LoginChallengeRepository challengeRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private LoginThrottle loginThrottle;
+    @Autowired private AuthServiceImpl authServiceImpl;
 
     private Learner awa;
     private AdminUser staff;
@@ -66,6 +71,9 @@ class AdvancedAuthIT extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() {
         reset(dispatcher, googleVerifier);
+        // Le frein par (e-mail, IP) est en mémoire et partagé par tous les tests : repartir de zéro
+        loginThrottle.reset("staff@example.com", "127.0.0.1");
+        loginThrottle.reset("awa@example.com", "127.0.0.1");
         awa = new Learner();
         awa.setEmail("awa@example.com");
         awa.setFirstName("Awa");
@@ -182,18 +190,40 @@ class AdvancedAuthIT extends AbstractIntegrationTest {
     // ── Verrouillage ─────────────────────────────────────────────────
 
     @Test
-    void fiveBadPasswordsLockThePasswordLogin_andTheRightOneIsRefusedWith429() throws Exception {
+    void fiveBadPasswordsBlockThatEmailFromThatAddress_andTheRightOneIsRefusedWith429() throws Exception {
         for (int i = 0; i < 5; i++) {
             login("staff@example.com", "mauvais-" + i).andExpect(status().isUnauthorized());
         }
         login("staff@example.com", PASSWORD).andExpect(status().isTooManyRequests());
 
-        // Le verrou expire
-        AdminUser locked = adminUserRepository.findById(staff.getId()).orElseThrow();
-        locked.setLockedUntil(LocalDateTime.now().minusSeconds(1));
-        adminUserRepository.saveAndFlush(locked);
+        // Le blocage ne vise que ce couple (e-mail, adresse IP) : le titulaire, depuis une autre adresse, se connecte
+        login("staff@example.com", PASSWORD, "198.51.100.7").andExpect(status().isOk());
+        assertThat(adminUserRepository.findById(staff.getId()).orElseThrow().getLockedUntil()).isNull();
+
+        // Le blocage expire
+        loginThrottle.reset("staff@example.com", "127.0.0.1");
         login("staff@example.com", PASSWORD).andExpect(status().isOk());
         assertThat(adminUserRepository.findById(staff.getId()).orElseThrow().getFailedLoginAttempts()).isZero();
+    }
+
+    @Test
+    void aUnknownEmailIsThrottledTheSameWay_soTheBlockRevealsNothing() throws Exception {
+        for (int i = 0; i < 5; i++) login("inconnu@example.com", "mauvais").andExpect(status().isUnauthorized());
+        login("inconnu@example.com", "mauvais").andExpect(status().isTooManyRequests());
+        loginThrottle.reset("inconnu@example.com", "127.0.0.1");
+    }
+
+    @Test
+    void anAttackSpreadOverManyAddressesStillLocksTheAccount() throws Exception {
+        ReflectionTestUtils.setField(authServiceImpl, "lockoutMaxAttempts", 6);
+        try {
+            for (int i = 0; i < 6; i++) login("staff@example.com", "mauvais", "203.0.113." + (10 + i)).andExpect(status().isUnauthorized());
+            login("staff@example.com", PASSWORD, "203.0.113.99").andExpect(status().isTooManyRequests());
+            // Le lien par e-mail reste possible
+            requestLink("staff@example.com").andExpect(status().isOk());
+        } finally {
+            ReflectionTestUtils.setField(authServiceImpl, "lockoutMaxAttempts", 20);
+        }
     }
 
     @Test
@@ -275,6 +305,15 @@ class AdvancedAuthIT extends AbstractIntegrationTest {
 
     private ResultActions verifyBody(String json) throws Exception {
         return mockMvc.perform(post("/api/v1/auth/passwordless/verify").contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
+    private ResultActions login(String email, String password, String ip) throws Exception {
+        return mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .with(request -> {
+                    request.setRemoteAddr(ip);
+                    return request;
+                })
+                .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"));
     }
 
     private ResultActions login(String email, String password) throws Exception {

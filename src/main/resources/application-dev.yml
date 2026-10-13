@@ -9,6 +9,9 @@ spring:
 app:
   recaptcha:
     enabled: false   # pas de clé reCAPTCHA réelle en dev local
+  auth:
+    cookie:
+      secure: false  # le cookie de session circule en HTTP sur localhost
 
 logging:
   level:

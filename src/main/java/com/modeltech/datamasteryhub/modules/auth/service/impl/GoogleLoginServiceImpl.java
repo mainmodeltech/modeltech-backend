@@ -1,10 +1,11 @@
 package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
 import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthOptionsResponse;
-import com.modeltech.datamasteryhub.modules.auth.dto.response.AuthResponse;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
+import com.modeltech.datamasteryhub.modules.auth.service.AuthOutcome;
 import com.modeltech.datamasteryhub.modules.auth.service.AuthService;
+import com.modeltech.datamasteryhub.modules.auth.service.ClientInfo;
 import com.modeltech.datamasteryhub.modules.auth.service.GoogleIdTokenVerifier;
 import com.modeltech.datamasteryhub.modules.auth.service.GoogleLoginService;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class GoogleLoginServiceImpl implements GoogleLoginService {
     }
 
     @Override
-    public AuthResponse login(String credential) {
+    public AuthOutcome login(String credential, ClientInfo client) {
         if (!verifier.enabled()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Connexion Google non activée.");
         GoogleIdTokenVerifier.GoogleIdentity identity = verifier.verify(credential)
                 .filter(GoogleIdTokenVerifier.GoogleIdentity::emailVerified)
@@ -54,6 +55,6 @@ public class GoogleLoginServiceImpl implements GoogleLoginService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "Aucun compte Model Technologie ne correspond à ce compte Google.");
         }
-        return authService.loginWithoutPassword(email);
+        return authService.loginWithoutPassword(email, client);
     }
 }

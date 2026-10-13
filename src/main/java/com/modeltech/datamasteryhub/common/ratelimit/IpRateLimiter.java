@@ -42,22 +42,31 @@ public class IpRateLimiter {
     public static final String VERIFY_SCOPE = "certificate-verify";
     /** Consultation d'une page à lien secret (paiement) : plus large que les formulaires, bornée contre le balayage de jetons. */
     public static final String TOKEN_VIEW_SCOPE = "token-view";
+    /** Rafraichissement de session : un par chargement de page et par onglet toutes les 15 minutes, derriere une IP souvent partagee. */
+    public static final String REFRESH_SCOPE = "refresh";
 
     private final int perHour;
     private final int loginPerHour;
     private final int verifyPerHour;
     private final int tokenViewPerHour;
+    private final int refreshPerHour;
     private final Map<String, Entry> buckets = new ConcurrentHashMap<>();
 
     @Autowired
     public IpRateLimiter(@Value("${app.rate-limit.forms.per-hour:10}") int perHour,
                          @Value("${app.rate-limit.login.per-hour:30}") int loginPerHour,
                          @Value("${app.rate-limit.verify.per-hour:120}") int verifyPerHour,
-                         @Value("${app.rate-limit.token-view.per-hour:120}") int tokenViewPerHour) {
+                         @Value("${app.rate-limit.token-view.per-hour:120}") int tokenViewPerHour,
+                         @Value("${app.rate-limit.refresh.per-hour:1200}") int refreshPerHour) {
         this.perHour = perHour;
         this.loginPerHour = loginPerHour;
         this.verifyPerHour = verifyPerHour;
         this.tokenViewPerHour = tokenViewPerHour;
+        this.refreshPerHour = refreshPerHour;
+    }
+
+    IpRateLimiter(int perHour, int loginPerHour, int verifyPerHour, int tokenViewPerHour) {
+        this(perHour, loginPerHour, verifyPerHour, tokenViewPerHour, perHour);
     }
 
     IpRateLimiter(int perHour, int loginPerHour, int verifyPerHour) {
@@ -90,7 +99,7 @@ public class IpRateLimiter {
         return entry.bucket.tryConsume(1);
     }
 
-    static String clientIp(HttpServletRequest request) {
+    public static String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
             String[] hops = forwarded.split(",");
@@ -102,7 +111,8 @@ public class IpRateLimiter {
     private Bucket newBucket(String scope) {
         int limit = LOGIN_SCOPE.equals(scope) ? loginPerHour
                 : VERIFY_SCOPE.equals(scope) ? verifyPerHour
-                : TOKEN_VIEW_SCOPE.equals(scope) ? tokenViewPerHour : perHour;
+                : TOKEN_VIEW_SCOPE.equals(scope) ? tokenViewPerHour
+                : REFRESH_SCOPE.equals(scope) ? refreshPerHour : perHour;
         return Bucket.builder()
                 .addLimit(Bandwidth.classic(limit, Refill.intervally(limit, WINDOW)))
                 .build();

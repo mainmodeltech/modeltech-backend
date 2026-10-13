@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.security;
 
 import com.modeltech.datamasteryhub.modules.auth.repository.TokenBlacklistRepository;
+import com.modeltech.datamasteryhub.modules.auth.service.MfaPolicy;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,15 +23,18 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Optional;
 
 /**
  * Filtre JWT — exécuté une seule fois par requête.
  *
  * Pipeline :
  *  1. Extraire le Bearer token du header Authorization
- *  2. Valider la signature + expiration (JwtTokenProvider)
+ *  2. Valider la signature + expiration et exiger un jeton d'accès (un défi MFA ne vaut pas authentification)
  *  3. Vérifier que le token n'est pas en blacklist (révocation logout)
- *  4. Charger UserDetails et setter le SecurityContext
+ *  4. Charger le compte (actif) et vérifier que sa version de sécurité est celle du jeton : un changement de
+ *     mot de passe, de rôle, une désactivation ou une réinitialisation du MFA invalide tous les jetons déjà émis
+ *  5. Personnel : exiger que le second facteur ait été validé (claim {@code mfa})
  */
 @Component
 @RequiredArgsConstructor
@@ -40,6 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider         jwtTokenProvider;
     private final UserDetailsService       userDetailsService;
     private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final MfaPolicy                mfaPolicy;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -49,27 +54,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromRequest(request);
 
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+        if (StringUtils.hasText(token)) {
+            Optional<JwtTokenProvider.TokenClaims> claims = jwtTokenProvider.parseOfType(token, JwtTokenProvider.TYPE_ACCESS);
 
-            // Vérifier la blacklist (token révoqué par logout)
-            if (isBlacklisted(token)) {
-                log.debug("Token révoqué détecté — accès refusé");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token révoqué");
-                return;
-            }
+            if (claims.isPresent()) {
+                // Vérifier la blacklist (token révoqué par logout)
+                if (isBlacklisted(token)) {
+                    log.debug("Token révoqué détecté — accès refusé");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token révoqué");
+                    return;
+                }
 
-            String email = jwtTokenProvider.getEmailFromToken(token);
-            UserDetails userDetails = loadActiveUser(email);
+                AppUserDetails user = loadActiveUser(claims.get().email());
 
-            // Compte supprimé ou désactivé depuis l'émission du jeton : la requête reste
-            // anonyme (donc refusée sur les routes protégées) au lieu de planter ou de passer.
-            if (userDetails != null) {
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // Compte supprimé, désactivé, modifié depuis l'émission du jeton, ou second facteur non validé :
+                // la requête reste anonyme (donc refusée sur les routes protégées) au lieu de planter ou de passer.
+                if (user != null
+                        && user.securityVersion() == claims.get().securityVersion()
+                        && (!mfaPolicy.enforcedFor(user) || claims.get().mfaVerified())) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
 
@@ -77,12 +85,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /** @return l'utilisateur s'il existe et est actif, sinon null. */
-    private UserDetails loadActiveUser(String email) {
+    private AppUserDetails loadActiveUser(String email) {
         try {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            return userDetails.isEnabled() && userDetails.isAccountNonLocked() ? userDetails : null;
+            if (userDetails instanceof AppUserDetails user && user.isEnabled() && user.isAccountNonLocked()) return user;
+            return null;
         } catch (UsernameNotFoundException e) {
-            log.debug("Jeton valide pour un compte inexistant : {}", email);
+            log.debug("Jeton valide pour un compte inexistant");
             return null;
         }
     }

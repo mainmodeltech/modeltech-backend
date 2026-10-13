@@ -70,10 +70,10 @@ class AdminUserControllerIT extends AbstractIntegrationTest {
         String token = link.getValue().substring(link.getValue().indexOf("token=") + 6);
 
         mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"" + token + "\",\"newPassword\":\"MotDePasse#2026\"}"))
+                        .content("{\"token\":\"" + token + "\",\"newPassword\":\"Cormoran-Biscuit-2026\"}"))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"formateur@test.local\",\"password\":\"MotDePasse#2026\"}"))
+                        .content("{\"email\":\"formateur@test.local\",\"password\":\"Cormoran-Biscuit-2026\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.userType").value("ADMIN"))
                 .andExpect(jsonPath("$.user.roles[0]").value("ROLE_TRAINER"));

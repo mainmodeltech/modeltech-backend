@@ -72,10 +72,10 @@ class AdminLearnerControllerIT extends AbstractIntegrationTest {
         String token = createLearnerAndGetToken();
 
         mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"" + token + "\",\"newPassword\":\"MotDePasse#2026\"}"))
+                        .content("{\"token\":\"" + token + "\",\"newPassword\":\"Cormoran-Biscuit-2026\"}"))
                 .andExpect(status().isOk());
 
-        String response = login("awa.diop@example.com", "MotDePasse#2026")
+        String response = login("awa.diop@example.com", "Cormoran-Biscuit-2026")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.userType").value("LEARNER"))
                 .andExpect(jsonPath("$.user.roles[0]").value("ROLE_LEARNER"))
@@ -128,8 +128,8 @@ class AdminLearnerControllerIT extends AbstractIntegrationTest {
     void deactivate_blocksLoginAndAlreadyIssuedTokens_thenActivateRestoresThem() throws Exception {
         String token = createLearnerAndGetToken();
         mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"token\":\"" + token + "\",\"newPassword\":\"MotDePasse#2026\"}"));
-        JsonNode session = objectMapper.readTree(login("awa.diop@example.com", "MotDePasse#2026")
+                .content("{\"token\":\"" + token + "\",\"newPassword\":\"Cormoran-Biscuit-2026\"}"));
+        JsonNode session = objectMapper.readTree(login("awa.diop@example.com", "Cormoran-Biscuit-2026")
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
         String jwt = session.get("accessToken").asText();
         UUID id = UUID.fromString(session.get("user").get("id").asText());
@@ -138,13 +138,13 @@ class AdminLearnerControllerIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.active").value(false));
 
-        login("awa.diop@example.com", "MotDePasse#2026").andExpect(status().isUnauthorized());
+        login("awa.diop@example.com", "Cormoran-Biscuit-2026").andExpect(status().isUnauthorized());
         // Le JWT déjà émis est refusé tout de suite (le filtre recharge le compte à chaque requête)
         mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + jwt))
                 .andExpect(status().is4xxClientError());
 
         mockMvc.perform(patch(URL + "/" + id + "/activate").with(asRole("ADMIN"))).andExpect(status().isOk());
-        login("awa.diop@example.com", "MotDePasse#2026").andExpect(status().isOk());
+        login("awa.diop@example.com", "Cormoran-Biscuit-2026").andExpect(status().isOk());
     }
 
     @Test

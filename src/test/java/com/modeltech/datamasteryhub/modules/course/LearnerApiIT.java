@@ -138,7 +138,7 @@ class LearnerApiIT extends AbstractIntegrationTest {
                         .content("{\"newPassword\":\"court\"}"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(put("/api/v1/learner/password").with(asAwa).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"MotDePasse#2026\"}"))
+                        .content("{\"newPassword\":\"Cormoran-Biscuit-2026\"}"))
                 .andExpect(status().isNoContent());
         mockMvc.perform(get("/api/v1/learner/profile").with(asAwa)).andExpect(jsonPath("$.hasPassword").value(true));
         mockMvc.perform(put("/api/v1/learner/password").with(asAwa).contentType(MediaType.APPLICATION_JSON)

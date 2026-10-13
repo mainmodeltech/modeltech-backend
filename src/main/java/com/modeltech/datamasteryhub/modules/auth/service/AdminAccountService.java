@@ -25,4 +25,11 @@ public interface AdminAccountService {
      * @param actingEmail e-mail du SUPER_ADMIN qui effectue la modification
      */
     AdminUserSummaryResponse update(UUID id, UpdateAdminUserRequest request, String actingEmail);
+
+    /**
+     * Réinitialise la double authentification d'un compte (téléphone perdu) : secret et codes de secours supprimés,
+     * sessions terminées, le titulaire est prévenu par e-mail et devra enrôler un nouvel appareil à sa prochaine connexion.
+     * Un compte ne peut pas réinitialiser son propre MFA.
+     */
+    AdminUserSummaryResponse resetMfa(UUID id, String actingEmail);
 }

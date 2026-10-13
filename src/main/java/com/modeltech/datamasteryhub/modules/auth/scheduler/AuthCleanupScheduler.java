@@ -3,6 +3,7 @@ package com.modeltech.datamasteryhub.modules.auth.scheduler;
 import com.modeltech.datamasteryhub.modules.auth.repository.LoginChallengeRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.PasswordResetTokenRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.TokenBlacklistRepository;
+import com.modeltech.datamasteryhub.modules.auth.service.AuthSessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,6 +26,7 @@ public class AuthCleanupScheduler {
     private final TokenBlacklistRepository     tokenBlacklistRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final LoginChallengeRepository     loginChallengeRepository;
+    private final AuthSessionService           authSessionService;
 
     /**
      * Supprime les tokens JWT expirés de la blacklist — toutes les heures.
@@ -51,5 +53,13 @@ public class AuthCleanupScheduler {
     @Transactional
     public void cleanLoginChallenges() {
         loginChallengeRepository.deleteExpiredAndConsumed(LocalDateTime.now());
+    }
+
+    /** Supprime les sessions terminées depuis plus de 30 jours — toutes les 6h. */
+    @Scheduled(fixedRate = 21_600_000)
+    @Transactional
+    public void cleanEndedSessions() {
+        int removed = authSessionService.cleanup();
+        if (removed > 0) log.debug("Sessions terminées : {} supprimée(s)", removed);
     }
 }

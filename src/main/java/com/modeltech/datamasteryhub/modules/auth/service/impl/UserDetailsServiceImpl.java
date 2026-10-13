@@ -5,10 +5,11 @@ import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.entity.Role;
 import com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
+import com.modeltech.datamasteryhub.security.AppUserDetails;
+import com.modeltech.datamasteryhub.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -44,21 +45,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     private UserDetails toUserDetails(AdminUser admin) {
-        return User.builder()
-                .username(admin.getEmail())
-                .password(admin.getPasswordHash())
-                .authorities(authorities(admin.getRoles()))
-                .accountLocked(!admin.isActive())
-                .build();
+        return new AppUserDetails(admin.getEmail(), admin.getPasswordHash(), admin.isActive(), authorities(admin.getRoles()),
+                admin.getId(), admin.getFullName(), JwtTokenProvider.USER_TYPE_ADMIN, admin.getSecurityVersion(), admin.isMfaEnabled());
     }
 
     private UserDetails toUserDetails(Learner learner) {
-        return User.builder()
-                .username(learner.getEmail())
-                .password(learner.getPasswordHash() != null ? learner.getPasswordHash() : NO_PASSWORD)
-                .authorities(authorities(learner.getRoles()))
-                .accountLocked(!learner.isActive())
-                .build();
+        return new AppUserDetails(learner.getEmail(), learner.getPasswordHash() != null ? learner.getPasswordHash() : NO_PASSWORD,
+                learner.isActive(), authorities(learner.getRoles()),
+                learner.getId(), learner.getFullName(), JwtTokenProvider.USER_TYPE_LEARNER, learner.getSecurityVersion(), false);
     }
 
     private List<SimpleGrantedAuthority> authorities(Set<Role> roles) {

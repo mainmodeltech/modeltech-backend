@@ -17,6 +17,8 @@ public class AdminUserSummaryResponse {
     private String fullName;
     private Set<String> roles;
     private boolean active;
+    /** La double authentification est activée sur ce compte. */
+    private boolean mfaEnabled;
     private UUID partnerId;
     private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
