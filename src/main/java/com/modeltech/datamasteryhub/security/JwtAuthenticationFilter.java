@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // la requête reste anonyme (donc refusée sur les routes protégées) au lieu de planter ou de passer.
                 if (user != null
                         && user.securityVersion() == claims.get().securityVersion()
-                        && (!mfaPolicy.enforcedFor(user) || claims.get().mfaVerified())) {
+                        && (!mfaPolicy.enforcedFor(user) || (claims.get().mfaVerified() && user.mfaEnabled()))) {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

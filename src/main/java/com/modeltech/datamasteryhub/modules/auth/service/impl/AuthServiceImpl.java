@@ -220,7 +220,8 @@ public class AuthServiceImpl implements AuthService {
         if (email == null) return Optional.empty();
 
         AppUserDetails user = (AppUserDetails) userDetailsService.loadUserByUsername(email);
-        boolean staffWithoutSecondFactor = mfaPolicy.enforcedFor(user) && !session.isMfaVerified();
+        // Une session « second facteur validé » ne survit pas à la disparition du second facteur du compte
+        boolean staffWithoutSecondFactor = mfaPolicy.enforcedFor(user) && (!session.isMfaVerified() || !user.mfaEnabled());
         if (!user.isAccountNonLocked() || staffWithoutSecondFactor) {
             sessions.revokeAllFor(session.getSubjectType(), session.getSubjectId());
             return Optional.empty();

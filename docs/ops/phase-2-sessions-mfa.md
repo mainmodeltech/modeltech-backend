@@ -18,7 +18,7 @@ Suite de l'audit de sécurité (`data-mastery-hub/docs/security/audit-securite-e
 ### Double authentification obligatoire du personnel (E1)
 - Concerne **tous** les comptes du back-office : Super Admin, Admin, Éditeur, Formateur, Partenaire. Les apprenants n'y sont pas soumis.
 - Application d'authentification (TOTP, RFC 6238) : Google Authenticator, Microsoft Authenticator, Authy, 1Password, Bitwarden…
-- **Première connexion** : écran d'enrôlement obligatoire (clé à saisir ou lien `otpauth://`), confirmation par un premier code, puis **10 codes de secours** à usage unique, affichés une seule fois. Le back-office reste inaccessible tant que ce n'est pas fait.
+- **Première connexion** : écran d'enrôlement obligatoire avec un **QR code à scanner** (généré dans le navigateur : le secret ne quitte pas la page ; en secours, la clé à recopier ou un lien `otpauth://` qui ouvre l'application sur mobile), confirmation par un premier code, puis **10 codes de secours** à usage unique, affichés une seule fois. Le back-office reste inaccessible tant que ce n'est pas fait.
 - **Connexions suivantes** : après le mot de passe, le code à 6 chiffres (ou un code de secours).
 - Le lien/code par e-mail et la connexion Google **ne suffisent plus** pour le personnel : ils ne sont que le premier facteur, le code est demandé ensuite.
 - Un jeton d'accès de personnel sans second facteur validé est refusé par le serveur sur toutes les routes ; le « défi » de 5 minutes délivré après le mot de passe ne donne accès à aucune route autre que `/auth/mfa/*`.
@@ -71,7 +71,6 @@ Le compte devra enrôler un nouvel appareil à sa prochaine connexion.
 
 ## 5. Limites connues
 
-- Pas de QR code : clé à recopier ou lien `otpauth://` (suffisant sur mobile). Un QR code demande d'ajouter une dépendance au front.
 - Le frein de connexion par (e-mail, IP) est en mémoire (une instance) ; à déplacer vers un stockage partagé si le backend est répliqué.
 - Pas encore de page « mes sessions / appareils connectés » (les données existent dans `auth_sessions`).
 - Le MFA est optionnel/absent pour les apprenants.
