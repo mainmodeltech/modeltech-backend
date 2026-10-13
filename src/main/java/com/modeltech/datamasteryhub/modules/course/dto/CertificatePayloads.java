@@ -22,7 +22,7 @@ public final class CertificatePayloads {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class PublicCertificate {
         private String publicId;
-        /** VALID ou REVOKED. */
+        /** VALID ou REVOKED (un certificat à valider n'est jamais exposé publiquement). */
         private String status;
         private String recipientName;
         private String formationTitle;
@@ -63,6 +63,8 @@ public final class CertificatePayloads {
         private UUID sessionId;
         private String sessionName;
         private LocalDateTime issuedAt;
+        /** Date d'éligibilité (certificat « à valider »). */
+        private LocalDateTime eligibleAt;
         private String issuedBy;
         private boolean forced;
         private String forceReason;
@@ -81,6 +83,21 @@ public final class CertificatePayloads {
 
         @Size(max = 1000)
         private String reason;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Schema(description = "Valider plusieurs certificats à la fois")
+    public static class ValidateBatchRequest {
+        @jakarta.validation.constraints.NotEmpty(message = "Choisissez au moins un certificat")
+        @jakarta.validation.constraints.Size(max = 100, message = "100 certificats au plus par validation")
+        private List<String> publicIds;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    @Schema(description = "Résultat d'une validation groupée")
+    public static class ValidateBatchResult {
+        private int validated;
+        private List<String> failed;
     }
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor

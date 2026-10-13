@@ -10,6 +10,7 @@ import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.course.entity.Certificate;
 import com.modeltech.datamasteryhub.modules.course.repository.CertificateRepository;
+import com.modeltech.datamasteryhub.modules.course.service.CertificateIssuedEvent;
 import com.modeltech.datamasteryhub.modules.course.service.CertificateService;
 import com.modeltech.datamasteryhub.modules.notification.service.CertificateNotice;
 import com.modeltech.datamasteryhub.modules.training.entity.Bootcamp;
@@ -45,6 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Délivrance automatique et manuelle, vérification publique, PDF, révocation, e-mail. */
+@org.springframework.test.context.event.RecordApplicationEvents
 class CertificateIT extends AbstractIntegrationTest {
 
     private static final String ID_FORMAT = "MT-\\d{4}-[A-Z0-9]{2,6}-\\d{5}-[A-HJ-NP-Z2-9]{4}";
@@ -59,6 +61,7 @@ class CertificateIT extends AbstractIntegrationTest {
     @Autowired private com.modeltech.datamasteryhub.modules.auth.repository.RoleRepository roleRepository;
     @Autowired private CertificateRepository certificateRepository;
     @Autowired private CertificateService certificateService;
+    @Autowired private org.springframework.test.context.event.ApplicationEvents applicationEvents;
 
     private Bootcamp bootcamp;
     private BootcampSession session;
@@ -145,6 +148,86 @@ class CertificateIT extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.publicId").value(org.hamcrest.Matchers.containsString("-XL-")));   // code saisi
+    }
+
+    // ── Validation manuelle ──────────────────────────────────────────
+
+    @Test
+    void autoEligibility_createsAPendingCertificate_invisibleAndSilent_untilAPersonValidatesIt() throws Exception {
+        String publicId = eligibleAndGetId();
+
+        Certificate waiting = certificateRepository.findAll().get(0);
+        assertThat(waiting.getStatus()).isEqualTo(Certificate.PENDING);
+        assertThat(applicationEvents.stream(CertificateIssuedEvent.class)).as("aucun e-mail tant que non validé").isEmpty();
+
+        // Ni vérifiable, ni téléchargeable par le public ; invisible de l'apprenant
+        mockMvc.perform(get("/api/v1/certificates/" + publicId)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/certificates/" + publicId + "/pdf")).andExpect(status().isNotFound());
+        assertThat(json(mockMvc.perform(get("/api/v1/learner/certificates").with(awaAuth)).andExpect(status().isOk())).size()).isZero();
+
+        // L'équipe le voit « à valider », avec la date d'éligibilité
+        JsonNode list = json(mockMvc.perform(get("/api/v1/admin/certificates").param("status", "PENDING").with(staff("PEDAGOGY"))).andExpect(status().isOk()));
+        assertThat(list.at("/data/0/publicId").asText()).isEqualTo(publicId);
+        assertThat(list.at("/data/0/status").asText()).isEqualTo("PENDING");
+        assertThat(list.at("/data/0/eligibleAt").asText()).isNotBlank();
+    }
+
+    @Test
+    void preview_isARealPdfForTheTeamOnly_andNeverForTheLearnerOrThePublic() throws Exception {
+        String publicId = eligibleAndGetId();
+        byte[] pdf = mockMvc.perform(get("/api/v1/admin/certificates/" + publicId + "/preview").with(staff("PEDAGOGY")))
+                .andExpect(status().isOk()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PDF))
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
+        mockMvc.perform(get("/api/v1/admin/certificates/" + publicId + "/preview").with(awaAuth)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/admin/certificates/" + publicId + "/preview")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/admin/certificates/" + publicId + "/preview").with(staff("COMMUNICATION"))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void validation_makesItVisibleAndSendsIt_andIsRefusedToProfilesWithoutTheRight() throws Exception {
+        String publicId = eligibleAndGetId();
+        mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/validate").with(staff("AUDITOR"))).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/validate").with(staff("TRAINER"))).andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/validate").with(staff("PEDAGOGY")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("VALID")).andExpect(jsonPath("$.data.issuedBy").value("staff@test.local"));
+        assertThat(applicationEvents.stream(CertificateIssuedEvent.class).map(CertificateIssuedEvent::publicId)).containsExactly(publicId);
+
+        mockMvc.perform(get("/api/v1/certificates/" + publicId)).andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("VALID"));
+        assertThat(json(mockMvc.perform(get("/api/v1/learner/certificates").with(awaAuth)).andExpect(status().isOk())).size()).isEqualTo(1);
+        // Déjà validé : une seconde validation est refusée
+        mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/validate").with(staff("PEDAGOGY"))).andExpect(status().isConflict());
+    }
+
+    @Test
+    void batchValidation_validatesWhatItCan_andReportsTheRest() throws Exception {
+        String publicId = eligibleAndGetId();
+        JsonNode result = json(mockMvc.perform(post("/api/v1/admin/certificates/validate").with(staff("PEDAGOGY"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"publicIds\":[\"" + publicId + "\",\"MT-2026-XXX-00001-AAAA\"]}"))
+                .andExpect(status().isOk()));
+        assertThat(result.at("/data/validated").asInt()).isEqualTo(1);
+        assertThat(result.at("/data/failed/0").asText()).isEqualTo("MT-2026-XXX-00001-AAAA");
+    }
+
+    @Test
+    void refusingAPendingCertificate_revokesItWithoutAnyEmail_andItIsNotReissuedAutomatically() throws Exception {
+        String publicId = eligibleAndGetId();
+        mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/revoke").with(staff("PEDAGOGY"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Projet non conforme\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("REVOKED"));
+        assertThat(applicationEvents.stream(CertificateIssuedEvent.class)).isEmpty();
+        certificateService.sweep();
+        assertThat(certificateRepository.findAll()).hasSize(1);   // pas de nouveau certificat automatique
+    }
+
+    @Test
+    void manualIssue_validatesTheWaitingCertificate_insteadOfCreatingASecondOne() throws Exception {
+        eligibleAndGetId();
+        mockMvc.perform(post(sessionUrl() + "/learners/" + awa.getId() + "/certificate").with(staff("PEDAGOGY"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.status").value("VALID"));
+        assertThat(certificateRepository.findAll()).hasSize(1);
     }
 
     // ── Vérification publique et PDF ─────────────────────────────────
@@ -311,7 +394,15 @@ class CertificateIT extends AbstractIntegrationTest {
 
     // ── Helpers ──────────────────────────────────────────────────────
 
+    /** Le certificat devient dû (créé « à valider ») puis une personne habilitée le valide : il est alors délivré. */
     private String issueAndGetId() throws Exception {
+        String publicId = eligibleAndGetId();
+        mockMvc.perform(post("/api/v1/admin/certificates/" + publicId + "/validate").with(staff("PEDAGOGY"))).andExpect(status().isOk());
+        return publicId;
+    }
+
+    /** Le certificat devient dû : il est créé « à valider » (rien n'est envoyé ni visible). */
+    private String eligibleAndGetId() throws Exception {
         complete().andExpect(status().isNoContent());
         return certificateRepository.findAll().get(0).getPublicId();
     }

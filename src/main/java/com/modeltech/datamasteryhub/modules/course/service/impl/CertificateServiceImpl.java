@@ -108,7 +108,8 @@ public class CertificateServiceImpl implements CertificateService {
         CertificateEligibility.Evaluation evaluation = eligibility.evaluate(learner, bootcamp, enrollment.getSession());
         if (!evaluation.eligible()) return Optional.empty();
 
-        return Optional.of(issue(learner, bootcamp, enrollment.getSession(), evaluation.includesProject(), SYSTEM, false, null).getPublicId());
+        // Éligible : certificat « à valider », ni visible de l'apprenant ni envoyé tant qu'une personne habilitée ne l'a pas validé
+        return Optional.of(issue(learner, bootcamp, enrollment.getSession(), evaluation.includesProject(), SYSTEM, false, null, true).getPublicId());
     }
 
     @Override
@@ -126,6 +127,9 @@ public class CertificateServiceImpl implements CertificateService {
         if (certificateRepository.findByLearnerIdAndBootcampIdAndStatusAndIsDeletedFalse(learnerId, bootcamp.getId(), Certificate.VALID).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cet apprenant a déjà un certificat valide pour cette formation.");
         }
+        // Un certificat « à valider » existe déjà (délivrance automatique) : la délivrance manuelle le valide
+        Optional<Certificate> waiting = certificateRepository.findByLearnerIdAndBootcampIdAndStatusAndIsDeletedFalse(learnerId, bootcamp.getId(), Certificate.PENDING);
+        if (waiting.isPresent()) return validate(waiting.get().getPublicId(), actorEmail);
 
         CertificateEligibility.Evaluation evaluation = eligibility.evaluate(enrollment.getLearner(), bootcamp, session);
         boolean force = Boolean.TRUE.equals(request.getForce());
@@ -147,13 +151,13 @@ public class CertificateServiceImpl implements CertificateService {
         }
         boolean forced = force && !evaluation.eligible();
         Certificate certificate = issue(enrollment.getLearner(), bootcamp, session, evaluation.includesProject(),
-                actorEmail, forced, forced ? reason : null);
+                actorEmail, forced, forced ? reason : null, false);
         return toAdmin(certificate);
     }
 
     /** Photographie les informations du certificat, lui attribue son numéro et programme l'e-mail après validation de la transaction. */
     private Certificate issue(Learner learner, Bootcamp bootcamp, BootcampSession session, boolean includesProject,
-                              String issuedBy, boolean forced, String forceReason) {
+                              String issuedBy, boolean forced, String forceReason, boolean pending) {
         LocalDateTime now = LocalDateTime.now();
         Certificate c = new Certificate();
         c.setPublicId(nextPublicId(bootcamp, now));
@@ -173,11 +177,12 @@ public class CertificateServiceImpl implements CertificateService {
         c.setIssuedBy(issuedBy);
         c.setForced(forced);
         c.setForceReason(forceReason);
-        c.setStatus(Certificate.VALID);
+        c.setEligibleAt(now);
+        c.setStatus(pending ? Certificate.PENDING : Certificate.VALID);
         Certificate saved = certificateRepository.save(c);
-        log.info("Certificat {} délivré à {} pour « {} » ({}{})", saved.getPublicId(), learner.getEmail(), bootcamp.getTitle(),
+        log.info("Certificat {} {} pour {} « {} » ({}{})", saved.getPublicId(), pending ? "à valider" : "délivré", learner.getEmail(), bootcamp.getTitle(),
                 issuedBy, forced ? ", dérogation" : "");
-        events.publishEvent(new CertificateIssuedEvent(saved.getPublicId()));
+        if (!pending) events.publishEvent(new CertificateIssuedEvent(saved.getPublicId()));
         return saved;
     }
 
@@ -189,12 +194,52 @@ public class CertificateServiceImpl implements CertificateService {
     @Transactional
     public CertificatePayloads.AdminCertificate revoke(String publicId, String reason, String actorEmail) {
         Certificate c = requireByPublicId(publicId);
-        if (!c.isValid()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce certificat est déjà révoqué.");
+        if (!c.isValid() && !c.isPending()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce certificat est déjà révoqué.");
         c.setStatus(Certificate.REVOKED);
         c.setRevokedAt(LocalDateTime.now());
         c.setRevokedReason(reason.trim());
         log.info("Certificat {} révoqué par {} : {}", publicId, actorEmail, reason);
         return toAdmin(certificateRepository.save(c));
+    }
+
+    @Override
+    @Transactional
+    public CertificatePayloads.AdminCertificate validate(String publicId, String actorEmail) {
+        Certificate c = requireByPublicId(publicId);
+        if (!c.isPending()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce certificat n'est pas en attente de validation.");
+        c.setStatus(Certificate.VALID);
+        c.setIssuedAt(LocalDateTime.now());
+        c.setIssuedBy(actorEmail);
+        Certificate saved = certificateRepository.save(c);
+        log.info("Certificat {} validé par {} : visible et envoyé à {}", publicId, actorEmail, c.getLearner().getEmail());
+        events.publishEvent(new CertificateIssuedEvent(saved.getPublicId()));   // e-mail envoyé après validation de la transaction
+        return toAdmin(saved);
+    }
+
+    @Override
+    @Transactional
+    public CertificatePayloads.ValidateBatchResult validateAll(List<String> publicIds, String actorEmail) {
+        int validated = 0;
+        List<String> failed = new java.util.ArrayList<>();
+        for (String id : publicIds) {
+            try {
+                // Appel interne (sans proxy) : un refus (introuvable, déjà validé) est levé avant toute écriture et n'annule pas les autres
+                validate(id, actorEmail);
+                validated++;
+            } catch (RuntimeException e) {
+                log.warn("Validation du certificat {} impossible : {}", id, e.getMessage());
+                failed.add(id);
+            }
+        }
+        return CertificatePayloads.ValidateBatchResult.builder().validated(validated).failed(failed).build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] preview(String publicId) {
+        Certificate c = requireByPublicId(publicId);
+        if (c.getStatus().equals(Certificate.REVOKED)) throw new ResponseStatusException(HttpStatus.GONE, "Ce certificat a été révoqué.");
+        return pdfGenerator.generate(document(c), true);
     }
 
     @Override
@@ -217,6 +262,7 @@ public class CertificateServiceImpl implements CertificateService {
     @Override
     public CertificatePayloads.PublicCertificate verify(String publicId) {
         Certificate c = requireByPublicId(publicId);
+        if (c.isPending()) throw new ResourceNotFoundException("Certificat introuvable.");   // pas encore validé : n'existe pas pour le public
         return CertificatePayloads.PublicCertificate.builder()
                 .publicId(c.getPublicId())
                 .status(c.getStatus())
@@ -236,6 +282,7 @@ public class CertificateServiceImpl implements CertificateService {
     @Override
     public byte[] pdf(String publicId) {
         Certificate c = requireByPublicId(publicId);
+        if (c.isPending()) throw new ResourceNotFoundException("Certificat introuvable.");
         if (!c.isValid()) throw new ResponseStatusException(HttpStatus.GONE, "Ce certificat a été révoqué.");
         return render(c);
     }
@@ -245,6 +292,7 @@ public class CertificateServiceImpl implements CertificateService {
         Learner learner = learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(learnerEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Espace réservé aux apprenants."));
         return certificateRepository.findAllByLearnerIdAndIsDeletedFalseOrderByIssuedAtDesc(learner.getId()).stream()
+                .filter(c -> !c.isPending())   // « à valider » : invisible tant que l'équipe n'a pas validé
                 .map(c -> CertificatePayloads.LearnerCertificate.builder()
                         .publicId(c.getPublicId())
                         .formationId(c.getBootcamp().getId().toString())
@@ -303,10 +351,14 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     private byte[] render(Certificate c) {
-        return pdfGenerator.generate(new CertificatePdfGenerator.CertificateDocument(
+        return pdfGenerator.generate(document(c));
+    }
+
+    private CertificatePdfGenerator.CertificateDocument document(Certificate c) {
+        return new CertificatePdfGenerator.CertificateDocument(
                 c.getPublicId(), c.getRecipientName(), c.getFormationTitle(), c.getDurationLabel(),
                 c.getSkills(), c.isIncludesProject(), c.getSignatoryName(), c.getSignatoryTitle(),
-                c.getTrainerName(), c.getIssuedAt(), verifyUrl(c.getPublicId())));
+                c.getTrainerName(), c.getIssuedAt(), verifyUrl(c.getPublicId()));
     }
 
     private String verifyUrl(String publicId) {
@@ -364,6 +416,7 @@ public class CertificateServiceImpl implements CertificateService {
                 .sessionId(c.getSession() != null ? c.getSession().getId() : null)
                 .sessionName(c.getSession() != null ? c.getSession().getSessionName() : null)
                 .issuedAt(c.getIssuedAt())
+                .eligibleAt(c.getEligibleAt())
                 .issuedBy(c.getIssuedBy())
                 .forced(c.isForced())
                 .forceReason(c.getForceReason())

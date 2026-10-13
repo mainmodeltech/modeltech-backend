@@ -56,6 +56,30 @@ public class AdminCertificateController {
                 certificateService.revoke(publicId, request.getReason(), authentication.getName())));
     }
 
+    /** Valide un certificat « à valider » : il devient visible pour l'apprenant et lui est envoyé. */
+    @PostMapping("/certificates/{publicId}/validate")
+    public ResponseEntity<ApiResponse<CertificatePayloads.AdminCertificate>> validate(
+            @PathVariable String publicId, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Certificat validé et envoyé",
+                certificateService.validate(publicId, authentication.getName())));
+    }
+
+    @PostMapping("/certificates/validate")
+    public ResponseEntity<ApiResponse<CertificatePayloads.ValidateBatchResult>> validateAll(
+            @Valid @RequestBody CertificatePayloads.ValidateBatchRequest request, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Validation effectuée",
+                certificateService.validateAll(request.getPublicIds(), authentication.getName())));
+    }
+
+    /** Aperçu PDF (filigrane) d'un certificat à valider, pour le relire avant l'envoi. */
+    @GetMapping(value = "/certificates/{publicId}/preview", produces = org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> preview(@PathVariable String publicId) {
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"apercu-" + publicId + ".pdf\"")
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(certificateService.preview(publicId));
+    }
+
     @PostMapping("/certificates/{publicId}/resend")
     public ResponseEntity<ApiResponse<Void>> resend(@PathVariable String publicId) {
         certificateService.resend(publicId);

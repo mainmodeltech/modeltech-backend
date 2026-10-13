@@ -36,6 +36,8 @@ public final class StatsPayloads {
         private Long projectsToReview;
         /** Lives dans les 7 prochains jours. */
         private Long upcomingLives;
+        /** Certificats prêts, en attente de validation par l'équipe. */
+        private Long certificatesToValidate;
         /** E-mails en échec ces 7 derniers jours. */
         private Long failedEmails;
     }

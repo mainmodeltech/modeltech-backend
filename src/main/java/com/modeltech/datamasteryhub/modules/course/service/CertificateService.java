@@ -28,6 +28,15 @@ public interface CertificateService {
 
     CertificatePayloads.AdminCertificate revoke(String publicId, String reason, String actorEmail);
 
+    /** Valide un certificat « à valider » : il devient visible pour l'apprenant et lui est envoyé par e-mail. */
+    CertificatePayloads.AdminCertificate validate(String publicId, String actorEmail);
+
+    /** Valide plusieurs certificats ; un échec n'empêche pas les autres. */
+    CertificatePayloads.ValidateBatchResult validateAll(java.util.List<String> publicIds, String actorEmail);
+
+    /** PDF d'aperçu (filigrane) d'un certificat à valider ou valide, réservé à l'équipe. */
+    byte[] preview(String publicId);
+
     /** Renvoie l'e-mail « certificat prêt » (avec le PDF). */
     void resend(String publicId);
 

@@ -64,6 +64,7 @@ public class StatsServiceImpl implements StatsService {
                         SELECT count(*) FROM course_lessons
                         WHERE is_deleted = false AND type = 'LIVE' AND status <> 'DRAFT' AND live_at BETWEEN :now AND :in7days
                         """, p)))
+                .certificatesToValidate(visible(Permission.CERTIFICATES_MANAGE, () -> count("SELECT count(*) FROM certificates WHERE is_deleted = false AND status = 'PENDING'", p)))
                 .failedEmails(visible(Permission.EMAIL_LOGS_VIEW, () -> count("SELECT count(*) FROM email_logs WHERE status = 'FAILED' AND created_at >= :ago7days", p)))
                 .build();
     }

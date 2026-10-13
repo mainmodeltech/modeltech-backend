@@ -170,6 +170,11 @@ public class EvaluationServiceImpl implements EvaluationService {
                         bootcamp.getId(), learnerIds, com.modeltech.datamasteryhub.modules.course.entity.Certificate.VALID)
                 .stream().map(c -> c.getLearner().getId()).collect(Collectors.toSet());
 
+        Set<UUID> waiting = learnerIds.isEmpty() ? Set.of()
+                : certificateRepository.findAllByBootcampIdAndLearnerIdInAndStatusAndIsDeletedFalse(
+                        bootcamp.getId(), learnerIds, com.modeltech.datamasteryhub.modules.course.entity.Certificate.PENDING)
+                .stream().map(c -> c.getLearner().getId()).collect(Collectors.toSet());
+
         LocalDate today = access.today();
         boolean endingSoon = session.getEndDate() != null && !today.isBefore(session.getEndDate().minusDays(AT_RISK_DAYS));
         List<EvaluationPayloads.TrackedLearner> learners = new ArrayList<>();
@@ -193,7 +198,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                     .quizPassed((int) lessons.stream().filter(l -> l.getType() == LessonType.QUIZ && passed.contains(l.getId())).count())
                     .quizTotal(quizTotal)
                     .project(project)
-                    .certificate(certified.contains(id) ? "ISSUED" : ready ? "READY" : endingSoon ? "AT_RISK" : "PENDING")
+                    .certificate(certified.contains(id) ? "ISSUED" : waiting.contains(id) ? "TO_VALIDATE" : ready ? "READY" : endingSoon ? "AT_RISK" : "PENDING")
                     .build());
         }
 
