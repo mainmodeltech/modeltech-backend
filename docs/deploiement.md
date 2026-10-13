@@ -40,6 +40,9 @@ cible la précédente tant qu'elle n'est pas fusionnée, puis `develop`.
 | Variable | Obligatoire | Rôle |
 |---|---|---|
 | `JWT_SECRET` | oui | **64 octets minimum** (HS512). Plus court : le démarrage journalise une erreur et aucune connexion ne fonctionne. `openssl rand -base64 64` |
+| `MFA_ENCRYPTION_KEY` | **oui (staging/production)** | Chiffre les secrets de la double authentification : `openssl rand -base64 32`. À conserver hors du serveur et **à ne jamais changer** une fois des comptes enrôlés. Voir `docs/ops/phase-2-sessions-mfa.md` |
+| `JWT_PREVIOUS_SECRET`, `JWT_EXPIRATION` | non | Rotation de la clé JWT (ancien secret accepté en lecture le temps de la transition) ; durée du jeton d'accès (15 minutes par défaut, la session se prolonge par un cookie `HttpOnly`) |
+| `AUTH_MFA_ENFORCED`, `AUTH_COOKIE_SECURE`, `AUTH_THROTTLE_*`, `AUTH_REFRESH_*`, `AUTH_PASSWORD_MIN_*` | non | Double authentification obligatoire du personnel (vrai : ne désactiver qu'en local), cookie `Secure` (vrai : faux seulement en HTTP local), frein par (e-mail, IP), durées de session, longueur minimale des mots de passe |
 | `APP_FRONTEND_URL` | **oui** | URL publique du site (ex. `https://www.model-technologie.com`) : base des liens des e-mails (paiement, définition de mot de passe). Défaut `http://localhost:5173` → liens inutilisables en production |
 | `MAIL_USERNAME`, `MAIL_PASSWORD` | oui | Compte SMTP (Gmail : mot de passe d'application). Vides : aucun e-mail ne part (tracé `SKIPPED`) |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM`, `MAIL_FROM_NAME` | non | Défaut `smtp.gmail.com:587` ; `MAIL_FROM` vide = le compte SMTP ; `MAIL_FROM_NAME` = nom affiché de l'expéditeur (défaut « Model Technologie ») |
