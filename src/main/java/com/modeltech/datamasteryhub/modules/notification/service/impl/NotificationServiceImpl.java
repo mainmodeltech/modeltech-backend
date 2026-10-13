@@ -48,35 +48,15 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    /**
-     * Email vers le CANDIDAT : inscription reçue + instructions de paiement.
-     * Déclenché juste après la sauvegarde (statut PENDING).
-     */
+    /** Inscription confirmée par le paiement (personne qui a déjà un compte actif). */
     @Override
     @Async
-    public void sendRegistrationPendingEmail(Registration registration) {
-        log.info("Email 'inscription en attente' → {} ({})",
-                registration.getFirstName(), registration.getEmail());
+    public void sendEnrollmentConfirmedEmail(Registration registration) {
+        log.info("Email 'inscription confirmée' → {} ({})", registration.getFirstName(), registration.getEmail());
         try {
-            emailNotifier.sendPendingConfirmationToCandidate(registration);
+            emailNotifier.sendEnrollmentConfirmedEmail(registration);
         } catch (Exception e) {
-            log.error("Erreur Email 'pending' candidat {} : {}", registration.getEmail(), e.getMessage());
-        }
-    }
-
-    /**
-     * Email vers le CANDIDAT : place définitivement confirmée.
-     * Déclenché quand le backoffice passe le statut PENDING → CONFIRMED.
-     */
-    @Override
-    @Async
-    public void sendRegistrationConfirmedEmail(Registration registration) {
-        log.info("Email 'inscription confirmée' → {} ({})",
-                registration.getFirstName(), registration.getEmail());
-        try {
-            emailNotifier.sendConfirmedToCandidate(registration);
-        } catch (Exception e) {
-            log.error("Erreur Email 'confirmed' candidat {} : {}", registration.getEmail(), e.getMessage());
+            log.error("Erreur email 'inscription confirmée' {} : {}", registration.getEmail(), e.getMessage());
         }
     }
 

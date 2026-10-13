@@ -81,6 +81,8 @@ app:
   mail:
     # Expediteur ; vide = le compte SMTP (Gmail impose la meme adresse, sauf alias declare)
     from: ${MAIL_FROM:}
+    # Nom affiche a cote de l'adresse dans la boite de reception (« Model Technologie <noreply@...> »)
+    from-name: ${MAIL_FROM_NAME:Model Technologie}
     # Hors production : redirige TOUS les e-mails vers cette adresse (l'original est rappele dans l'objet)
     redirect-to: ${MAIL_REDIRECT_TO:}
     max-attempts: ${MAIL_MAX_ATTEMPTS:3}

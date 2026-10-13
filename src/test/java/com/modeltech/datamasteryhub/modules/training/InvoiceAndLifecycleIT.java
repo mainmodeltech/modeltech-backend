@@ -90,7 +90,7 @@ class InvoiceAndLifecycleIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value("PENDING"))
                 .andExpect(jsonPath("$.data.source").value("ADMIN"))
                 .andExpect(jsonPath("$.data.bootcampTitle").value("Power BI")));
-        verify(notificationService, never()).sendRegistrationPendingEmail(any());
+        verify(notificationService, never()).sendEnrollmentConfirmedEmail(any());
         verify(notificationService, never()).notifyNewRegistration(any());
 
         mockMvc.perform(post(ADMIN_REGISTRATIONS + "/" + created.at("/data/id").asText() + "/accept").with(admin())

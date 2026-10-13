@@ -18,6 +18,7 @@ import com.modeltech.datamasteryhub.modules.course.service.MessagingService;
 import com.modeltech.datamasteryhub.modules.course.service.SessionAccessPolicy;
 import com.modeltech.datamasteryhub.modules.notification.channel.MessageDispatcher;
 import com.modeltech.datamasteryhub.modules.notification.channel.OutboundMessage;
+import com.modeltech.datamasteryhub.modules.notification.template.EmailContent;
 import com.modeltech.datamasteryhub.modules.training.entity.BootcampSession;
 import com.modeltech.datamasteryhub.modules.training.entity.Enrollment;
 import com.modeltech.datamasteryhub.modules.training.repository.BootcampSessionRepository;
@@ -126,7 +127,20 @@ public class MessagingServiceImpl implements MessagingService {
                 """.formatted(learner.getFirstName(), live.getTitle(), live.getModule().getBootcamp().getTitle(),
                 session.getSessionName(), LiveReminder.H1.equals(kind) ? "dans une heure" : (today ? "aujourd'hui" : "demain"),
                 time, link, brandName);
-        return OutboundMessage.of("LIVE_REMINDER", learner.getEmail(), learner.getFullName(), subject, body);
+        String when = LiveReminder.H1.equals(kind) ? "dans une heure" : (today ? "aujourd'hui" : "demain");
+        String liveUrl = live.getLiveUrl() != null && !live.getLiveUrl().isBlank() ? live.getLiveUrl() : null;
+        EmailContent rich = EmailContent.builder(LiveReminder.H1.equals(kind) ? "Votre live commence dans une heure" : "Rappel : votre live a lieu " + when)
+                .preheader(live.getTitle() + " — " + time)
+                .greetingFor(learner.getFirstName())
+                .paragraph("Votre live **« " + live.getTitle() + " »** a lieu " + when + " à **" + time + "**.")
+                .details(List.of(EmailContent.entry("Live", live.getTitle()),
+                        EmailContent.entry("Formation", live.getModule().getBootcamp().getTitle()),
+                        EmailContent.entry("Session", session.getSessionName()),
+                        EmailContent.entry("Heure", time)))
+                .button(liveUrl != null ? "Rejoindre le live" : "Ouvrir mon espace", liveUrl != null ? liveUrl : base() + "/espace")
+                .signature("À tout à l'heure !\nL'équipe " + brandName)
+                .build();
+        return OutboundMessage.of("LIVE_REMINDER", learner.getEmail(), learner.getFullName(), subject, body).withEmail(rich);
     }
 
     // =========================================================================
@@ -157,9 +171,18 @@ public class MessagingServiceImpl implements MessagingService {
         String replyTo = actorEmail != null && actorEmail.contains("@") ? actorEmail : null;
         String footer = "\n\n— " + senderName + ", " + brandName + "\nVous recevez ce message car vous suivez « "
                 + session.getBootcamp().getTitle() + " » (" + session.getSessionName() + ").";
+        String subject = request.getSubject().trim();
+        String sessionLine = "Vous recevez ce message car vous suivez « " + session.getBootcamp().getTitle() + " » (" + session.getSessionName() + ").";
         List<OutboundMessage> messages = targets.stream()
                 .map(e -> new OutboundMessage("SESSION_MESSAGE", e.getLearner().getEmail(), null, e.getLearner().getFullName(),
-                        request.getSubject().trim(), "Bonjour " + e.getLearner().getFirstName() + ",\n\n" + request.getBody().trim() + footer, replyTo))
+                        subject, "Bonjour " + e.getLearner().getFirstName() + ",\n\n" + request.getBody().trim() + footer, replyTo)
+                        .withEmail(EmailContent.builder(subject)
+                                .preheader(request.getBody().trim().replaceAll("\\s+", " "))
+                                .greetingFor(e.getLearner().getFirstName())
+                                .paragraph(request.getBody().trim())
+                                .signature("— " + senderName + ", " + brandName)
+                                .footnote(sessionLine)
+                                .build()))
                 .toList();
 
         SessionMessage record = new SessionMessage();
@@ -211,11 +234,21 @@ public class MessagingServiceImpl implements MessagingService {
                 ? enrollment.getSession().getTrainer().getEmail() : teamEmail;
         if (to != null && !to.isBlank()) {
             String where = enrollment.getSession() != null ? "/admin/sessions/" + enrollment.getSession().getId() : "/admin";
-            dispatcher.sendAll(List.of(OutboundMessage.of("LESSON_QUESTION", to, null,
+            OutboundMessage toTeam = OutboundMessage.of("LESSON_QUESTION", to, null,
                     "Question d'un apprenant — " + lesson.getTitle(),
                     "%s pose une question sur la leçon « %s » (%s) :\n\n%s\n\nRépondre : %s%s".formatted(
                             learner.getFullName(), lesson.getTitle(), lesson.getModule().getBootcamp().getTitle(),
-                            saved.getQuestion(), base(), where))), null);
+                            saved.getQuestion(), base(), where))
+                    .withEmail(EmailContent.builder("Question d'un apprenant")
+                            .preheader(learner.getFullName() + " — " + lesson.getTitle())
+                            .paragraph("**" + learner.getFullName() + "** pose une question sur une leçon.")
+                            .details(List.of(EmailContent.entry("Leçon", lesson.getTitle()),
+                                    EmailContent.entry("Formation", lesson.getModule().getBootcamp().getTitle())))
+                            .quote(saved.getQuestion(), learner.getFullName())
+                            .button("Répondre", base() + where)
+                            .noSignature()
+                            .build());
+            dispatcher.sendAll(List.of(toTeam), null);
         }
         return toLearnerView(saved);
     }
@@ -252,11 +285,22 @@ public class MessagingServiceImpl implements MessagingService {
         q.setAnsweredAt(LocalDateTime.now());
         LessonQuestion saved = questionRepository.save(q);
 
-        dispatcher.sendAll(List.of(new OutboundMessage("QUESTION_ANSWER", q.getLearner().getEmail(), null, q.getLearner().getFullName(),
+        String answerReplyTo = actorEmail != null && actorEmail.contains("@") ? actorEmail : null;
+        OutboundMessage answerMessage = new OutboundMessage("QUESTION_ANSWER", q.getLearner().getEmail(), null, q.getLearner().getFullName(),
                 "Réponse à votre question — " + q.getLesson().getTitle(),
                 "Bonjour %s,\n\nVotre question sur « %s » :\n> %s\n\nRéponse de %s :\n%s\n\nRetrouvez-la dans votre espace : %s/espace\n— %s".formatted(
                         q.getLearner().getFirstName(), q.getLesson().getTitle(), q.getQuestion(), author, saved.getAnswer(), base(), brandName),
-                actorEmail != null && actorEmail.contains("@") ? actorEmail : null)), null);
+                answerReplyTo)
+                .withEmail(EmailContent.builder("Réponse à votre question")
+                        .preheader("Sur la leçon « " + q.getLesson().getTitle() + " »")
+                        .greetingFor(q.getLearner().getFirstName())
+                        .paragraph("**" + author + "** a répondu à votre question sur la leçon **« " + q.getLesson().getTitle() + " »**.")
+                        .quote(q.getQuestion(), "Votre question")
+                        .paragraph(saved.getAnswer())
+                        .button("Voir dans mon espace", base() + "/espace")
+                        .signature("L'équipe " + brandName)
+                        .build());
+        dispatcher.sendAll(List.of(answerMessage), null);
         return toSessionView(saved);
     }
 

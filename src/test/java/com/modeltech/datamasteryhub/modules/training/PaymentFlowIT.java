@@ -322,7 +322,8 @@ class PaymentFlowIT extends AbstractIntegrationTest {
         assertThat(enrollment.getAccessStartsAt()).isEqualTo(session.getStartDate());
         assertThat(enrollment.getAccessEndsAt()).isEqualTo(session.getEndDate());
 
-        verify(notificationService).sendRegistrationConfirmedEmail(any(Registration.class));
+        // nouveau compte : l'invitation vaut confirmation, pas de second e-mail
+        verify(notificationService, never()).sendEnrollmentConfirmedEmail(any(Registration.class));
         verify(notificationService).sendAccountInvitationEmail(
                 eq("awa@example.com"), eq("Awa"), anyString(), anyInt(), eq(true));
 
@@ -332,6 +333,26 @@ class PaymentFlowIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].learnerEmail").value("awa@example.com"))
                 .andExpect(jsonPath("$.data[0].bootcampTitle").value("Power BI"));
+    }
+
+    @Test
+    void confirm_forAnExistingActiveAccount_sendsTheEnrollmentConfirmation_andNoInvitation() throws Exception {
+        com.modeltech.datamasteryhub.modules.auth.entity.Learner existing = new com.modeltech.datamasteryhub.modules.auth.entity.Learner();
+        existing.setEmail("awa@example.com");
+        existing.setFirstName("Awa");
+        existing.setLastName("Diop");
+        existing.setPasswordHash("$2a$10$dummyhashdummyhashdummyhashdummyhashdummyhashdummyha");
+        learnerRepository.save(existing);
+
+        Registration reg = newRegistration("awa@example.com", null);
+        accept(reg, "{}").andExpect(status().isOk());
+        declare(firstToken(reg), "{\"method\":\"WAVE\",\"reference\":\"W1\"}").andExpect(status().isOk());
+        Payment payment = paymentRepository.findAll().get(0);
+
+        mockMvc.perform(post(ADMIN_PAYMENTS + "/" + payment.getId() + "/confirm").with(admin())).andExpect(status().isOk());
+
+        verify(notificationService).sendEnrollmentConfirmedEmail(any(Registration.class));
+        verify(notificationService, never()).sendAccountInvitationEmail(anyString(), any(), anyString(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -354,7 +375,7 @@ class PaymentFlowIT extends AbstractIntegrationTest {
         assertThat(sessionRepository.findById(session.getId()).orElseThrow().getCurrentParticipants()).isEqualTo(1);
         assertThat(enrollmentRepository.findAll()).hasSize(1);
         assertThat(learnerRepository.findAll().stream().filter(l -> l.getEmail().equals("awa@example.com"))).hasSize(1);
-        verify(notificationService, times(1)).sendRegistrationConfirmedEmail(any(Registration.class));
+        verify(notificationService, never()).sendEnrollmentConfirmedEmail(any(Registration.class));
 
         mockMvc.perform(get(ADMIN_REGISTRATIONS + "/" + reg.getId()).with(admin()))
                 .andExpect(status().isOk())
