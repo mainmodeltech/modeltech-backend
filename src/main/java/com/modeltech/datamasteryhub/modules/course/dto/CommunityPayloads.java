@@ -41,7 +41,7 @@ public final class CommunityPayloads {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CreateRequest {
         @NotBlank(message = "Le message est obligatoire")
-        @Size(max = 2000, message = "2 000 caractères maximum")
+        @Size(max = 5000, message = "5 000 caractères maximum")
         private String content;
 
         /** Message auquel on répond ; absent pour un nouveau message. */

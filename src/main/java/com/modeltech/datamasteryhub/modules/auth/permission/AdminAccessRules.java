@@ -79,6 +79,7 @@ public final class AdminAccessRules {
         rule(POST, "/api/v1/admin/sessions/*/learners/*/certificate", CERTIFICATES_MANAGE);
         rule(GET, "/api/v1/admin/sessions/**", SESSIONS_VIEW);
         rule(null, "/api/v1/admin/sessions/**", SESSIONS_TRACK);
+        rule(GET, "/api/v1/admin/questions", SESSIONS_VIEW);                              // boîte de réception (portée : voir MessagingService.inbox)
         rule(GET, "/api/v1/admin/certificates/**", CERTIFICATES_VIEW);
         rule(null, "/api/v1/admin/certificates/**", CERTIFICATES_MANAGE);
 

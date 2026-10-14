@@ -34,6 +34,14 @@ public interface MessagingService {
     List<MessagingPayloads.SessionQuestion> sessionQuestions(UUID sessionId, boolean onlyOpen,
                                                              String actorEmail, Collection<String> actorRoles);
 
+    /**
+     * Boîte de réception des questions, toutes sessions confondues : l'équipe avec la portée « toutes les sessions » les voit
+     * toutes, un formateur seulement celles de ses sessions.
+     */
+    org.springframework.data.domain.Page<MessagingPayloads.InboxQuestion> inbox(String status, String search, UUID sessionId,
+                                                                               org.springframework.data.domain.Pageable pageable,
+                                                                               String actorEmail, Collection<String> actorAuthorities);
+
     MessagingPayloads.SessionQuestion answer(UUID sessionId, UUID questionId, String answer,
                                              String actorEmail, Collection<String> actorRoles);
 }

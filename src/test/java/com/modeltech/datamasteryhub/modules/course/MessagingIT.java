@@ -238,6 +238,38 @@ class MessagingIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void questionInbox_listsAcrossSessions_filtersByStatus_andIsScopedToTheTrainersOwnSessions() throws Exception {
+        RequestPostProcessor awaAuth = user("awa@example.com", "LEARNER");
+        String url = "/api/v1/learner/lessons/" + videoId + "/questions";
+        JsonNode first = json(mockMvc.perform(post(url).with(awaAuth).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"question\":\"Comment écrire ceci ?\\n```dax\\nTotal = SUM(Ventes[Montant])\\n```\"}")).andExpect(status().isCreated()));
+        mockMvc.perform(post(url).with(awaAuth).contentType(MediaType.APPLICATION_JSON).content("{\"question\":\"Une seconde question ?\"}")).andExpect(status().isCreated());
+        mockMvc.perform(post(sessionUrl() + "/questions/" + first.get("id").asText() + "/answer").with(trainer)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"answer\":\"Oui.\"}")).andExpect(status().isOk());
+
+        String inbox = "/api/v1/admin/questions";
+        // Pédagogie (toutes les sessions) : par défaut les questions sans réponse, avec la session et la formation
+        mockMvc.perform(get(inbox).with(user("p@test.local", "PEDAGOGY")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].question").value("Une seconde question ?"))
+                .andExpect(jsonPath("$.data[0].sessionName").value("Cohorte 1"))
+                .andExpect(jsonPath("$.data[0].formationTitle").value("Power BI"))
+                .andExpect(jsonPath("$.data[0].sessionId").value(session.getId().toString()));
+        mockMvc.perform(get(inbox).param("status", "ANSWERED").with(user("p@test.local", "PEDAGOGY")))
+                .andExpect(jsonPath("$.data.length()").value(1)).andExpect(jsonPath("$.data[0].answer").value("Oui."));
+        mockMvc.perform(get(inbox).param("status", "ALL").with(user("p@test.local", "PEDAGOGY"))).andExpect(jsonPath("$.data.length()").value(2));
+        mockMvc.perform(get(inbox).param("status", "ALL").param("q", "dax").with(user("p@test.local", "PEDAGOGY"))).andExpect(jsonPath("$.data.length()").value(1));
+        mockMvc.perform(get(inbox).param("status", "ALL").param("q", "%").with(user("p@test.local", "PEDAGOGY"))).andExpect(jsonPath("$.data.length()").value(0));
+
+        // Le formateur de la session voit ses questions ; un autre formateur n'en voit aucune ; l'apprenant n'a pas accès
+        mockMvc.perform(get(inbox).with(trainer)).andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(1));
+        mockMvc.perform(get(inbox).with(user("autre@test.local", "TRAINER"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(0));
+        mockMvc.perform(get(inbox).with(awaAuth)).andExpect(status().isForbidden());
+        mockMvc.perform(get(inbox).with(user("c@test.local", "COMMUNICATION"))).andExpect(status().isForbidden());
+    }
+
+    @Test
     void questions_areLimited_andOnlyAboutLessonsTheLearnerCanOpen() throws Exception {
         RequestPostProcessor awaAuth = user("awa@example.com", "LEARNER");
         String url = "/api/v1/learner/lessons/" + videoId + "/questions";
