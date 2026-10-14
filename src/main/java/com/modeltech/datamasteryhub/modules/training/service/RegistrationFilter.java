@@ -65,6 +65,7 @@ public record RegistrationFilter(Stage stage, RegistrationStatus status, String 
                             cb.like(cb.lower(cb.coalesce(root.<String>get("company"), "")), like, '\\'),
                             cb.like(cb.lower(cb.coalesce(root.<String>get("phone"), "")), like, '\\'),
                             cb.like(cb.lower(cb.coalesce(root.<String>get("bootcampTitle"), "")), like, '\\'),
+                            cb.like(cb.lower(cb.coalesce(root.<String>get("sessionName"), "")), like, '\\'),
                             cb.like(cb.lower(cb.coalesce(root.<String>get("promoCodeUsed"), "")), like, '\\')));
                 }
             }
