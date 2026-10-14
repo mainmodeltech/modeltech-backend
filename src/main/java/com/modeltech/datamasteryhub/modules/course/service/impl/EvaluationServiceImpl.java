@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.course.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.course.dto.EvaluationPayloads;
@@ -58,6 +60,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final com.modeltech.datamasteryhub.modules.course.service.SessionAccessPolicy sessionAccess;
     private final com.modeltech.datamasteryhub.modules.course.service.CertificateService certificateService;
     private final com.modeltech.datamasteryhub.modules.course.repository.CertificateRepository certificateRepository;
+    private final AuditService audit;
 
     @Value("${app.brand.name:Model Technologie}")
     private String brandName;
@@ -150,6 +153,9 @@ public class EvaluationServiceImpl implements EvaluationService {
         grant.setReason(request.getReason().trim());
         grant.setGrantedBy(actorEmail);
         grantRepository.save(grant);
+        audit.record(AuditAction.QUIZ_ATTEMPTS_GRANTED, "Learner", learnerId,
+                request.getExtraAttempts() + " tentative(s) supplémentaire(s) accordée(s) à " + enrollment.getLearner().getFullName()
+                        + " sur « " + quiz.getTitle() + " » : " + request.getReason().trim());
         log.info("{} tentative(s) accordée(s) à {} sur le quiz {} par {} : {}", request.getExtraAttempts(),
                 enrollment.getLearner().getEmail(), quizId, actorEmail, request.getReason());
         return quizSummariesOf(session.getBootcamp(), learnerId).stream()

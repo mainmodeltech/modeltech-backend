@@ -39,6 +39,13 @@ public class AdminPaymentResponse {
     private String notes;
     private LocalDateTime refundedAt;
     private String refundReason;
+    private String recordedBy;
+    private boolean confirmedUnchecked;
+    /** Demande de remboursement en attente de validation (renseignée tant qu'elle n'est ni validée ni refusée). */
+    private LocalDateTime refundRequestedAt;
+    private String refundRequestedBy;
+    private String refundRequestReason;
+    private boolean refundUnchecked;
     private Integer reminderCount;
     private LocalDateTime lastReminderAt;
     /** Lien de paiement à communiquer au candidat. */

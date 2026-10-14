@@ -53,8 +53,22 @@ public class AdminPaymentController {
     @PostMapping("/payments/{id}/refund")
     public ResponseEntity<ApiResponse<AdminPaymentResponse>> refund(
             @PathVariable UUID id, @Valid @RequestBody RejectReasonRequest request, Authentication authentication) {
-        return ResponseEntity.ok(ApiResponse.ok("Remboursement consigné",
+        return ResponseEntity.ok(ApiResponse.ok("Remboursement demandé (ou consigné si vous seul pouvez le valider)",
                 paymentService.refund(id, request.getReason(), authentication.getName())));
+    }
+
+    @PostMapping("/payments/{id}/refund/approve")
+    public ResponseEntity<ApiResponse<AdminPaymentResponse>> approveRefund(
+            @PathVariable UUID id, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Remboursement validé et consigné",
+                paymentService.approveRefund(id, authentication.getName())));
+    }
+
+    @PostMapping("/payments/{id}/refund/decline")
+    public ResponseEntity<ApiResponse<AdminPaymentResponse>> declineRefund(
+            @PathVariable UUID id, @Valid @RequestBody RejectReasonRequest request, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok("Demande de remboursement refusée",
+                paymentService.declineRefund(id, request.getReason(), authentication.getName())));
     }
 
     @PostMapping("/payments/{id}/remind")

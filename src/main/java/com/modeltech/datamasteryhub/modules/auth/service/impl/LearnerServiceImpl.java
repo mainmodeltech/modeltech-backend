@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.dto.request.CreateLearnerRequest;
 import com.modeltech.datamasteryhub.modules.auth.dto.response.LearnerResponse;
@@ -40,6 +42,7 @@ public class LearnerServiceImpl implements LearnerService {
     private final AuthService authService;
     private final NotificationService notificationService;
     private final AccountSecurityService accountSecurity;
+    private final AuditService audit;
 
     // ── Admin ───────────────────────────────────────────────────────
 
@@ -64,7 +67,10 @@ public class LearnerServiceImpl implements LearnerService {
         Learner learner = newLearner(request.getFirstName(), request.getLastName(), email,
                 request.getPhone(), request.getCountry());
         log.info("Création du compte apprenant {}", email);
-        return toResponse(invite(learnerRepository.save(learner)));
+        Learner created = learnerRepository.save(learner);
+        audit.record(AuditAction.LEARNER_CREATED, "Learner", created.getId(),
+                "Compte apprenant créé pour " + created.getFullName() + " (" + email + ")");
+        return toResponse(invite(created));
     }
 
     @Override
@@ -74,6 +80,10 @@ public class LearnerServiceImpl implements LearnerService {
         boolean changed = learner.isActive() != active;
         learner.setActive(active);
         Learner saved = learnerRepository.save(learner);
+        if (changed) {
+            audit.record(AuditAction.LEARNER_ACTIVATION_CHANGED, "Learner", id,
+                    "Compte apprenant de " + saved.getFullName() + (active ? " activé" : " désactivé"));
+        }
         // Désactivation : les jetons et sessions déjà émis ne valent plus
         if (changed && !active) accountSecurity.invalidateSessions(saved);
         return toResponse(saved);

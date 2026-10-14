@@ -1,5 +1,8 @@
 package com.modeltech.datamasteryhub.modules.course.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditFlag;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
@@ -65,6 +68,7 @@ public class CertificateServiceImpl implements CertificateService {
     private final ApplicationEventPublisher events;
     private final JdbcTemplate jdbc;
     private final PlatformTransactionManager transactionManager;
+    private final AuditService audit;
 
     @Value("${app.certificate.signatory-name:Patrick Lionnel DOOKO}")
     private String signatoryName;
@@ -182,7 +186,13 @@ public class CertificateServiceImpl implements CertificateService {
         Certificate saved = certificateRepository.save(c);
         log.info("Certificat {} {} pour {} « {} » ({}{})", saved.getPublicId(), pending ? "à valider" : "délivré", learner.getEmail(), bootcamp.getTitle(),
                 issuedBy, forced ? ", dérogation" : "");
-        if (!pending) events.publishEvent(new CertificateIssuedEvent(saved.getPublicId()));
+        if (!pending) {
+            events.publishEvent(new CertificateIssuedEvent(saved.getPublicId()));
+            audit.record(AuditAction.CERTIFICATE_ISSUED, "Certificate", saved.getPublicId(),
+                    "Certificat " + saved.getPublicId() + " délivré à " + learner.getFullName() + " pour « " + bootcamp.getTitle() + " »"
+                            + (forced ? " par dérogation : " + forceReason : ""),
+                    forced ? java.util.Map.of("motif", String.valueOf(forceReason)) : null, forced ? AuditFlag.OVERRIDE : null);
+        }
         return saved;
     }
 
@@ -198,6 +208,8 @@ public class CertificateServiceImpl implements CertificateService {
         c.setStatus(Certificate.REVOKED);
         c.setRevokedAt(LocalDateTime.now());
         c.setRevokedReason(reason.trim());
+        audit.record(AuditAction.CERTIFICATE_REVOKED, "Certificate", publicId,
+                "Certificat " + publicId + " de " + c.getRecipientName() + " révoqué : " + reason.trim());
         log.info("Certificat {} révoqué par {} : {}", publicId, actorEmail, reason);
         return toAdmin(certificateRepository.save(c));
     }
@@ -211,6 +223,8 @@ public class CertificateServiceImpl implements CertificateService {
         c.setIssuedAt(LocalDateTime.now());
         c.setIssuedBy(actorEmail);
         Certificate saved = certificateRepository.save(c);
+        audit.record(AuditAction.CERTIFICATE_VALIDATED, "Certificate", publicId,
+                "Certificat " + publicId + " de " + c.getRecipientName() + " validé : visible de l'apprenant et envoyé par e-mail");
         log.info("Certificat {} validé par {} : visible et envoyé à {}", publicId, actorEmail, c.getLearner().getEmail());
         events.publishEvent(new CertificateIssuedEvent(saved.getPublicId()));   // e-mail envoyé après validation de la transaction
         return toAdmin(saved);

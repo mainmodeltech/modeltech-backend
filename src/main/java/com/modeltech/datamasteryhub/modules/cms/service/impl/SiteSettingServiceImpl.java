@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.cms.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
@@ -31,6 +33,7 @@ public class SiteSettingServiceImpl implements SiteSettingService {
 
     private final SiteSettingRepository repository;
     private final ObjectMapper objectMapper;
+    private final AuditService audit;
 
     @Override
     public Map<String, JsonNode> findAllPublic() {
@@ -66,7 +69,9 @@ public class SiteSettingServiceImpl implements SiteSettingService {
         setting.setDeletedAt(null);
         setting.setDeletedBy(null);
         log.info("Contenu du site « {} » enregistré", key);
-        return toResponse(repository.save(setting));
+        SiteSetting saved = repository.save(setting);
+        audit.record(AuditAction.SITE_CONTENT_CHANGED, "SiteSetting", key, "Contenu du site « " + key + " » modifié");
+        return toResponse(saved);
     }
 
     @Override
@@ -79,6 +84,8 @@ public class SiteSettingServiceImpl implements SiteSettingService {
         setting.setDeletedAt(LocalDateTime.now());
         setting.setDeletedBy("system");
         repository.save(setting);
+        audit.record(AuditAction.SITE_CONTENT_CHANGED, "SiteSetting", key,
+                "Contenu du site « " + key + " » rétabli à sa version d'origine");
     }
 
     private void requireValidKey(String key) {

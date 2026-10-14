@@ -105,4 +105,25 @@ public class Payment extends BaseEntity {
 
     @Column(name = "refund_reason", columnDefinition = "TEXT")
     private String refundReason;
+
+    /** Qui a saisi ce paiement reçu hors site (il ne peut pas le confirmer lui-même s'il existe une autre personne habilitée). */
+    @Column(name = "recorded_by")
+    private String recordedBy;
+
+    /** Confirmé par la personne qui l'avait saisi, faute d'une autre personne habilitée. */
+    @Column(name = "confirmed_unchecked", nullable = false)
+    private boolean confirmedUnchecked = false;
+
+    @Column(name = "refund_requested_at")
+    private LocalDateTime refundRequestedAt;
+
+    @Column(name = "refund_requested_by")
+    private String refundRequestedBy;
+
+    @Column(name = "refund_request_reason", columnDefinition = "TEXT")
+    private String refundRequestReason;
+
+    /** Remboursé sans second contrôle (le demandeur était seul à pouvoir valider). */
+    @Column(name = "refund_unchecked", nullable = false)
+    private boolean refundUnchecked = false;
 }

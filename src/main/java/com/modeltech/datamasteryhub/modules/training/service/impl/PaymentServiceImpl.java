@@ -1,5 +1,9 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditFlag;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
+import com.modeltech.datamasteryhub.modules.audit.service.FourEyes;
 import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.common.util.TokenUtils;
@@ -46,8 +50,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -72,6 +78,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final NotificationService notificationService;
     private final StorageService storageService;
     private final com.modeltech.datamasteryhub.modules.training.repository.InvoiceRepository invoiceRepository;
+    private final AuditService audit;
+    private final FourEyes fourEyes;
 
     /** Délai (jours) laissé pour payer quand l'admin ne fixe pas d'échéance. */
     @Value("${app.payment.default-due-days:2}")
@@ -130,6 +138,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
         paymentRepository.saveAll(payments);
 
+        Long quoted = pricing.quote(reg).map(RegistrationPricing.Quote::total).orElse(null);
+        boolean priceOverride = quoted == null || quoted != total;
         reg.setStatus(RegistrationStatus.PAYMENT_PENDING);
         reg.setAcceptedAt(now);
         reg.setAcceptedBy(actor);
@@ -138,6 +148,15 @@ public class PaymentServiceImpl implements PaymentService {
         Registration saved = registrationRepository.save(reg);
 
         notificationService.sendPaymentLinkEmail(notice(saved, payments.get(0), null), false);
+        Map<String, Object> accepted = new LinkedHashMap<>();
+        accepted.put("montant", total);
+        accepted.put("devise", currency);
+        accepted.put("echeances", payments.size());
+        if (quoted != null) accepted.put("tarifCatalogue", quoted);
+        audit.record(AuditAction.REGISTRATION_ACCEPTED, "Registration", saved.getId(),
+                "Candidature de " + person(saved) + " acceptée : " + total + " " + currency + " en " + payments.size() + " échéance(s)"
+                        + (priceOverride ? " (montant différent du tarif du catalogue)" : ""),
+                accepted, priceOverride ? AuditFlag.OVERRIDE : null);
         log.info("Candidature {} acceptée par {} : {} {} en {} échéance(s)",
                 saved.getId(), actor, total, currency, payments.size());
         return toResponse(saved);
@@ -153,7 +172,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
         reg.setStatus(RegistrationStatus.REJECTED);
         reg.setRejectedReason(reason.trim());
-        return toResponse(registrationRepository.save(reg));
+        Registration saved = registrationRepository.save(reg);
+        audit.record(AuditAction.REGISTRATION_REJECTED, "Registration", saved.getId(),
+                "Candidature de " + person(saved) + " refusée : " + reason.trim());
+        return toResponse(saved);
     }
 
     @Override
@@ -180,10 +202,16 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         markDeclared(target, reg, request.getMethod(), blankToNull(request.getReference()));
+        target.setRecordedBy(Actor.email());
         target.setInvoiceRef(firstNonBlank(request.getInvoiceRef(), target.getInvoiceRef()));
         target.setPurchaseOrderRef(firstNonBlank(request.getPurchaseOrderRef(), target.getPurchaseOrderRef()));
         target.setNotes(blankToNull(request.getNotes()));
-        return paymentMapper.toAdmin(paymentRepository.save(target));
+        Payment saved = paymentRepository.save(target);
+        audit.record(AuditAction.PAYMENT_RECORDED, "Payment", saved.getId(),
+                "Paiement hors site saisi pour " + person(reg) + " : " + saved.getAmount() + " " + saved.getCurrency()
+                        + " (échéance " + saved.getInstallmentNumber() + "/" + saved.getInstallmentCount() + ", " + request.getMethod() + ")",
+                Map.of("registrationId", reg.getId().toString(), "montant", saved.getAmount(), "moyen", String.valueOf(request.getMethod())), null);
+        return paymentMapper.toAdmin(saved);
     }
 
     private static final Set<RegistrationStatus> CANCELLABLE = Set.of(RegistrationStatus.PENDING,
@@ -198,6 +226,8 @@ public class PaymentServiceImpl implements PaymentService {
                     "Cette inscription ne peut plus être annulée (statut : " + reg.getStatus() + ").");
         }
         closeRegistration(reg, reason.trim());
+        audit.record(AuditAction.REGISTRATION_CANCELLED, "Registration", registrationId,
+                "Inscription de " + person(reg) + " annulée : " + reason.trim());
         log.info("Inscription {} annulée par {} : {}", registrationId, actor, reason);
         return toResponse(reg);
     }
@@ -231,6 +261,11 @@ public class PaymentServiceImpl implements PaymentService {
         registrationRepository.save(reg);
     }
 
+    /**
+     * Demande de remboursement. La demande est ensuite validée par <b>une autre personne</b> habilitée
+     * ({@link #approveRefund}). Exception pour une petite équipe : si la personne qui demande est la seule à pouvoir valider,
+     * le remboursement est effectué tout de suite et consigné « sans second contrôle ».
+     */
     @Override
     @Transactional
     public AdminPaymentResponse refund(UUID paymentId, String reason, String actor) {
@@ -239,20 +274,99 @@ public class PaymentServiceImpl implements PaymentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Seule une échéance confirmée peut être remboursée (statut : " + payment.getStatus() + ").");
         }
+        if (payment.getRefundRequestedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Une demande de remboursement est déjà en attente de validation pour cette échéance.");
+        }
+        payment.setRefundRequestedAt(LocalDateTime.now());
+        payment.setRefundRequestedBy(actor);
+        payment.setRefundRequestReason(reason.trim());
+
+        if (Actor.has(Permission.PAYMENTS_REFUND_APPROVE) && !fourEyes.otherHolderExists(Permission.PAYMENTS_REFUND_APPROVE, actor)) {
+            payment.setRefundUnchecked(true);
+            return executeRefund(payment, actor);
+        }
+        paymentRepository.save(payment);
+        audit.record(AuditAction.REFUND_REQUESTED, "Payment", paymentId,
+                "Remboursement demandé pour " + person(payment.getRegistration()) + " : " + payment.getAmount() + " " + payment.getCurrency()
+                        + " — " + reason.trim() + " (en attente de validation)",
+                refundDetails(payment), null);
+        return paymentMapper.toAdmin(payment);
+    }
+
+    @Override
+    @Transactional
+    public AdminPaymentResponse approveRefund(UUID paymentId, String actor) {
+        Payment payment = getPayment(paymentId);
+        if (payment.getRefundRequestedAt() == null || payment.getStatus() != PaymentStatus.CONFIRMED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Aucune demande de remboursement en attente pour cette échéance.");
+        }
+        if (FourEyes.same(payment.getRefundRequestedBy(), actor)) {
+            if (fourEyes.otherHolderExists(Permission.PAYMENTS_REFUND_APPROVE, actor)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Vous avez demandé ce remboursement : une autre personne habilitée doit le valider.");
+            }
+            payment.setRefundUnchecked(true);
+        }
+        return executeRefund(payment, actor);
+    }
+
+    @Override
+    @Transactional
+    public AdminPaymentResponse declineRefund(UUID paymentId, String reason, String actor) {
+        Payment payment = getPayment(paymentId);
+        if (payment.getRefundRequestedAt() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Aucune demande de remboursement en attente pour cette échéance.");
+        }
+        Map<String, Object> details = refundDetails(payment);
+        details.put("motifDuRefus", reason.trim());
+        String requester = payment.getRefundRequestedBy();
+        payment.setRefundRequestedAt(null);
+        payment.setRefundRequestedBy(null);
+        payment.setRefundRequestReason(null);
+        paymentRepository.save(payment);
+        audit.record(AuditAction.REFUND_DECLINED, "Payment", paymentId,
+                "Demande de remboursement de " + requester + " pour " + person(payment.getRegistration()) + " refusée : " + reason.trim(),
+                details, null);
+        return paymentMapper.toAdmin(payment);
+    }
+
+    /** Effectue le remboursement (paiement remboursé, accès fermé s'il ne reste plus rien de payé) et le consigne. */
+    private AdminPaymentResponse executeRefund(Payment payment, String actor) {
+        String reason = payment.getRefundRequestReason();
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setRefundedAt(LocalDateTime.now());
         payment.setRefundedBy(actor);
-        payment.setRefundReason(reason.trim());
+        payment.setRefundReason(reason);
         paymentRepository.save(payment);
 
         Registration reg = payment.getRegistration();
         boolean stillPaid = paymentRepository.findAllByRegistrationIdAndIsDeletedFalseOrderByInstallmentNumberAsc(reg.getId())
                 .stream().anyMatch(p -> p.getStatus() == PaymentStatus.CONFIRMED);
         if (!stillPaid && reg.getStatus() == RegistrationStatus.CONFIRMED) {
-            closeRegistration(reg, "Remboursement : " + reason.trim());
+            closeRegistration(reg, "Remboursement : " + reason);
         }
-        log.info("Échéance {} remboursée par {} : {}", paymentId, actor, reason);
+        boolean unchecked = payment.isRefundUnchecked();
+        audit.record(AuditAction.REFUND_APPROVED, "Payment", payment.getId(),
+                "Remboursement de " + payment.getAmount() + " " + payment.getCurrency() + " effectué pour " + person(reg)
+                        + " — " + reason + (unchecked ? " (sans second contrôle : aucune autre personne habilitée)" : ""),
+                refundDetails(payment), unchecked ? AuditFlag.NO_SECOND_CHECK : null);
+        log.info("Échéance {} remboursée par {} : {}", payment.getId(), actor, reason);
         return paymentMapper.toAdmin(payment);
+    }
+
+    private Map<String, Object> refundDetails(Payment payment) {
+        Map<String, Object> d = new LinkedHashMap<>();
+        d.put("registrationId", payment.getRegistration().getId().toString());
+        d.put("montant", payment.getAmount());
+        d.put("devise", payment.getCurrency());
+        d.put("demandePar", payment.getRefundRequestedBy());
+        d.put("motif", payment.getRefundRequestReason());
+        return d;
+    }
+
+    private static String person(Registration reg) {
+        return (reg.getFirstName() + " " + reg.getLastName()).trim();
     }
 
     // =========================================================================
@@ -279,10 +393,21 @@ public class PaymentServiceImpl implements PaymentService {
                     "L'inscription n'est plus active (statut : " + reg.getStatus() + ").");
         }
 
+        // Séparation des tâches : un paiement saisi hors site ne peut pas être confirmé par la personne qui l'a saisi
+        boolean unchecked = false;
+        if (FourEyes.same(payment.getRecordedBy(), actor)) {
+            if (fourEyes.otherHolderExists(Permission.PAYMENTS_MANAGE, actor)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Vous avez saisi ce paiement : une autre personne habilitée doit le confirmer.");
+            }
+            unchecked = true;
+        }
+
         LocalDateTime now = LocalDateTime.now();
         payment.setStatus(PaymentStatus.CONFIRMED);
         payment.setConfirmedAt(now);
         payment.setConfirmedBy(actor);
+        payment.setConfirmedUnchecked(unchecked);
         if (payment.getPaidAt() == null) payment.setPaidAt(payment.getDeclaredAt() != null ? payment.getDeclaredAt() : now);
         payment.setRejectionReason(null);
         paymentRepository.save(payment);
@@ -290,6 +415,15 @@ public class PaymentServiceImpl implements PaymentService {
         if (AWAITING_PAYMENT.contains(reg.getStatus())) {
             openEnrollment(reg);
         }
+        Map<String, Object> confirmed = new LinkedHashMap<>();
+        confirmed.put("registrationId", reg.getId().toString());
+        confirmed.put("montant", payment.getAmount());
+        confirmed.put("moyen", String.valueOf(payment.getMethod()));
+        if (payment.getRecordedBy() != null) confirmed.put("saisiPar", payment.getRecordedBy());
+        audit.record(AuditAction.PAYMENT_CONFIRMED, "Payment", payment.getId(),
+                "Paiement de " + payment.getAmount() + " " + payment.getCurrency() + " confirmé pour " + person(reg)
+                        + (unchecked ? " (saisi et confirmé par la même personne : aucune autre personne habilitée)" : ""),
+                confirmed, unchecked ? AuditFlag.NO_SECOND_CHECK : null);
         return paymentMapper.toAdmin(payment);
     }
 
@@ -322,6 +456,8 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
         notificationService.sendPaymentRejectedEmail(notice);
+        audit.record(AuditAction.PAYMENT_REJECTED, "Payment", payment.getId(),
+                "Paiement de " + payment.getAmount() + " " + payment.getCurrency() + " refusé pour " + person(reg) + " : " + reason.trim());
         return paymentMapper.toAdmin(payment);
     }
 

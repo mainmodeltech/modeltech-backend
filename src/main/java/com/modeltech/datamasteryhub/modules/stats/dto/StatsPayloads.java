@@ -26,6 +26,8 @@ public final class StatsPayloads {
         private Long newApplications;
         /** Paiements déclarés à vérifier (DECLARED). */
         private Long paymentsToConfirm;
+        /** Demandes de remboursement à valider (faites par quelqu'un d'autre). */
+        private Long refundsToApprove;
         /** Échéances en attente dont la date est dépassée. */
         private Long overdueInstallments;
         /** Messages de contact et demandes non lus. */

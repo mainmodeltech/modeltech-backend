@@ -21,6 +21,12 @@ public final class Actor {
                 : auth.getAuthorities().stream().map(a -> a.getAuthority()).collect(java.util.stream.Collectors.toSet());
     }
 
+    /** Adresse e-mail de la personne connectée, ou « système » hors requête authentifiée (tâche planifiée). */
+    public static String email() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth == null || !auth.isAuthenticated() ? "système" : auth.getName();
+    }
+
     public static boolean isSuperAdmin() {
         return authorities().contains("ROLE_SUPER_ADMIN");
     }

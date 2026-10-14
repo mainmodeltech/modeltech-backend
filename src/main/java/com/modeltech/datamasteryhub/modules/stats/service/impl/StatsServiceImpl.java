@@ -52,6 +52,9 @@ public class StatsServiceImpl implements StatsService {
         return StatsPayloads.Actions.builder()
                 .newApplications(visible(Permission.APPLICATIONS_VIEW, () -> count("SELECT count(*) FROM registrations WHERE is_deleted = false AND status = 'PENDING'", p)))
                 .paymentsToConfirm(visible(Permission.PAYMENTS_MANAGE, () -> count("SELECT count(*) FROM payments WHERE is_deleted = false AND status = 'DECLARED'", p)))
+                .refundsToApprove(visible(Permission.PAYMENTS_REFUND_APPROVE, () -> count(
+                        "SELECT count(*) FROM payments WHERE is_deleted = false AND status = 'CONFIRMED' AND refund_requested_at IS NOT NULL AND lower(refund_requested_by) <> lower(:me)",
+                        p.addValue("me", Actor.email()))))
                 .overdueInstallments(visible(Permission.PAYMENTS_VIEW, () -> count("""
                         SELECT count(*) FROM payments p JOIN registrations r ON r.id = p.registration_id
                         WHERE p.is_deleted = false AND p.status = 'PENDING' AND p.due_date < CURRENT_DATE

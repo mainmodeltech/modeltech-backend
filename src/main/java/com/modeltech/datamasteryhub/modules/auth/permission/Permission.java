@@ -30,8 +30,10 @@ public enum Permission {
 
     // ── Argent ─────────────────────────────────────────────────────
     PAYMENTS_VIEW("Paiements et facturation", "Voir les paiements et leur statut"),
-    PAYMENTS_MANAGE("Paiements et facturation", "Confirmer, refuser, relancer un paiement ; saisir un paiement reçu hors site"),
-    PAYMENTS_REFUND("Paiements et facturation", "Rembourser un paiement"),
+    PAYMENTS_RECORD("Paiements et facturation", "Saisir un paiement reçu hors site (virement, espèces…) : il reste à confirmer par une autre personne"),
+    PAYMENTS_MANAGE("Paiements et facturation", "Confirmer, refuser, relancer un paiement"),
+    PAYMENTS_REFUND("Paiements et facturation", "Demander le remboursement d'un paiement"),
+    PAYMENTS_REFUND_APPROVE("Paiements et facturation", "Valider ou refuser une demande de remboursement faite par une autre personne"),
     INVOICES_VIEW("Paiements et facturation", "Voir et télécharger les factures"),
     INVOICES_MANAGE("Paiements et facturation", "Créer, envoyer ou annuler une facture"),
     PROMO_VIEW("Paiements et facturation", "Voir les codes de parrainage"),

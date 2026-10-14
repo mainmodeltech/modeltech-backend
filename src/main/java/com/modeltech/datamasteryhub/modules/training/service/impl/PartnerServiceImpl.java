@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.common.util.SlugUtils;
@@ -38,6 +40,7 @@ public class PartnerServiceImpl implements PartnerService {
     private final BootcampRepository bootcampRepository;
     private final PartnerMapper partnerMapper;
     private final StorageService storageService;
+    private final AuditService audit;
 
     // ── Public ──────────────────────────────────────────────────────
 
@@ -69,7 +72,12 @@ public class PartnerServiceImpl implements PartnerService {
         partner.setSlug(hasText(request.getSlug())
                 ? requireFreeSlug(request.getSlug(), partnerRepository.existsBySlug(request.getSlug()))
                 : SlugUtils.unique(request.getName(), "partenaire", partnerRepository::existsBySlug));
-        return partnerMapper.toAdminResponse(partnerRepository.save(partner));
+        AdminPartnerResponse created = partnerMapper.toAdminResponse(partnerRepository.save(partner));
+        if (partner.getRevenueSharePercent() != null) {
+            audit.record(AuditAction.PARTNER_REVENUE_CHANGED, "Partner", partner.getId(),
+                    "Part de revenu de " + partner.getName() + " fixée à " + partner.getRevenueSharePercent() + " %");
+        }
+        return created;
     }
 
     @Override
@@ -85,6 +93,9 @@ public class PartnerServiceImpl implements PartnerService {
         if (shareBefore == null ? partner.getRevenueSharePercent() != null
                 : partner.getRevenueSharePercent() == null || shareBefore.compareTo(partner.getRevenueSharePercent()) != 0) {
             Actor.require(Permission.PARTNERS_REVENUE, "la part de revenu d'un partenaire");
+            audit.record(AuditAction.PARTNER_REVENUE_CHANGED, "Partner", id,
+                    "Part de revenu de " + partner.getName() + " : " + (shareBefore == null ? "aucune" : shareBefore + " %")
+                            + " → " + (partner.getRevenueSharePercent() == null ? "aucune" : partner.getRevenueSharePercent() + " %"));
         }
         return partnerMapper.toAdminResponse(partnerRepository.save(partner));
     }
