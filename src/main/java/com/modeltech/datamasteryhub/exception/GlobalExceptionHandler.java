@@ -168,6 +168,19 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    /** Fichier plus lourd que le plafond technique : 413 lisible, pas de 500 opaque. */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleUploadTooLarge(Exception ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                "Payload Too Large",
+                "Fichier trop volumineux.",
+                request.getRequestURI(),
+                null
+        ));
+    }
+
     /** Fichier refusé (type, taille) ou stockage indisponible : message lisible, pas de 500 opaque. */
     @ExceptionHandler(StorageException.class)
     public ResponseEntity<ErrorResponse> handleStorage(StorageException ex, HttpServletRequest request) {

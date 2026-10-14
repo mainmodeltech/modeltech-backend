@@ -4,6 +4,13 @@ spring:
   application:
     name: data-mastery-hub
 
+  servlet:
+    multipart:
+      # Plafond technique ; chaque endpoint applique sa propre limite (images 5 Mo, preuve de paiement, fichiers du projet final)
+      # et UploadSizeFilter refuse tôt, selon la route, les requêtes manifestement trop lourdes.
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:100MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:105MB}
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
