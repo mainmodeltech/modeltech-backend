@@ -34,7 +34,6 @@ Chaque personne de l'équipe ne voit et ne fait que ce que son métier exige. Le
 3. Déployer le front (menu et boutons suivent les droits).
 4. Rôle des formateurs : sans le droit « Affecter un formateur », ils ne voient que les sessions qui leur sont confiées.
 
-## Reste à faire (lots suivants)
+## Lots suivants (réalisés)
 
-- **3b Journal d'audit** : qui a fait quoi (paiements, remboursements, acceptations, prix, certificats, comptes, exports), consultable par la direction et l'audit.
-- **3c Séparation des tâches** : remboursement demandé par une personne et validé par une autre ; paiement enregistré hors site confirmé par quelqu'un d'autre ; si personne d'autre n'est habilité, l'action reste possible mais tracée.
+- **3b Journal d'audit** et **3c Séparation des tâches** : voir [phase-3b-3c-audit-et-quatre-yeux.md](phase-3b-3c-audit-et-quatre-yeux.md).
