@@ -85,6 +85,10 @@ public final class AdminAccessRules {
 
         // ── Relations et contenu ─────────────────────────────────────────────
         rule(GET, "/api/v1/admin/masterclass/**", MASTERCLASS_VIEW);
+        rule(GET, "/api/v1/admin/masterclasses/**", MASTERCLASS_VIEW);
+        rule(GET, "/api/v1/admin/masterclasses", MASTERCLASS_VIEW);
+        rule(null, "/api/v1/admin/masterclasses/**", MASTERCLASS_MANAGE);
+        rule(null, "/api/v1/admin/masterclasses", MASTERCLASS_MANAGE);
         rule(null, "/api/v1/admin/contact-messages/**", MESSAGES_MANAGE);
         rule(null, "/api/v1/admin/newsletter-subscriptions/**", NEWSLETTER_MANAGE);
         rule(null, "/api/v1/admin/community/**", COMMUNITY_MODERATE);

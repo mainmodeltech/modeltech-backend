@@ -62,6 +62,7 @@ public enum Permission {
 
     // ── Relations et contenu ───────────────────────────────────────
     MASTERCLASS_VIEW("Relations et contenu", "Voir les inscrits aux masterclass"),
+    MASTERCLASS_MANAGE("Relations", "Gérer les masterclass : créer un événement, présences, écrire aux inscrits"),
     MESSAGES_MANAGE("Relations et contenu", "Traiter les messages entrants (contact, diagnostics, candidatures partenaires)"),
     NEWSLETTER_MANAGE("Relations et contenu", "Gérer la newsletter et ses abonnés"),
     COMMUNITY_MODERATE("Relations et contenu", "Modérer la communauté"),

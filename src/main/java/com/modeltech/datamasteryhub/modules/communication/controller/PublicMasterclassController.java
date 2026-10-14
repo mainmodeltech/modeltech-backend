@@ -3,6 +3,8 @@ package com.modeltech.datamasteryhub.modules.communication.controller;
 import com.modeltech.datamasteryhub.common.dto.ApiResponse;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.MasterclassRegistrationRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.response.MasterclassRegistrationResponseDTO;
+import com.modeltech.datamasteryhub.modules.communication.dto.MasterclassPayloads;
+import com.modeltech.datamasteryhub.modules.communication.service.MasterclassEventService;
 import com.modeltech.datamasteryhub.modules.communication.service.MasterclassService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -32,19 +34,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PublicMasterclassController {
 
     private final MasterclassService masterclassService;
+    private final MasterclassEventService events;
 
     // ── Rate Limiter — 5 requêtes / heure / IP ─────────────────────────────
     // ConcurrentHashMap : thread-safe, bucket créé à la première requête de chaque IP
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
+    /** Tentatives d'inscription par heure et par adresse IP (réglable : les tests en autorisent davantage). */
+    @org.springframework.beans.factory.annotation.Value("${app.rate-limit.masterclass.per-hour:5}")
+    private int perHour;
+
     private Bucket getBucketForIp(String ip) {
-        return buckets.computeIfAbsent(ip, key -> {
-            Bandwidth limit = Bandwidth.classic(
-                    5,                                       // 5 tentatives max
-                    Refill.intervally(5, Duration.ofHours(1)) // rechargé toutes les heures
-            );
-            return Bucket.builder().addLimit(limit).build();
-        });
+        return buckets.computeIfAbsent(ip, key -> Bucket.builder()
+                .addLimit(Bandwidth.classic(perHour, Refill.intervally(perHour, Duration.ofHours(1))))
+                .build());
     }
 
     private String extractIp(HttpServletRequest request) {
@@ -57,6 +60,18 @@ public class PublicMasterclassController {
     }
 
     // ── Public ─────────────────────────────────────────────────────────────
+
+    /** Prochaines masterclass publiées (la plus proche d'abord) : date, lieu, places restantes ; jamais le lien de connexion. */
+    @GetMapping("/upcoming")
+    public ResponseEntity<ApiResponse<java.util.List<MasterclassPayloads.PublicEvent>>> upcoming(
+            @RequestParam(defaultValue = "6") int limit) {
+        return ResponseEntity.ok(ApiResponse.ok("Prochaines masterclass", events.upcoming(limit)));
+    }
+
+    @GetMapping("/{code}")
+    public ResponseEntity<ApiResponse<MasterclassPayloads.PublicEvent>> byCode(@PathVariable String code) {
+        return ResponseEntity.ok(ApiResponse.ok("Masterclass", events.publicByCode(code)));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<MasterclassRegistrationResponseDTO>> register(

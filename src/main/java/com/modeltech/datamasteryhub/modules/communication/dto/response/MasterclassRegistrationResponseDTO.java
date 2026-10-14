@@ -16,5 +16,6 @@ public class MasterclassRegistrationResponseDTO {
     private String profile;
     private String company;
     private Boolean emailSent;
+    private String attendance;
     private LocalDateTime createdAt;
 }

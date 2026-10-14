@@ -19,4 +19,10 @@ public interface MasterclassRegistrationRepository extends JpaRepository<Masterc
     long countByMasterclassIdAndIsDeletedFalse(String masterclassId);
 
     Optional<MasterclassRegistration> findByMasterclassIdAndEmailAndIsDeletedFalse(String masterclassId, String email);
+
+    long countByMasterclassIdAndAttendanceAndIsDeletedFalse(String masterclassId, String attendance);
+
+    java.util.List<MasterclassRegistration> findAllByMasterclassIdAndIsDeletedFalseOrderByCreatedAtAsc(String masterclassId);
+
+    Optional<MasterclassRegistration> findByIdAndIsDeletedFalse(UUID id);
 }
