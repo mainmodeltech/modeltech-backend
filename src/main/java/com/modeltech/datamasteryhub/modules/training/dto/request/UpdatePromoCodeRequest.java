@@ -16,7 +16,7 @@ public class UpdatePromoCodeRequest {
     private String referrerPhone;
 
     @Min(value = 0, message = "Le pourcentage doit etre >= 0")
-    @Max(value = 100, message = "Le pourcentage doit etre <= 100")
+    @Max(value = 30, message = "Un code de parrainage ne peut pas dépasser 30 % de remise")
     private Integer discountPercent;
 
     private Integer maxUses;

@@ -69,6 +69,11 @@ public class CertificatePdfGenerator {
     private static final float SY = H / 513f;
 
     public byte[] generate(CertificateDocument doc) {
+        return generate(doc, false);
+    }
+
+    /** {@code preview} : filigrane « APERÇU » pour relire un certificat avant de le valider (jamais remis à l'apprenant). */
+    public byte[] generate(CertificateDocument doc, boolean preview) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(new Rectangle(W, H), 0, 0, 0, 0);
         try {
@@ -87,6 +92,7 @@ public class CertificatePdfGenerator {
             drawSkills(cb, doc);
             drawSignatures(cb, doc);
             drawVerification(cb, doc);
+            if (preview) drawPreviewWatermark(cb);
 
             document.close();
             return out.toByteArray();
@@ -220,6 +226,23 @@ public class CertificatePdfGenerator {
         } catch (com.google.zxing.WriterException e) {
             throw new IllegalStateException("QR code impossible pour " + content, e);
         }
+    }
+
+    private void drawPreviewWatermark(PdfContentByte cb) throws IOException, DocumentException {
+        BaseFont bold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, false);
+        cb.saveState();
+        com.lowagie.text.pdf.PdfGState state = new com.lowagie.text.pdf.PdfGState();
+        state.setFillOpacity(0.16f);
+        cb.setGState(state);
+        cb.beginText();
+        cb.setFontAndSize(bold, 110);
+        cb.setColorFill(ORANGE);
+        double angle = Math.toRadians(28);
+        cb.setTextMatrix((float) Math.cos(angle), (float) Math.sin(angle), (float) -Math.sin(angle), (float) Math.cos(angle), W * 0.16f, H * 0.2f);
+        cb.showText("APERÇU");
+        cb.endText();
+        cb.restoreState();
+        text(cb, bold, 9f, ORANGE, 0.6f, Element.ALIGN_CENTER, W / 2, 22, "APERÇU RÉSERVÉ À L'ÉQUIPE — certificat non validé, non visible de l'apprenant");
     }
 
     // ── Outils ───────────────────────────────────────────────────────

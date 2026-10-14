@@ -102,6 +102,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/auth/options",
+                                "/api/v1/masterclass/upcoming",
+                                "/api/v1/masterclass/*",
                                 "/api/v1/bootcamps",
                                 "/api/v1/bootcamps/**",
                                 "/api/v1/formations",

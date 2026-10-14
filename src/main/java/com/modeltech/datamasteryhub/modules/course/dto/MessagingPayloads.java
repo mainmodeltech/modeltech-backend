@@ -50,7 +50,7 @@ public final class MessagingPayloads {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class AskRequest {
         @NotBlank(message = "La question est obligatoire")
-        @Size(min = 5, max = 2000, message = "Entre 5 et 2 000 caractères")
+        @Size(min = 5, max = 5000, message = "Entre 5 et 5 000 caractères")
         private String question;
     }
 
@@ -58,7 +58,7 @@ public final class MessagingPayloads {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class AnswerRequest {
         @NotBlank(message = "La réponse est obligatoire")
-        @Size(max = 5000, message = "5 000 caractères maximum")
+        @Size(max = 8000, message = "8 000 caractères maximum")
         private String answer;
     }
 
@@ -67,6 +67,24 @@ public final class MessagingPayloads {
     public static class LearnerQuestion {
         private UUID id;
         private UUID lessonId;
+        private String question;
+        private LocalDateTime askedAt;
+        private String answer;
+        private String answeredBy;
+        private LocalDateTime answeredAt;
+    }
+
+    /** Boîte de réception : une question avec sa session et sa formation (toutes sessions confondues). */
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class InboxQuestion {
+        private UUID id;
+        private UUID sessionId;
+        private String sessionName;
+        private String formationTitle;
+        private UUID learnerId;
+        private String learnerName;
+        private UUID lessonId;
+        private String lessonTitle;
         private String question;
         private LocalDateTime askedAt;
         private String answer;

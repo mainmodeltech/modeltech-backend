@@ -46,9 +46,7 @@ public class StorageServiceImpl implements StorageService {
      * @return résultat contenant l'objectKey et l'URL publique
      */
     public UploadResult upload(MultipartFile file, String folder) {
-        validateFile(file);
-
-        String extension = extractExtension(file.getOriginalFilename());
+        String extension = validatedImageExtension(file);   // taille, signature réelle du fichier ; l'extension vient du contenu
         String objectKey = folder + "/" + UUID.randomUUID() + "." + extension;
 
         try {
@@ -57,7 +55,7 @@ public class StorageServiceImpl implements StorageService {
                             .bucket(minioProperties.getBucket())
                             .object(objectKey)
                             .stream(file.getInputStream(), file.getSize(), -1)
-                            .contentType(file.getContentType())
+                            .contentType(contentTypeOf(extension))
                             .build()
             );
 
@@ -215,6 +213,51 @@ public class StorageServiceImpl implements StorageService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /** Type de contenu servi pour une extension d'image détectée. */
+    private static String contentTypeOf(String extension) {
+        return switch (extension) {
+            case "png" -> "image/png";
+            case "gif" -> "image/gif";
+            case "webp" -> "image/webp";
+            case "svg" -> "image/svg+xml";
+            default -> "image/jpeg";
+        };
+    }
+
+    /** SVG « inerte » : balise svg, sans script ni gestionnaire d'événement ni objet externe. */
+    static boolean isSafeSvg(byte[] b) {
+        String head = new String(b, 0, Math.min(b.length, 200_000), java.nio.charset.StandardCharsets.UTF_8).toLowerCase(java.util.Locale.ROOT);
+        String trimmed = head.stripLeading().replaceFirst("^\\ufeff", "");
+        if (!trimmed.startsWith("<") || !trimmed.contains("<svg")) return false;
+        return !(head.contains("<script") || head.contains("javascript:") || head.contains("<foreignobject")
+                || head.contains("<iframe") || head.contains("<embed") || head.contains("<object")
+                || java.util.regex.Pattern.compile("\\son[a-z]+\\s*=").matcher(head).find());
+    }
+
+    /** Vérifie taille et contenu réel de l'image ; retourne son extension (jamais celle du nom de fichier envoyé). */
+    private String validatedImageExtension(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new StorageException("Le fichier est vide ou absent.");
+        }
+        long maxSizeBytes = 5L * 1024 * 1024; // 5 Mo
+        if (file.getSize() > maxSizeBytes) {
+            throw new StorageException("Fichier trop volumineux (max 5 Mo, reçu : " + file.getSize() / 1024 + " Ko).");
+        }
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (java.io.IOException e) {
+            throw new StorageException("Impossible de lire le fichier.");
+        }
+        String extension = imageExtension(bytes);
+        if (extension == null && isSafeSvg(bytes)) extension = "svg";
+        if (extension == null) {
+            throw new StorageException("Seules les images JPEG, PNG, WebP, GIF ou SVG sont autorisées.");
+        }
+        return extension;
+    }
+
+    @SuppressWarnings("unused")
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new StorageException("Le fichier est vide ou absent.");

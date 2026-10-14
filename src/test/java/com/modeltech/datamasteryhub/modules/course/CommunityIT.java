@@ -81,7 +81,7 @@ class CommunityIT extends AbstractIntegrationTest {
     void validation_andAccess() throws Exception {
         String url = "/api/v1/learner/formations/" + bootcamp.getId() + "/community";
         send(url, asAwa, "{\"content\":\"   \"}").andExpect(status().isBadRequest());
-        send(url, asAwa, "{\"content\":\"" + "x".repeat(2001) + "\"}").andExpect(status().isBadRequest());
+        send(url, asAwa, "{\"content\":\"" + "x".repeat(5001) + "\"}").andExpect(status().isBadRequest());
         // répondre à un message inexistant
         send(url, asAwa, "{\"content\":\"salut\",\"parentId\":\"" + java.util.UUID.randomUUID() + "\"}").andExpect(status().isBadRequest());
 

@@ -49,6 +49,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("app.rate-limit.login.per-hour", () -> "1000");
         registry.add("app.rate-limit.verify.per-hour", () -> "1000");
         registry.add("app.rate-limit.refresh.per-hour", () -> "1000");
+        registry.add("app.rate-limit.masterclass.per-hour", () -> "1000");
         // Double authentification obligatoire en production ; les tests existants ouvrent des sessions du personnel sans second
         // facteur. Son comportement est couvert par SessionsAndMfaIT, qui l'active.
         registry.add("app.auth.mfa.enforced", () -> "false");

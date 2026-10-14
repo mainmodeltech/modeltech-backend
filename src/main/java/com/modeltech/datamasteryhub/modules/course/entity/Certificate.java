@@ -24,6 +24,8 @@ import java.util.UUID;
 @Getter @Setter @NoArgsConstructor
 public class Certificate extends BaseEntity {
 
+    /** Éligible mais pas encore validé par l'équipe : invisible de l'apprenant, non vérifiable, aucun e-mail. */
+    public static final String PENDING = "PENDING";
     public static final String VALID = "VALID";
     public static final String REVOKED = "REVOKED";
 
@@ -72,11 +74,16 @@ public class Certificate extends BaseEntity {
     @Column(name = "trainer_name", updatable = false)
     private String trainerName;
 
-    @Column(name = "issued_at", nullable = false, updatable = false)
+    /** Date de délivrance : celle de la validation par l'équipe (ou de la délivrance manuelle). */
+    @Column(name = "issued_at", nullable = false)
     private LocalDateTime issuedAt;
 
+    /** Date à laquelle l'apprenant est devenu éligible. */
+    @Column(name = "eligible_at")
+    private LocalDateTime eligibleAt;
+
     /** « système » pour une délivrance automatique, sinon l'e-mail de la personne qui a délivré. */
-    @Column(name = "issued_by", nullable = false, updatable = false)
+    @Column(name = "issued_by", nullable = false)
     private String issuedBy;
 
     /** Délivré malgré des conditions non remplies (dérogation motivée). */
@@ -97,5 +104,9 @@ public class Certificate extends BaseEntity {
 
     public boolean isValid() {
         return VALID.equals(status);
+    }
+
+    public boolean isPending() {
+        return PENDING.equals(status);
     }
 }

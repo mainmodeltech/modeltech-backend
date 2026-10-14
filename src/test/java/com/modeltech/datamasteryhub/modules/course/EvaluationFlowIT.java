@@ -213,6 +213,66 @@ class EvaluationFlowIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void raisingTheAttemptLimit_afterTheLearnerExhaustedHisAttempts_givesNewAttempts() throws Exception {
+        JsonNode bank = saveBank(threeQuestions());
+        for (int i = 0; i < 2; i++) {
+            submit(json(mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isOk())), bank, false);
+        }
+        mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isConflict());
+        assertThat(json(mockMvc.perform(get(overviewUrl()).with(awa))).at("/quizzes/0/status").asText()).isEqualTo("FAILED");
+
+        // L'équipe corrige la limite dans le programme (ids conservés)
+        com.fasterxml.jackson.databind.node.ObjectNode programme = (com.fasterxml.jackson.databind.node.ObjectNode)
+                json(mockMvc.perform(get(contentUrl()).with(staff("ADMIN"))).andExpect(status().isOk()));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) programme.at("/modules/0/lessons/1/quiz")).put("maxAttempts", 4);
+        mockMvc.perform(put(contentUrl()).with(staff("ADMIN")).contentType(MediaType.APPLICATION_JSON).content(programme.toString()))
+                .andExpect(status().isOk());
+
+        JsonNode overview = json(mockMvc.perform(get(overviewUrl()).with(awa)).andExpect(status().isOk()));
+        assertThat(overview.at("/quizzes/0/maxAttempts").asInt()).isEqualTo(4);
+        assertThat(overview.at("/quizzes/0/status").asText()).isEqualTo("AVAILABLE");
+        mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isOk());
+    }
+
+    @Test
+    void theTeamCanGrantExtraAttempts_toOneLearner_withAReason() throws Exception {
+        JsonNode bank = saveBank(threeQuestions());
+        for (int i = 0; i < 2; i++) {
+            submit(json(mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isOk())), bank, false);
+        }
+        mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isConflict());
+
+        String base = "/api/v1/admin/sessions/" + session.getId() + "/learners/" + learnerId("awa@example.com") + "/quizzes";
+        JsonNode before = json(mockMvc.perform(get(base).with(staff("ADMIN"))).andExpect(status().isOk()));
+        assertThat(before.at("/0/status").asText()).isEqualTo("FAILED");
+        assertThat(before.at("/0/attemptsUsed").asInt()).isEqualTo(2);
+        assertThat(before.at("/0/maxAttempts").asInt()).isEqualTo(2);
+
+        String grant = base + "/" + quizId + "/attempts";
+        mockMvc.perform(post(grant).with(staff("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{\"extraAttempts\":1}")).andExpect(status().isBadRequest());   // motif obligatoire
+        mockMvc.perform(post(grant).with(staff("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{\"extraAttempts\":0,\"reason\":\"x\"}")).andExpect(status().isBadRequest());
+        mockMvc.perform(post(grant).with(awa).contentType(MediaType.APPLICATION_JSON).content("{\"extraAttempts\":1,\"reason\":\"x\"}")).andExpect(status().isForbidden());
+        mockMvc.perform(post(grant).with(staff("COMMUNICATION")).contentType(MediaType.APPLICATION_JSON).content("{\"extraAttempts\":1,\"reason\":\"x\"}")).andExpect(status().isForbidden());
+
+        JsonNode after = json(mockMvc.perform(post(grant).with(staff("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"extraAttempts\":1,\"reason\":\"Limite réglée à 2 par erreur\"}")).andExpect(status().isOk()));
+        assertThat(after.get("maxAttempts").asInt()).isEqualTo(3);
+        assertThat(after.get("extraAttempts").asInt()).isEqualTo(1);
+        assertThat(after.get("status").asText()).isEqualTo("AVAILABLE");
+
+        // L'apprenant voit sa nouvelle limite et peut repasser le quiz
+        JsonNode overview = json(mockMvc.perform(get(overviewUrl()).with(awa)).andExpect(status().isOk()));
+        assertThat(overview.at("/quizzes/0/maxAttempts").asInt()).isEqualTo(3);
+        JsonNode attempt = json(mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isOk()));
+        assertThat(attempt.get("maxAttempts").asInt()).isEqualTo(3);
+        JsonNode result = submit(attempt, bank, true);
+        assertThat(result.get("passed").asBoolean()).isTrue();
+        assertThat(result.get("attemptNumber").asInt()).isEqualTo(3);
+        // Un quiz déjà réussi n'a rien à se faire accorder de plus (le quiz reste réussi)
+        mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isConflict());
+    }
+
+    @Test
     void submit_isOwnedByTheLearner_isFinal_andIgnoresForgedAnswers() throws Exception {
         JsonNode bank = saveBank(threeQuestions());
         JsonNode attempt = json(mockMvc.perform(post(startUrl()).with(awa)).andExpect(status().isOk()));
@@ -430,7 +490,7 @@ class EvaluationFlowIT extends AbstractIntegrationTest {
         mockMvc.perform(post(base + "/learners/" + awaId + "/project/review").with(staff("TRAINER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"VALIDATED\"}")).andExpect(status().isOk());
         tracking = json(mockMvc.perform(get(base + "/tracking").with(staff("ADMIN"))).andExpect(status().isOk()));
-        assertThat(tracking.at("/learners/0/certificate").asText()).isEqualTo("ISSUED");   // délivré automatiquement à la validation
+        assertThat(tracking.at("/learners/0/certificate").asText()).isEqualTo("TO_VALIDATE");   // éligible : certificat prêt, en attente de validation par l'équipe
     }
 
     // ── Données de test ──────────────────────────────────────────────

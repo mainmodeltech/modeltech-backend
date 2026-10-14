@@ -43,6 +43,10 @@ public class MasterclassRegistration extends BaseEntity {
     @Column(nullable = false)
     private Boolean emailSent = false;
 
+    /** REGISTERED (inscrit), ATTENDED (présent) ou ABSENT : renseigné par l'équipe après l'événement. */
+    @Column(nullable = false, length = 12)
+    private String attendance = "REGISTERED";
+
     /** Notification Slack envoyée */
     @Column(nullable = false)
     private Boolean slackNotified = false;

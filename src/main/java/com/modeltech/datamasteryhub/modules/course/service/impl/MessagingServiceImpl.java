@@ -270,6 +270,25 @@ public class MessagingServiceImpl implements MessagingService {
     }
 
     @Override
+    public org.springframework.data.domain.Page<MessagingPayloads.InboxQuestion> inbox(
+            String status, String search, UUID sessionId, org.springframework.data.domain.Pageable pageable,
+            String actorEmail, Collection<String> actorAuthorities) {
+        String normalized = status == null ? "OPEN" : status.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!java.util.Set.of("OPEN", "ANSWERED", "ALL").contains(normalized)) normalized = "OPEN";
+        boolean all = actorAuthorities.contains(com.modeltech.datamasteryhub.modules.auth.permission.Permission.SCOPE_ALL_SESSIONS.name());
+        String like = search == null || search.isBlank() ? "%"
+                : "%" + search.trim().toLowerCase(java.util.Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        return questionRepository.inbox(normalized, all, actorEmail == null ? "" : actorEmail.toLowerCase(java.util.Locale.ROOT),
+                sessionId, like, pageable).map(q -> MessagingPayloads.InboxQuestion.builder()
+                .id(q.getId()).sessionId(q.getSession().getId()).sessionName(q.getSession().getSessionName())
+                .formationTitle(q.getSession().getBootcamp().getTitle())
+                .learnerId(q.getLearner().getId()).learnerName(q.getLearner().getFullName())
+                .lessonId(q.getLesson().getId()).lessonTitle(q.getLesson().getTitle())
+                .question(q.getQuestion()).askedAt(q.getCreatedAt())
+                .answer(q.getAnswer()).answeredBy(q.getAnsweredBy()).answeredAt(q.getAnsweredAt()).build());
+    }
+
+    @Override
     @Transactional
     public MessagingPayloads.SessionQuestion answer(UUID sessionId, UUID questionId, String answer,
                                                     String actorEmail, Collection<String> actorRoles) {

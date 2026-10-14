@@ -10,5 +10,8 @@ public interface MasterclassService {
     Page<MasterclassRegistrationResponseDTO> getAll(String masterclassId, int page, int size);
     long count(String masterclassId);
 
+    /** Présence d'un inscrit (équipe). */
+    MasterclassRegistrationResponseDTO setAttendance(String masterclassId, java.util.UUID registrationId, String attendance);
+
 
 }

@@ -42,10 +42,10 @@ public final class DefaultProfiles {
         add(RoleNames.PEDAGOGY, "Pédagogie", "Formations, programme, sessions, évaluations, certificats, suivi et communauté.",
                 EnumSet.of(DASHBOARD_ACTIVITY, CATALOG_VIEW, CATALOG_MANAGE, PROGRAM_MANAGE, SESSIONS_VIEW, SESSIONS_TRACK, SESSIONS_ASSIGN,
                         CERTIFICATES_VIEW, CERTIFICATES_MANAGE, CERTIFICATES_OVERRIDE, SCOPE_ALL_SESSIONS, SCOPE_ALL_FORMATIONS,
-                        LEARNERS_VIEW, PARTNERS_VIEW, PARTNERS_MANAGE, MASTERCLASS_VIEW, COMMUNITY_MODERATE, SITE_CONTENT_VIEW));
+                        LEARNERS_VIEW, PARTNERS_VIEW, PARTNERS_MANAGE, MASTERCLASS_VIEW, MASTERCLASS_MANAGE, COMMUNITY_MODERATE, SITE_CONTENT_VIEW));
 
         add(RoleNames.COMMUNICATION, "Communication", "Site, newsletter, témoignages, alumni, masterclass, messages et communauté.",
-                EnumSet.of(MASTERCLASS_VIEW, MESSAGES_MANAGE, NEWSLETTER_MANAGE, COMMUNITY_MODERATE,
+                EnumSet.of(MASTERCLASS_VIEW, MASTERCLASS_MANAGE, MESSAGES_MANAGE, NEWSLETTER_MANAGE, COMMUNITY_MODERATE,
                         SITE_CONTENT_VIEW, SITE_CONTENT_MANAGE));
 
         add(RoleNames.TRAINER, "Formateur", "Animation de ses sessions uniquement : appel, correction des projets, réponses aux questions, messages.",

@@ -19,6 +19,12 @@ public interface RegistrationService {
     /** Recuperer toutes les inscriptions pour l'admin (avec filtre optionnel par statut) */
     Page<RegistrationResponse> findAllForAdmin(Pageable pageable, RegistrationStatus status);
 
+    /** Liste filtrée (étape, recherche libre, formation, session) et paginée côté serveur. */
+    Page<RegistrationResponse> search(Pageable pageable, RegistrationFilter filter);
+
+    /** Nombre de candidatures par étape, pour les onglets (le filtre d'étape est ignoré). */
+    java.util.Map<String, Long> stageCounts(RegistrationFilter filter);
+
     /** Recuperer une inscription par ID pour l'admin */
     RegistrationResponse findByIdForAdmin(UUID id);
 

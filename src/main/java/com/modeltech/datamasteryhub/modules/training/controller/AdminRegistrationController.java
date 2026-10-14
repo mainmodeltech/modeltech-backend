@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import com.modeltech.datamasteryhub.modules.training.dto.response.RegistrationResponse;
 import com.modeltech.datamasteryhub.modules.training.enums.RegistrationStatus;
+import com.modeltech.datamasteryhub.modules.training.service.RegistrationFilter;
 import com.modeltech.datamasteryhub.modules.training.service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,38 @@ public class AdminRegistrationController {
             @RequestParam(required = false) RegistrationStatus status
     ) {
         return registrationService.findAllForAdmin(pageable, status);
+    }
+
+    /**
+     * Liste filtrée côté serveur : {@code stage} (NEW, AWAITING_PAYMENT, TO_CONFIRM, ENROLLED, ARCHIVED), {@code q} (nom, e-mail,
+     * téléphone, entreprise, formation, code), {@code bootcampId}, {@code sessionId}. Tri : createdAt, lastName, status, bootcampTitle.
+     */
+    @GetMapping("/search")
+    public Page<RegistrationResponse> search(
+            @PageableDefault(size = 25, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable,
+            @RequestParam(required = false) RegistrationFilter.Stage stage,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) UUID bootcampId,
+            @RequestParam(required = false) UUID sessionId) {
+        return registrationService.search(sortable(pageable), new RegistrationFilter(stage, null, q, bootcampId, sessionId));
+    }
+
+    /** Nombre de candidatures par étape (onglets), pour la même recherche. */
+    @GetMapping("/summary")
+    public java.util.Map<String, Long> summary(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) UUID bootcampId,
+            @RequestParam(required = false) UUID sessionId) {
+        return registrationService.stageCounts(new RegistrationFilter(null, null, q, bootcampId, sessionId));
+    }
+
+    /** Seuls quelques champs sont triables (un nom de champ inconnu ne doit pas provoquer d'erreur serveur) ; taille bornée. */
+    private static Pageable sortable(Pageable pageable) {
+        java.util.Set<String> allowed = java.util.Set.of("createdAt", "lastName", "firstName", "status", "bootcampTitle", "email");
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(
+                pageable.getSort().stream().filter(o -> allowed.contains(o.getProperty())).toList());
+        if (sort.isEmpty()) sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt");
+        return org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 200), sort);
     }
 
     @GetMapping("/{id}")

@@ -47,6 +47,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final CourseLessonRepository lessonRepository;
     private final LessonProgressRepository progressRepository;
     private final QuizAttemptRepository attemptRepository;
+    private final com.modeltech.datamasteryhub.modules.course.repository.QuizAttemptGrantRepository grantRepository;
     private final CourseProjectRepository projectRepository;
     private final ProjectSubmissionRepository submissionRepository;
     private final LiveRollCallRepository rollCallRepository;
@@ -82,12 +83,13 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .filter(a -> lessonIds.contains(a.getLesson().getId()))
                 .collect(Collectors.groupingBy(a -> a.getLesson().getId()));
         Set<UUID> locked = lockedModules(config, lessons, completed);
+        Map<UUID, Integer> extras = extraAttemptsOf(learner.getId());
 
         List<EvaluationPayloads.QuizSummary> quizzes = new ArrayList<>();
         for (CourseLesson l : lessons) {
             if (l.getType() != LessonType.QUIZ) continue;
             List<QuizAttempt> done = attempts.getOrDefault(l.getId(), List.of());
-            quizzes.add(summary(l, done, locked.contains(l.getModule().getId())));
+            quizzes.add(summary(l, done, locked.contains(l.getModule().getId()), extras.getOrDefault(l.getId(), 0)));
         }
 
         EvaluationPayloads.ProjectOverview project = finalProjectService.getLearnerProject(learnerEmail, formationId);
@@ -109,10 +111,77 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .build();
     }
 
-    private EvaluationPayloads.QuizSummary summary(CourseLesson l, List<QuizAttempt> done, boolean moduleLocked) {
+    /** Tentatives accordées par l'équipe à un apprenant, par quiz. */
+    private Map<UUID, Integer> extraAttemptsOf(UUID learnerId) {
+        Map<UUID, Integer> extras = new HashMap<>();
+        grantRepository.findAllByLearnerIdAndIsDeletedFalse(learnerId)
+                .forEach(g -> extras.merge(g.getLesson().getId(), g.getExtraAttempts(), Integer::sum));
+        return extras;
+    }
+
+    @Override
+    public List<EvaluationPayloads.QuizSummary> learnerQuizzes(UUID sessionId, UUID learnerId, String actorEmail,
+                                                               java.util.Collection<String> actorRoles) {
+        BootcampSession session = requireSession(sessionId);
+        sessionAccess.require(session, actorEmail, actorRoles);
+        requireEnrolled(sessionId, learnerId);
+        return quizSummariesOf(session.getBootcamp(), learnerId);
+    }
+
+    @Override
+    @Transactional
+    public EvaluationPayloads.QuizSummary grantAttempts(UUID sessionId, UUID learnerId, UUID quizId,
+                                                        EvaluationPayloads.GrantAttemptsRequest request, String actorEmail,
+                                                        java.util.Collection<String> actorRoles) {
+        BootcampSession session = requireSession(sessionId);
+        sessionAccess.require(session, actorEmail, actorRoles);
+        Enrollment enrollment = requireEnrolled(sessionId, learnerId);
+        CourseLesson quiz = lessonsOf(session.getBootcamp()).stream()
+                .filter(l -> l.getId().equals(quizId) && l.getType() == LessonType.QUIZ).findFirst()
+                .orElseThrow(() -> new com.modeltech.datamasteryhub.exception.ResourceNotFoundException("Quiz", "id", quizId));
+        if (quiz.getQuizMaxAttempts() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                    "Ce quiz a un nombre de tentatives illimité : rien à accorder.");
+        }
+        com.modeltech.datamasteryhub.modules.course.entity.QuizAttemptGrant grant = new com.modeltech.datamasteryhub.modules.course.entity.QuizAttemptGrant();
+        grant.setLearner(enrollment.getLearner());
+        grant.setLesson(quiz);
+        grant.setExtraAttempts(request.getExtraAttempts());
+        grant.setReason(request.getReason().trim());
+        grant.setGrantedBy(actorEmail);
+        grantRepository.save(grant);
+        log.info("{} tentative(s) accordée(s) à {} sur le quiz {} par {} : {}", request.getExtraAttempts(),
+                enrollment.getLearner().getEmail(), quizId, actorEmail, request.getReason());
+        return quizSummariesOf(session.getBootcamp(), learnerId).stream()
+                .filter(q -> q.getId().equals(quizId.toString())).findFirst().orElseThrow();
+    }
+
+    private Enrollment requireEnrolled(UUID sessionId, UUID learnerId) {
+        return enrollmentRepository.findActiveBySession(sessionId).stream()
+                .filter(e -> e.getLearner().getId().equals(learnerId)).findFirst()
+                .orElseThrow(() -> new com.modeltech.datamasteryhub.exception.ResourceNotFoundException("Apprenant", "id", learnerId));
+    }
+
+    private List<EvaluationPayloads.QuizSummary> quizSummariesOf(Bootcamp bootcamp, UUID learnerId) {
+        List<CourseLesson> lessons = lessonsOf(bootcamp);
+        Set<UUID> lessonIds = lessons.stream().map(CourseLesson::getId).collect(Collectors.toSet());
+        Map<UUID, List<QuizAttempt>> attempts = attemptRepository.findAllByLearnerIdAndSubmittedAtNotNull(learnerId).stream()
+                .filter(a -> lessonIds.contains(a.getLesson().getId()))
+                .collect(Collectors.groupingBy(a -> a.getLesson().getId()));
+        Map<UUID, Integer> extras = extraAttemptsOf(learnerId);
+        List<EvaluationPayloads.QuizSummary> out = new ArrayList<>();
+        for (CourseLesson l : lessons) {
+            if (l.getType() != LessonType.QUIZ) continue;
+            out.add(summary(l, attempts.getOrDefault(l.getId(), List.of()), false, extras.getOrDefault(l.getId(), 0)));
+        }
+        return out;
+    }
+
+    private EvaluationPayloads.QuizSummary summary(CourseLesson l, List<QuizAttempt> done, boolean moduleLocked, int extra) {
         boolean passed = done.stream().anyMatch(a -> Boolean.TRUE.equals(a.getPassed()));
         Integer best = done.stream().map(QuizAttempt::getScore).filter(Objects::nonNull).max(Integer::compare).orElse(null);
-        Integer max = l.getQuizMaxAttempts();
+        Integer base = l.getQuizMaxAttempts();
+        Integer max = base == null ? null : base + extra;   // limite effective : celle du quiz + tentatives accordées
         String status;
         if (passed) status = "PASSED";
         else if (moduleLocked || l.getStatus() == LessonStatus.SCHEDULED) status = "LOCKED";
@@ -126,6 +195,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .timeLimitMinutes(null)
                 .passThreshold(l.getQuizPassThreshold() != null ? l.getQuizPassThreshold() : 0)
                 .maxAttempts(max)
+                .extraAttempts(extra)
                 .attemptsUsed(done.size())
                 .bestScore(best)
                 .status(status)
@@ -170,6 +240,11 @@ public class EvaluationServiceImpl implements EvaluationService {
                         bootcamp.getId(), learnerIds, com.modeltech.datamasteryhub.modules.course.entity.Certificate.VALID)
                 .stream().map(c -> c.getLearner().getId()).collect(Collectors.toSet());
 
+        Set<UUID> waiting = learnerIds.isEmpty() ? Set.of()
+                : certificateRepository.findAllByBootcampIdAndLearnerIdInAndStatusAndIsDeletedFalse(
+                        bootcamp.getId(), learnerIds, com.modeltech.datamasteryhub.modules.course.entity.Certificate.PENDING)
+                .stream().map(c -> c.getLearner().getId()).collect(Collectors.toSet());
+
         LocalDate today = access.today();
         boolean endingSoon = session.getEndDate() != null && !today.isBefore(session.getEndDate().minusDays(AT_RISK_DAYS));
         List<EvaluationPayloads.TrackedLearner> learners = new ArrayList<>();
@@ -193,7 +268,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                     .quizPassed((int) lessons.stream().filter(l -> l.getType() == LessonType.QUIZ && passed.contains(l.getId())).count())
                     .quizTotal(quizTotal)
                     .project(project)
-                    .certificate(certified.contains(id) ? "ISSUED" : ready ? "READY" : endingSoon ? "AT_RISK" : "PENDING")
+                    .certificate(certified.contains(id) ? "ISSUED" : waiting.contains(id) ? "TO_VALIDATE" : ready ? "READY" : endingSoon ? "AT_RISK" : "PENDING")
                     .build());
         }
 
