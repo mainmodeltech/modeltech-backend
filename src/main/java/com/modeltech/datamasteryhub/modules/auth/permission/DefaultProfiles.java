@@ -28,14 +28,14 @@ public final class DefaultProfiles {
         add(RoleNames.SUPER_ADMIN, "Direction", "Tous les droits, y compris comptes, profils et journal d'audit. À réserver à deux personnes.",
                 EnumSet.allOf(Permission.class));
 
-        add(RoleNames.FINANCE, "Finance", "Paiements, factures, remboursements, tarifs, parrainage, parts de revenu des partenaires.",
+        add(RoleNames.FINANCE, "Finance", "Paiements (confirmation, remboursements), factures, tarifs, parrainage, parts de revenu des partenaires.",
                 EnumSet.of(DASHBOARD_FINANCE, DASHBOARD_ACTIVITY, APPLICATIONS_VIEW, PRICE_OVERRIDE,
-                        PAYMENTS_VIEW, PAYMENTS_MANAGE, PAYMENTS_REFUND, INVOICES_VIEW, INVOICES_MANAGE,
+                        PAYMENTS_VIEW, PAYMENTS_RECORD, PAYMENTS_MANAGE, PAYMENTS_REFUND, PAYMENTS_REFUND_APPROVE, INVOICES_VIEW, INVOICES_MANAGE,
                         PROMO_VIEW, PROMO_MANAGE, PRICING_MANAGE, PARTNERS_VIEW, PARTNERS_REVENUE,
                         LEARNERS_VIEW, CATALOG_VIEW, CERTIFICATES_VIEW));
 
-        add(RoleNames.ADMISSIONS, "Admissions", "Candidatures, inscriptions, apprenants et messages entrants ; voit le statut des paiements sans pouvoir les modifier.",
-                EnumSet.of(DASHBOARD_ACTIVITY, APPLICATIONS_VIEW, APPLICATIONS_DECIDE, ENROLLMENTS_MANAGE, PAYMENTS_VIEW,
+        add(RoleNames.ADMISSIONS, "Admissions", "Candidatures, inscriptions, apprenants et messages entrants ; voit les paiements et peut saisir un paiement reçu hors site (à confirmer par la Finance).",
+                EnumSet.of(DASHBOARD_ACTIVITY, APPLICATIONS_VIEW, APPLICATIONS_DECIDE, ENROLLMENTS_MANAGE, PAYMENTS_VIEW, PAYMENTS_RECORD,
                         LEARNERS_VIEW, LEARNERS_MANAGE, CATALOG_VIEW, SESSIONS_VIEW, CERTIFICATES_VIEW,
                         MASTERCLASS_VIEW, MESSAGES_MANAGE, EMAIL_LOGS_VIEW));
 

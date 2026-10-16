@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.config.InvoiceProperties;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.notification.service.InvoiceNotice;
@@ -49,6 +51,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceProperties properties;
     private final NotificationService notificationService;
     private final JdbcTemplate jdbc;
+    private final AuditService audit;
 
     @Override
     @Transactional
@@ -92,6 +95,8 @@ public class InvoiceServiceImpl implements InvoiceService {
         inv.setStatus(Invoice.ISSUED);
 
         Invoice saved = invoiceRepository.save(inv);
+        audit.record(AuditAction.INVOICE_CREATED, "Invoice", saved.getNumber(),
+                "Facture " + saved.getNumber() + " émise : " + saved.getTotal() + " " + saved.getCurrency() + " pour " + saved.getBuyerName());
         log.info("Facture {} émise par {} pour l'inscription {} ({} {})", saved.getNumber(), actorEmail, registrationId,
                 saved.getTotal(), saved.getCurrency());
         return toResponse(saved);
@@ -122,6 +127,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         inv.setStatus(Invoice.CANCELLED);
         inv.setCancelledAt(LocalDateTime.now());
         inv.setCancelledReason(reason.trim());
+        audit.record(AuditAction.INVOICE_CANCELLED, "Invoice", number, "Facture " + number + " annulée : " + reason.trim());
         log.info("Facture {} annulée par {} : {}", number, actorEmail, reason);
         return toResponse(invoiceRepository.save(inv));
     }

@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.modules.training.entity.Payment;
 import com.modeltech.datamasteryhub.modules.training.enums.PaymentStatus;
 import com.modeltech.datamasteryhub.modules.training.mapper.PaymentMapper;
@@ -52,6 +54,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final PaymentMapper             paymentMapper;
     private final NotificationService       notificationService;
     private final RecaptchaService          recaptchaService;
+    private final AuditService              audit;
 
     // =========================================================================
     //  INSCRIPTION PUBLIQUE
@@ -99,6 +102,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         asPublic.setMessage(request.getMessage());
 
         Registration saved = persistNew(asPublic, "ADMIN");
+        audit.record(AuditAction.ENROLLMENT_CREATED, "Registration", saved.getId(),
+                "Inscription saisie manuellement pour " + saved.getFirstName() + " " + saved.getLastName() + " (" + saved.getEmail() + ")");
         log.info("Inscription manuelle créée par {} pour {}", actor, saved.getEmail());
         RegistrationResponse response = registrationMapper.toResponse(saved);
         attachPaymentSummaries(List.of(response));
@@ -187,6 +192,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         Registration saved = registrationRepository.save(registration);
+        audit.record(AuditAction.REGISTRATION_STATUS_CHANGED, "Registration", saved.getId(),
+                "Statut de l'inscription de " + saved.getFirstName() + " " + saved.getLastName() + " : " + oldStatus + " → " + newStatus);
 
         RegistrationResponse response = registrationMapper.toResponse(saved);
         attachPaymentSummaries(List.of(response));
@@ -206,6 +213,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         registration.setDeleted(true);
         registration.setDeletedAt(LocalDateTime.now());
         registrationRepository.save(registration);
+        audit.record(AuditAction.REGISTRATION_DELETED, "Registration", id,
+                "Candidature de " + registration.getFirstName() + " " + registration.getLastName() + " supprimée");
     }
 
     /** Renseigne le résumé des échéances de chaque inscription, en une seule requête. */

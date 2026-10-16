@@ -42,7 +42,7 @@ public final class AdminAccessRules {
         // ── Admissions ───────────────────────────────────────────────────────
         rule(GET, "/api/v1/admin/registrations/*/invoices", INVOICES_VIEW);
         rule(POST, "/api/v1/admin/registrations/*/invoice", INVOICES_MANAGE);
-        rule(POST, "/api/v1/admin/registrations/*/payments", PAYMENTS_MANAGE);            // paiement reçu hors site
+        rule(POST, "/api/v1/admin/registrations/*/payments", PAYMENTS_RECORD);            // paiement reçu hors site (confirmé ensuite par une autre personne)
         rule(POST, "/api/v1/admin/registrations", ENROLLMENTS_MANAGE);                    // inscription manuelle
         rule(GET, "/api/v1/admin/registrations/**", APPLICATIONS_VIEW);
         rule(GET, "/api/v1/admin/enrollments/**", APPLICATIONS_VIEW);
@@ -50,7 +50,8 @@ public final class AdminAccessRules {
 
         // ── Argent ───────────────────────────────────────────────────────────
         rule(GET, "/api/v1/admin/payments/**", PAYMENTS_VIEW);
-        rule(POST, "/api/v1/admin/payments/*/refund", PAYMENTS_REFUND);
+        rule(POST, "/api/v1/admin/payments/*/refund", PAYMENTS_REFUND);                   // demander (ou exécuter, si personne d'autre ne peut valider)
+        rule(POST, "/api/v1/admin/payments/*/refund/*", PAYMENTS_REFUND_APPROVE);         // valider / refuser une demande
         rule(null, "/api/v1/admin/payments/**", PAYMENTS_MANAGE);                         // confirmer, refuser, relancer
         rule(GET, "/api/v1/admin/invoices/**", INVOICES_VIEW);
         rule(null, "/api/v1/admin/invoices/**", INVOICES_MANAGE);

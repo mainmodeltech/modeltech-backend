@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.modules.auth.permission.Permission;
 import com.modeltech.datamasteryhub.security.Actor;
 import com.modeltech.datamasteryhub.common.util.SlugUtils;
@@ -51,6 +53,7 @@ public class BootcampServiceImpl implements BootcampService {
     private final DomainRepository domainRepository;
     private final PartnerRepository partnerRepository;
     private final BootcampMapper mapper;
+    private final AuditService audit;
     private final com.modeltech.datamasteryhub.modules.auth.repository.AdminUserRepository adminUserRepository;
 
     // ── Public ──────────────────────────────────────────────────────
@@ -131,7 +134,12 @@ public class BootcampServiceImpl implements BootcampService {
         applyPartner(bootcamp, request.getPartnerId());
         applyRelated(bootcamp, request.getRelatedFormationIds());
 
-        return toAdminResponse(bootcampRepository.save(bootcamp));
+        Bootcamp created = bootcampRepository.save(bootcamp);
+        if (created.getPrice() != null || created.getPriceAmount() != null) {
+            audit.record(AuditAction.PRICE_CHANGED, "Bootcamp", created.getId(),
+                    "Prix de la formation « " + created.getTitle() + " » fixé : " + describePrice(created.getPrice(), created.getPriceAmount()));
+        }
+        return toAdminResponse(created);
     }
 
     @Override
@@ -145,6 +153,11 @@ public class BootcampServiceImpl implements BootcampService {
         if (!java.util.Objects.equals(priceBefore, bootcamp.getPrice()) || !java.util.Objects.equals(priceAmountBefore, bootcamp.getPriceAmount())) {
             // Un formulaire renvoie le prix inchangé : seul un changement réel exige le droit « Tarifs »
             Actor.require(Permission.PRICING_MANAGE, "le prix d'une formation");
+            audit.record(AuditAction.PRICE_CHANGED, "Bootcamp", id,
+                    "Prix de la formation « " + bootcamp.getTitle() + " » : " + describePrice(priceBefore, priceAmountBefore)
+                            + " → " + describePrice(bootcamp.getPrice(), bootcamp.getPriceAmount()),
+                    java.util.Map.of("avant", describePrice(priceBefore, priceAmountBefore),
+                            "apres", describePrice(bootcamp.getPrice(), bootcamp.getPriceAmount())), null);
         }
 
         if (request.getSlug() != null && !request.getSlug().equals(bootcamp.getSlug())) {
@@ -208,6 +221,10 @@ public class BootcampServiceImpl implements BootcampService {
         return only;
     }
 
+    private static String describePrice(String label, Long amount) {
+        return amount != null ? amount + (label != null && !label.isBlank() ? " (" + label + ")" : "") : (label != null ? label : "non renseigné");
+    }
+
     private static List<Object> sessionPrices(BootcampSession s) {
         return java.util.Arrays.asList(s.getPriceOverride(), s.getPriceOverrideAmount(), s.getEarlyBirdPrice(),
                 s.getEarlyBirdAmount(), s.getEarlyBirdDeadline());
@@ -223,7 +240,12 @@ public class BootcampServiceImpl implements BootcampService {
             Actor.require(Permission.PRICING_MANAGE, "le prix d'une session");
         }
         session.setBootcamp(bootcamp);
-        return mapper.toSessionResponse(sessionRepository.save(session));
+        BootcampSession createdSession = sessionRepository.save(session);
+        if (!sessionPrices(createdSession).stream().allMatch(java.util.Objects::isNull)) {
+            audit.record(AuditAction.PRICE_CHANGED, "BootcampSession", createdSession.getId(),
+                    "Tarif particulier fixé pour une session de « " + bootcamp.getTitle() + " » : " + sessionPrices(createdSession));
+        }
+        return mapper.toSessionResponse(createdSession);
     }
 
     @Override
@@ -235,6 +257,8 @@ public class BootcampServiceImpl implements BootcampService {
         mapper.updateSessionEntity(request, session);
         if (!pricesBefore.equals(sessionPrices(session))) {
             Actor.require(Permission.PRICING_MANAGE, "le prix d'une session");
+            audit.record(AuditAction.PRICE_CHANGED, "BootcampSession", sessionId,
+                    "Tarif d'une session de « " + session.getBootcamp().getTitle() + " » : " + pricesBefore + " → " + sessionPrices(session));
         }
         // Recalcule isFull si currentParticipants ou max ont changé
         if (session.getMaxParticipants() != null && session.getCurrentParticipants() != null) {

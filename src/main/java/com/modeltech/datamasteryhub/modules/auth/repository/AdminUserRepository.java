@@ -20,6 +20,9 @@ public interface AdminUserRepository extends JpaRepository<AdminUser, UUID> {
 
     Optional<AdminUser> findByIdAndIsDeletedFalse(UUID id);
 
+    /** Comptes actifs du back-office (séparation des tâches : qui d'autre peut valider ?). */
+    List<AdminUser> findAllByActiveTrueAndIsDeletedFalse();
+
     Page<AdminUser> findAllByIsDeletedFalse(Pageable pageable);
 
     /** Nombre de comptes actifs portant un rôle (garde-fou « dernier SUPER_ADMIN »). */

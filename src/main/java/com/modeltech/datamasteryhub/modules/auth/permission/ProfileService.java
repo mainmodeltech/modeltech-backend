@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.auth.permission;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.auth.entity.Role;
 import com.modeltech.datamasteryhub.modules.auth.entity.RoleNames;
@@ -37,6 +39,7 @@ public class ProfileService {
     private final RoleRepository roleRepository;
     private final AdminUserRepository adminUserRepository;
     private final PermissionService permissionService;
+    private final AuditService audit;
 
     public record ProfileView(UUID id, String name, String label, String description, boolean system, boolean allPermissions,
                               List<String> permissions, long activeUsers) {}
@@ -68,6 +71,8 @@ public class ProfileService {
         Role role = Role.builder().name(name).label(label).description(trim(input.description()))
                 .system(false).staff(true).permissions(permissions).build();
         Role saved = roleRepository.save(role);
+        audit.record(AuditAction.PROFILE_CHANGED, "Role", saved.getName(),
+                "Profil « " + label + " » créé avec " + permissions.size() + " droit(s)");
         log.info("Profil créé : {} ({} droits)", name, permissions.size());
         return view(saved);
     }
@@ -78,10 +83,12 @@ public class ProfileService {
         requireNotSuperAdmin(role);
         if (input.label() != null) role.setLabel(requireLabel(input.label()));
         if (input.description() != null) role.setDescription(trim(input.description()));
+        Set<String> before = new java.util.TreeSet<>(role.getPermissions());
         if (input.permissions() != null) {
             role.getPermissions().clear();
             role.getPermissions().addAll(checked(input.permissions()));
         }
+        recordDiff(role, before, "modifié");
         log.info("Profil modifié : {} ({} droits)", role.getName(), role.getPermissions().size());
         return view(roleRepository.save(role));
     }
@@ -96,10 +103,12 @@ public class ProfileService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce profil n'a pas de réglage par défaut.");
         }
         Set<String> permissions = checked(defaults.permissions().stream().map(Enum::name).collect(Collectors.toSet()));
+        Set<String> before = new java.util.TreeSet<>(role.getPermissions());
         role.setLabel(defaults.label());
         role.setDescription(defaults.description());
         role.getPermissions().clear();
         role.getPermissions().addAll(permissions);
+        recordDiff(role, before, "rétabli aux droits par défaut");
         log.info("Profil rétabli aux droits par défaut : {}", role.getName());
         return view(roleRepository.save(role));
     }
@@ -117,7 +126,22 @@ public class ProfileService {
         }
         role.setDeleted(true);
         roleRepository.save(role);
+        audit.record(AuditAction.PROFILE_CHANGED, "Role", role.getName(), "Profil « " + role.displayName() + " » supprimé");
         log.info("Profil supprimé : {}", role.getName());
+    }
+
+    /** Consigne les droits ajoutés et retirés d'un profil (la liste exacte, pour pouvoir répondre à « qui a donné ce droit ? »). */
+    private void recordDiff(Role role, Set<String> before, String verb) {
+        Set<String> added = new java.util.TreeSet<>(role.getPermissions());
+        added.removeAll(before);
+        Set<String> removed = new java.util.TreeSet<>(before);
+        removed.removeAll(role.getPermissions());
+        java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
+        details.put("droitsAjoutes", added);
+        details.put("droitsRetires", removed);
+        audit.record(AuditAction.PROFILE_CHANGED, "Role", role.getName(),
+                "Profil « " + role.displayName() + " » " + verb + " : +" + added.size() + " / −" + removed.size() + " droit(s)",
+                details, null);
     }
 
     // ── Règles partagées avec la gestion des comptes ────────────────

@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.training.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.training.dto.request.CreatePromoCodeRequest;
 import com.modeltech.datamasteryhub.modules.training.dto.request.UpdatePromoCodeRequest;
@@ -26,6 +28,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
 
     private final PromoCodeRepository promoCodeRepository;
     private final PromoCodeMapper promoCodeMapper;
+    private final AuditService audit;
 
     @Override
     @Transactional
@@ -34,7 +37,10 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         promoCode.setCode(request.getCode().trim().toUpperCase());
         promoCode.setIsActive(true);
         promoCode.setUsageCount(0);
-        return promoCodeMapper.toResponse(promoCodeRepository.save(promoCode));
+        PromoCode saved = promoCodeRepository.save(promoCode);
+        audit.record(AuditAction.PROMO_CHANGED, "PromoCode", saved.getId(),
+                "Code de parrainage " + saved.getCode() + " créé (" + saved.getDiscountPercent() + " %)");
+        return promoCodeMapper.toResponse(saved);
     }
 
     @Override
@@ -45,7 +51,10 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         if (request.getCode() != null) {
             promoCode.setCode(request.getCode().trim().toUpperCase());
         }
-        return promoCodeMapper.toResponse(promoCodeRepository.save(promoCode));
+        PromoCode saved = promoCodeRepository.save(promoCode);
+        audit.record(AuditAction.PROMO_CHANGED, "PromoCode", saved.getId(),
+                "Code de parrainage " + saved.getCode() + " modifié (remise " + saved.getDiscountPercent() + " %)");
+        return promoCodeMapper.toResponse(saved);
     }
 
     @Override
@@ -64,7 +73,10 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     public PromoCodeResponse toggleActive(UUID id) {
         PromoCode promoCode = getOrThrow(id);
         promoCode.setIsActive(!promoCode.getIsActive());
-        return promoCodeMapper.toResponse(promoCodeRepository.save(promoCode));
+        PromoCode saved = promoCodeRepository.save(promoCode);
+        audit.record(AuditAction.PROMO_CHANGED, "PromoCode", saved.getId(),
+                "Code de parrainage " + saved.getCode() + (saved.getIsActive() ? " activé" : " désactivé"));
+        return promoCodeMapper.toResponse(saved);
     }
 
     @Override
@@ -75,6 +87,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         promoCode.setDeletedAt(LocalDateTime.now());
         promoCode.setIsActive(false);
         promoCodeRepository.save(promoCode);
+        audit.record(AuditAction.PROMO_CHANGED, "PromoCode", id, "Code de parrainage " + promoCode.getCode() + " supprimé");
     }
 
     @Override

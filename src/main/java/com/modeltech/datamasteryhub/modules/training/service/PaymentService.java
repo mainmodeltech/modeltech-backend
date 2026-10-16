@@ -51,6 +51,12 @@ public interface PaymentService {
     /** Consigne le remboursement d'une échéance confirmée ; si plus rien n'est payé, l'inscription est annulée. */
     AdminPaymentResponse refund(UUID paymentId, String reason, String actor);
 
+    /** Valide une demande de remboursement (par une autre personne que le demandeur, sauf s'il est seul habilité). */
+    AdminPaymentResponse approveRefund(UUID paymentId, String actor);
+
+    /** Refuse ou retire une demande de remboursement en attente. */
+    AdminPaymentResponse declineRefund(UUID paymentId, String reason, String actor);
+
     Page<EnrollmentResponse> findEnrollments(Pageable pageable);
 
     // ── Lien de paiement (public, authentifié par le jeton) ──────────

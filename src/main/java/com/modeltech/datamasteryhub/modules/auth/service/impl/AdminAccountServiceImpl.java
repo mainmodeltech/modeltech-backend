@@ -1,5 +1,7 @@
 package com.modeltech.datamasteryhub.modules.auth.service.impl;
 
+import com.modeltech.datamasteryhub.modules.audit.service.AuditAction;
+import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.common.util.TokenUtils;
 import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.common.util.LogMask;
@@ -55,6 +57,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     private final MfaService mfaService;
     private final AccountSecurityService accountSecurity;
     private final ProfileService profileService;
+    private final AuditService audit;
 
     @Override
     public Page<AdminUserSummaryResponse> findAll(Pageable pageable) {
@@ -89,6 +92,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         String token = authService.createPasswordResetToken(email, INVITATION_VALID_HOURS * 60);
         notificationService.sendAccountInvitationEmail(email, saved.getFullName(),
                 authService.passwordSetupLink(token, false), INVITATION_VALID_HOURS, false);
+        audit.record(AuditAction.ACCOUNT_CREATED, "AdminUser", saved.getId(),
+                "Compte de back-office créé pour " + saved.getFullName() + " (" + email + ") — profils : " + roleNames(roles));
         log.info("Compte de back-office créé : {} ({})", email, roleNames(roles));
         return toResponse(saved);
     }
@@ -127,13 +132,20 @@ public class AdminAccountServiceImpl implements AdminAccountService {
             admin.setFullName(request.getFullName().trim());
         }
         boolean securityRelevant = !newRoles.equals(admin.getRoles()) || newActive != admin.isActive();
+        String rolesBefore = roleNames(admin.getRoles());
+        boolean activeBefore = admin.isActive();
         admin.setRoles(newRoles);
         admin.setActive(newActive);
         admin.setPartner(resolvePartner(newRoles, request.getPartnerId(), admin.getPartner()));
 
         AdminUser saved = adminUserRepository.save(admin);
         // Changement de rôle ou désactivation : les jetons et sessions déjà émis ne valent plus, la personne se reconnecte
-        if (securityRelevant) accountSecurity.invalidateSessions(saved);
+        if (securityRelevant) {
+            accountSecurity.invalidateSessions(saved);
+            audit.record(AuditAction.ACCOUNT_UPDATED, "AdminUser", saved.getId(),
+                    "Compte de " + saved.getFullName() + " modifié — profils : " + rolesBefore + " → " + roleNames(newRoles)
+                            + (activeBefore != newActive ? " ; " + (newActive ? "compte réactivé" : "compte désactivé") : ""));
+        }
         return toResponse(saved);
     }
 
@@ -148,6 +160,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         mfaService.reset(admin);
         accountSecurity.invalidateSessions(admin);
         notificationService.sendMfaResetEmail(admin.getEmail(), admin.getFullName());
+        audit.record(AuditAction.ACCOUNT_MFA_RESET, "AdminUser", admin.getId(),
+                "Double authentification de " + admin.getFullName() + " réinitialisée");
         log.warn("Double authentification réinitialisée pour {} par {}", LogMask.email(admin.getEmail()), LogMask.email(actingEmail));
         return toResponse(admin);
     }
