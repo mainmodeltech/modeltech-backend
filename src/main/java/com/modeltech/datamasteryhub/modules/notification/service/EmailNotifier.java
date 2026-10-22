@@ -29,8 +29,8 @@ public class EmailNotifier {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRENCH);
 
     /** Pages du back-office des propositions de programme (relecture, et « mes propositions » du formateur). */
-    private static final String PROPOSALS_PAGE = "/admin/propositions-programme";
-    private static final String MY_PROPOSALS_PAGE = "/admin/mes-propositions";
+    private static final String PROPOSALS_PAGE = "/admin/propositions";
+    private static final String MY_PROPOSALS_PAGE = "/admin/espace";
 
     private final TemplatedMailer mailer;
 
