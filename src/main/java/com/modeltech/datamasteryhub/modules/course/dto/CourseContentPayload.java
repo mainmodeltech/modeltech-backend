@@ -67,6 +67,11 @@ public class CourseContentPayload {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class LessonItem {
         private String id;
+        /**
+         * Identifiant stable d'une leçon NOUVELLE (sans id) dans une proposition de modification : il relie la leçon à sa
+         * banque de questions avant qu'elle n'existe. Ignoré par l'enregistrement direct du programme.
+         */
+        private String clientKey;
         private Integer order;
         private String title;
         private String subtitle;

@@ -36,6 +36,12 @@ public enum AuditAction {
     CERTIFICATE_VALIDATED("Pédagogie", "Certificat validé et envoyé"),
     CERTIFICATE_REVOKED("Pédagogie", "Certificat révoqué"),
     QUIZ_ATTEMPTS_GRANTED("Pédagogie", "Tentatives de quiz accordées"),
+    PROGRAM_PROPOSAL_CREATED("Pédagogie", "Proposition de modification du programme créée"),
+    PROGRAM_PROPOSAL_SUBMITTED("Pédagogie", "Proposition de modification du programme soumise"),
+    PROGRAM_PROPOSAL_WITHDRAWN("Pédagogie", "Proposition de modification du programme retirée par son auteur"),
+    PROGRAM_PROPOSAL_APPROVED("Pédagogie", "Proposition de modification du programme validée (programme mis à jour)"),
+    PROGRAM_PROPOSAL_CHANGES_REQUESTED("Pédagogie", "Modifications demandées sur une proposition de programme"),
+    PROGRAM_PROPOSAL_REJECTED("Pédagogie", "Proposition de modification du programme refusée"),
 
     // ── Comptes et droits ──
     ACCOUNT_CREATED("Comptes et droits", "Compte du back-office créé"),

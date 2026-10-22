@@ -119,6 +119,7 @@ class AdminAccessRulesIT extends AbstractIntegrationTest {
         allowed("PEDAGOGY", HttpMethod.GET, "/sessions/" + ID + "/tracking");
         allowed("PEDAGOGY", HttpMethod.POST, "/sessions/" + ID + "/learners/" + ID + "/certificate");
         allowed("PEDAGOGY", HttpMethod.PUT, "/formations/" + ID + "/content");
+        allowed("PEDAGOGY", HttpMethod.POST, "/program-proposals/" + ID + "/approve");
         denied("PEDAGOGY", HttpMethod.GET, "/payments");
         denied("PEDAGOGY", HttpMethod.GET, "/invoices");
         denied("PEDAGOGY", HttpMethod.GET, "/registrations");
@@ -141,6 +142,10 @@ class AdminAccessRulesIT extends AbstractIntegrationTest {
     @Test
     void trainerOnlyFollowsSessions() throws Exception {
         allowed("TRAINER", HttpMethod.GET, "/me/sessions");
+        allowed("TRAINER", HttpMethod.GET, "/program-proposals/mine/formations");     // propose des modifications du programme
+        allowed("TRAINER", HttpMethod.PUT, "/program-proposals/mine/" + ID);
+        denied("TRAINER", HttpMethod.GET, "/program-proposals");                      // la relecture est pour la pédagogie
+        denied("TRAINER", HttpMethod.PUT, "/formations/" + ID + "/content");
         allowed("TRAINER", HttpMethod.GET, "/sessions/" + ID + "/tracking");
         denied("TRAINER", HttpMethod.GET, "/payments");
         denied("TRAINER", HttpMethod.GET, "/registrations");

@@ -68,6 +68,11 @@ public class StatsServiceImpl implements StatsService {
                         WHERE is_deleted = false AND type = 'LIVE' AND status <> 'DRAFT' AND live_at BETWEEN :now AND :in7days
                         """, p)))
                 .certificatesToValidate(visible(Permission.CERTIFICATES_MANAGE, () -> count("SELECT count(*) FROM certificates WHERE is_deleted = false AND status = 'PENDING'", p)))
+                .programProposalsToReview(Actor.has(Permission.PROGRAM_MANAGE) && Actor.has(Permission.SCOPE_ALL_FORMATIONS)
+                        ? count("""
+                                SELECT count(*) FROM course_content_proposals cp JOIN admin_users a ON a.id = cp.author_id
+                                WHERE cp.is_deleted = false AND cp.status = 'SUBMITTED' AND lower(a.email) <> lower(:me)
+                                """, p.addValue("me", Actor.email())) : null)
                 .failedEmails(visible(Permission.EMAIL_LOGS_VIEW, () -> count("SELECT count(*) FROM email_logs WHERE status = 'FAILED' AND created_at >= :ago7days", p)))
                 .build();
     }

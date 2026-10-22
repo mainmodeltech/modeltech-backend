@@ -135,6 +135,11 @@ public class CourseContentServiceImpl implements CourseContentService {
         return assembler.assemble(bootcamp, false);
     }
 
+    @Override
+    public void validateContent(CourseContentPayload payload) {
+        validateShape(payload.getModules() == null ? List.of() : payload.getModules());
+    }
+
     // =========================================================================
     //  RÉGLAGES
     // =========================================================================

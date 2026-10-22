@@ -6,6 +6,7 @@ import com.modeltech.datamasteryhub.modules.notification.service.CertificateNoti
 import com.modeltech.datamasteryhub.modules.notification.service.InvoiceNotice;
 import com.modeltech.datamasteryhub.modules.notification.service.NotificationService;
 import com.modeltech.datamasteryhub.modules.notification.service.PaymentNotice;
+import com.modeltech.datamasteryhub.modules.notification.service.ProgramProposalNotice;
 import com.modeltech.datamasteryhub.modules.notification.service.SlackNotifier;
 import com.modeltech.datamasteryhub.modules.training.entity.Registration;
 import lombok.RequiredArgsConstructor;
@@ -96,6 +97,30 @@ public class NotificationServiceImpl implements NotificationService {
             emailNotifier.sendPaymentDeclaredInternal(notice);
         } catch (Exception e) {
             log.error("Erreur email interne (paiement déclaré) : {}", e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    //  PROGRAMME
+    // =========================================================================
+
+    @Override
+    @Async
+    public void notifyProgramProposalSubmitted(ProgramProposalNotice notice) {
+        try {
+            emailNotifier.sendProgramProposalSubmitted(notice);
+        } catch (Exception e) {
+            log.error("Erreur email (proposition de programme soumise) : {}", e.getMessage());
+        }
+    }
+
+    @Override
+    @Async
+    public void sendProgramProposalDecision(ProgramProposalNotice notice) {
+        try {
+            emailNotifier.sendProgramProposalDecision(notice);
+        } catch (Exception e) {
+            log.error("Erreur email (décision sur une proposition de programme) : {}", e.getMessage());
         }
     }
 
