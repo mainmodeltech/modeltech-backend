@@ -15,6 +15,9 @@ public interface CourseContentService {
      */
     CourseContentPayload getAdminContent(UUID formationId, String actorEmail, Collection<String> actorRoles);
 
+    /** Contrôles de forme de l'enregistrement (titres, types, liens, réglages des quiz, limites), sans écriture ni contrôle d'accès. */
+    void validateContent(CourseContentPayload payload);
+
     /** Remplace le programme par l'arbre fourni et retourne le résultat enregistré (identifiants définitifs). */
     CourseContentPayload saveAdminContent(UUID formationId, CourseContentPayload payload,
                                           String actorEmail, Collection<String> actorRoles);

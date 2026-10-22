@@ -75,6 +75,8 @@ public final class AdminAccessRules {
         rule(null, "/api/v1/admin/domains/**", CATALOG_MANAGE);
         rule(null, "/api/v1/admin/formations/**", PROGRAM_MANAGE);                        // contenu, projet final (une formation à la fois : voir CourseAccessPolicy)
         rule(null, "/api/v1/admin/lessons/**", PROGRAM_MANAGE);                           // banque de questions
+        rule(null, "/api/v1/admin/program-proposals/mine/**", PROGRAM_PROPOSE);           // propositions du formateur (formations de ses sessions : vérifié par le service)
+        rule(null, "/api/v1/admin/program-proposals/**", PROGRAM_MANAGE);                 // relecture (exige aussi SCOPE_ALL_FORMATIONS : vérifié par le service)
 
         // ── Sessions, certificats ────────────────────────────────────────────
         rule(POST, "/api/v1/admin/sessions/*/learners/*/certificate", CERTIFICATES_MANAGE);

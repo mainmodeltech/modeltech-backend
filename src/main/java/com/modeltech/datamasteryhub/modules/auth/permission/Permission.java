@@ -53,6 +53,7 @@ public enum Permission {
     CATALOG_VIEW("Pédagogie", "Voir le catalogue (formations, domaines, sessions)"),
     CATALOG_MANAGE("Pédagogie", "Gérer le catalogue (formations, domaines, sessions, formateur d'une session)"),
     PROGRAM_MANAGE("Pédagogie", "Éditer le programme d'une formation (modules, leçons, quiz, projet final)"),
+    PROGRAM_PROPOSE("Pédagogie", "Proposer des modifications du programme des formations de ses sessions (sans suppression, validées par la pédagogie)"),
     SESSIONS_VIEW("Pédagogie", "Voir le suivi d'une session (progression, appel, questions)"),
     SESSIONS_TRACK("Pédagogie", "Animer une session : appel, correction des projets, réponses, messages"),
     SESSIONS_ASSIGN("Pédagogie", "Affecter un formateur à une session"),

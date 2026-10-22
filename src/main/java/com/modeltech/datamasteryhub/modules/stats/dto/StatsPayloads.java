@@ -40,6 +40,8 @@ public final class StatsPayloads {
         private Long upcomingLives;
         /** Certificats prêts, en attente de validation par l'équipe. */
         private Long certificatesToValidate;
+        /** Propositions de modification du programme soumises par quelqu'un d'autre, à relire (pédagogie). */
+        private Long programProposalsToReview;
         /** E-mails en échec ces 7 derniers jours. */
         private Long failedEmails;
     }

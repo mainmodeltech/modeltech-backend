@@ -28,6 +28,10 @@ public class EmailNotifier {
 
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRENCH);
 
+    /** Pages du back-office des propositions de programme (relecture, et « mes propositions » du formateur). */
+    private static final String PROPOSALS_PAGE = "/admin/propositions-programme";
+    private static final String MY_PROPOSALS_PAGE = "/admin/mes-propositions";
+
     private final TemplatedMailer mailer;
 
     /** Adresse de l'équipe : destinataire des notifications internes. */
@@ -91,6 +95,44 @@ public class EmailNotifier {
                 .build();
         mailer.send(internalEmail, "Paiement à confirmer — " + n.fullName() + " — " + money(n.amount(), n.currency()),
                 content, "INTERNAL_PAYMENT_DECLARED");
+    }
+
+    /** Aux relecteurs de la pédagogie (à défaut : l'adresse de l'équipe). */
+    public void sendProgramProposalSubmitted(ProgramProposalNotice n) {
+        List<String> to = n.to() == null || n.to().isEmpty() ? (isDisabled() ? List.of() : List.of(internalEmail)) : n.to();
+        EmailContent content = EmailContent.builder("Proposition de programme à relire")
+                .preheader(n.authorName() + " propose des modifications du programme « " + n.formationTitle() + " »")
+                .paragraph("**" + n.authorName() + "** propose des modifications du programme de la formation **"
+                        + n.formationTitle() + "**. Relisez-les puis validez, demandez des modifications ou refusez.")
+                .button("Relire la proposition", admin(PROPOSALS_PAGE))
+                .noSignature()
+                .build();
+        for (String recipient : to) {
+            mailer.send(recipient, "Proposition de programme à relire — " + n.formationTitle(), content, "INTERNAL_PROGRAM_PROPOSAL");
+        }
+    }
+
+    /** À l'auteur : la décision de la pédagogie et son commentaire. */
+    public void sendProgramProposalDecision(ProgramProposalNotice n) {
+        String verdict = switch (n.decision()) {
+            case "APPROVED" -> "a été validée : le programme en ligne est mis à jour";
+            case "CHANGES_REQUESTED" -> "vous est renvoyée : des modifications sont demandées";
+            default -> "a été refusée";
+        };
+        String title = switch (n.decision()) {
+            case "APPROVED" -> "Proposition validée";
+            case "CHANGES_REQUESTED" -> "Modifications demandées";
+            default -> "Proposition refusée";
+        };
+        EmailContent.Builder builder = EmailContent.builder(title)
+                .preheader("Programme « " + n.formationTitle() + " »")
+                .greeting(n.authorName() != null && !n.authorName().isBlank() ? "Bonjour " + n.authorName().trim() + "," : "Bonjour,")
+                .paragraph("Votre proposition de modification du programme **" + n.formationTitle() + "** " + verdict + ".");
+        if (n.comment() != null && !n.comment().isBlank()) builder.quote(n.comment().trim(), n.reviewerName());
+        EmailContent content = builder.button("Voir ma proposition", admin(MY_PROPOSALS_PAGE)).build();
+        for (String recipient : n.to() == null ? List.<String>of() : n.to()) {
+            mailer.send(recipient, title + " — programme « " + n.formationTitle() + " »", content, "PROGRAM_PROPOSAL_DECISION");
+        }
     }
 
     // =========================================================================

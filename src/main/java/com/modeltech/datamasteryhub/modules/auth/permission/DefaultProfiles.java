@@ -48,8 +48,8 @@ public final class DefaultProfiles {
                 EnumSet.of(MASTERCLASS_VIEW, MASTERCLASS_MANAGE, MESSAGES_MANAGE, NEWSLETTER_MANAGE, COMMUNITY_MODERATE,
                         SITE_CONTENT_VIEW, SITE_CONTENT_MANAGE));
 
-        add(RoleNames.TRAINER, "Formateur", "Animation de ses sessions uniquement : appel, correction des projets, réponses aux questions, messages.",
-                EnumSet.of(SESSIONS_VIEW, SESSIONS_TRACK));
+        add(RoleNames.TRAINER, "Formateur", "Animation de ses sessions uniquement : appel, correction des projets, réponses aux questions, messages ; propositions de modification du programme.",
+                EnumSet.of(SESSIONS_VIEW, SESSIONS_TRACK, PROGRAM_PROPOSE));
 
         add(RoleNames.PARTNER, "Partenaire", "Programme de ses formations uniquement.",
                 EnumSet.of(PROGRAM_MANAGE));

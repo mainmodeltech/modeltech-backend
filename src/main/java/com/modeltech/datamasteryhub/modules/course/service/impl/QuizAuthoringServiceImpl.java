@@ -45,6 +45,16 @@ public class QuizAuthoringServiceImpl implements QuizAuthoringService {
     }
 
     @Override
+    public List<EvaluationPayloads.QuizQuestionEdit> questionsOf(UUID lessonId) {
+        return lessonRepository.findByIdAndIsDeletedFalse(lessonId).map(l -> toBank(l).getQuestions()).orElse(List.of());
+    }
+
+    @Override
+    public void validateQuestions(List<EvaluationPayloads.QuizQuestionEdit> questions) {
+        validate(questions == null ? List.of() : questions);
+    }
+
+    @Override
     @Transactional
     public EvaluationPayloads.QuizBank save(UUID lessonId, EvaluationPayloads.QuizBank bank,
                                             String actorEmail, Collection<String> actorRoles) {
