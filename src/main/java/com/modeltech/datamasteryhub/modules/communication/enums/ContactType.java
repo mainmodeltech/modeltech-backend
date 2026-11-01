@@ -7,5 +7,7 @@ public enum ContactType {
     /** Demande de diagnostic gratuit d'une entreprise (page Entreprises). */
     DIAGNOSTIC,
     /** Candidature d'un formateur partenaire (page Partenaires). */
-    PARTNER_APPLICATION
+    PARTNER_APPLICATION,
+    /** Liste d'attente du simulateur de certification (page Simulateur). */
+    SIMULATOR_WAITLIST
 }

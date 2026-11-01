@@ -1,0 +1,150 @@
+{
+  "hero": {
+    "badge": "Ouverture prochaine · Liste d'attente ouverte",
+    "eyebrow": "Simulateur de certification",
+    "title": "Réussissez le PL-300 : Microsoft Power BI Data Analyst",
+    "description": "Vous maîtrisez déjà Power BI ? Entraînez-vous dans les conditions de l'examen, mesurez votre niveau compétence par compétence et révisez uniquement ce qui vous manque, sans suivre un cours complet.",
+    "primary": { "label": "Rejoindre la liste d'attente", "href": "#liste-attente" },
+    "secondary": { "label": "Voir le contenu prévu", "href": "#contenu" },
+    "points": [
+      "Examens blancs chronométrés (100 minutes)",
+      "Entraînement par domaine avec correction immédiate",
+      "Questions en anglais, explications en français",
+      "Résultats par compétence et plan de révision"
+    ],
+    "image": { "url": "", "alt": "" }
+  },
+  "audience": {
+    "eyebrow": "Pour qui ?",
+    "title": "Pour ceux qui savent déjà faire et veulent le prouver",
+    "items": [
+      { "title": "Analystes et experts Excel", "description": "Vous utilisez déjà Power BI ou Excel au quotidien et voulez valider officiellement votre niveau." },
+      { "title": "Professionnels financés par leur employeur", "description": "Vous devez justifier votre préparation et passer l'examen dans un délai précis." },
+      { "title": "Étudiants et jeunes diplômés", "description": "Vous voulez un diplôme reconnu à l'international pour démarrer votre carrière data." },
+      { "title": "Candidats à un second essai", "description": "Vous avez déjà tenté l'examen et voulez cibler précisément vos points faibles." }
+    ]
+  },
+  "coverage": {
+    "eyebrow": "Alignement sur l'examen",
+    "title": "Chaque question est rattachée à une compétence mesurée",
+    "version": "Compétences mesurées au 20 avril 2026",
+    "intro": "Le simulateur suit le guide d'étude public de Microsoft. Les questions sont écrites par nos experts : ce ne sont pas les questions de l'examen réel.",
+    "domains": [
+      {
+        "name": "Préparer les données",
+        "weight": "25–30 %",
+        "topics": ["Se connecter aux sources et choisir Import, DirectQuery ou DirectLake", "Profiler et nettoyer les données", "Transformer et charger avec Power Query"]
+      },
+      {
+        "name": "Modéliser les données",
+        "weight": "25–30 %",
+        "topics": ["Relations, cardinalité et table de dates", "Mesures DAX, CALCULATE et intelligence temporelle", "Optimiser les performances du modèle"]
+      },
+      {
+        "name": "Visualiser et analyser les données",
+        "weight": "25–30 %",
+        "topics": ["Choisir et formater les visuels", "Signets, infobulles, navigation et accessibilité", "Repérer tendances, valeurs atypiques et prévisions"]
+      },
+      {
+        "name": "Gérer et sécuriser Power BI",
+        "weight": "15–20 %",
+        "topics": ["Espaces de travail, applications et distribution", "Actualisation planifiée et passerelles", "Sécurité au niveau des lignes et étiquettes de sensibilité"]
+      }
+    ]
+  },
+  "features": {
+    "eyebrow": "Ce que vous aurez",
+    "title": "Tout pour arriver prêt le jour de l'examen",
+    "items": [
+      { "title": "Examens blancs en conditions réelles", "description": "Chronomètre, navigation entre les questions, marquage, correction détaillée à la fin.", "status": "" },
+      { "title": "Entraînement par domaine", "description": "Travaillez une compétence à la fois avec la correction immédiate et l'explication en français.", "status": "" },
+      { "title": "Résultats par compétence", "description": "Un score estimé (indicatif) et vos points forts et faibles, domaine par domaine.", "status": "" },
+      { "title": "Plan de révision", "description": "Un planning de révision adapté à votre date d'examen.", "status": "Après l'ouverture" },
+      { "title": "Labs guidés", "description": "Exercices pas à pas avec jeux de données, pour pratiquer ce que les questions testent.", "status": "Après l'ouverture" },
+      { "title": "Coaching en option", "description": "Des séances avec un formateur pour débloquer vos points difficiles.", "status": "" }
+    ]
+  },
+  "plans": {
+    "eyebrow": "Forfaits",
+    "title": "Choisissez votre niveau de préparation",
+    "note": "Tarifs prévisionnels en FCFA, confirmés à l'ouverture. Aucun paiement n'est demandé aujourd'hui.",
+    "items": [
+      {
+        "code": "ESSENTIEL",
+        "name": "Essentiel",
+        "price": "25 000 FCFA",
+        "duration": "Accès 30 jours",
+        "highlighted": false,
+        "badge": "",
+        "features": ["Banque de questions par domaine", "2 examens blancs", "Correction détaillée en français"]
+      },
+      {
+        "code": "PRO",
+        "name": "Pro",
+        "price": "45 000 FCFA",
+        "duration": "Accès 90 jours",
+        "highlighted": true,
+        "badge": "Recommandé",
+        "features": ["Banque de questions complète", "5 examens blancs de 100 minutes", "Résultats par compétence", "Plan de révision", "Labs guidés (après l'ouverture)"]
+      },
+      {
+        "code": "PRO_COACHING",
+        "name": "Pro + coaching",
+        "price": "75 000 FCFA",
+        "duration": "Accès 90 jours",
+        "highlighted": false,
+        "badge": "",
+        "features": ["Tout le forfait Pro", "2 séances d'1 heure avec un formateur"]
+      },
+      {
+        "code": "ENTREPRISE",
+        "name": "Entreprise ou école",
+        "price": "Sur devis",
+        "duration": "Licences par lot",
+        "highlighted": false,
+        "badge": "",
+        "features": ["Licences nominatives", "Suivi de cohorte avec accord des participants"]
+      }
+    ]
+  },
+  "steps": {
+    "eyebrow": "Comment ça marche",
+    "title": "De l'entraînement à l'examen officiel",
+    "items": [
+      { "title": "Choisissez votre forfait", "description": "Accès immédiat après le paiement, avec un nombre de tentatives par examen." },
+      { "title": "Passez des examens blancs", "description": "Dans les conditions de l'examen : temps limité, correction à la fin." },
+      { "title": "Analysez vos résultats", "description": "Repérez vos compétences faibles et revoyez les questions manquées." },
+      { "title": "Réservez l'examen officiel", "description": "L'inscription et le prix de l'examen sont gérés par Microsoft et Pearson VUE, en plus du simulateur." }
+    ]
+  },
+  "faq": {
+    "eyebrow": "Questions fréquentes",
+    "title": "Avant de vous inscrire",
+    "items": [
+      { "question": "Le simulateur contient-il les vraies questions de l'examen ?", "answer": "Non. Toutes les questions sont originales et rédigées par nos experts à partir du guide d'étude public de Microsoft. Les questions réelles sont confidentielles : nous n'en proposons jamais." },
+      { "question": "Dois-je suivre le bootcamp pour utiliser le simulateur ?", "answer": "Non. Le simulateur est conçu pour les personnes qui ont déjà de l'expérience et veulent se préparer directement à l'examen." },
+      { "question": "Dans quelle langue sont les questions ?", "answer": "En anglais, comme dans l'examen, avec des explications en français pour chaque question." },
+      { "question": "Le simulateur garantit-il la réussite ?", "answer": "Non, personne ne peut le garantir. Il vous permet de mesurer précisément votre niveau et de combler vos lacunes avant de payer l'examen." },
+      { "question": "Combien coûte l'examen officiel ?", "answer": "Son prix est fixé par Microsoft selon le pays et n'est pas inclus dans nos forfaits. Consultez la page de l'examen PL-300 sur Microsoft Learn." },
+      { "question": "Quand le simulateur ouvre-t-il ?", "answer": "Dès que le contenu est finalisé et relu. Les personnes inscrites sur la liste d'attente sont prévenues en premier." }
+    ]
+  },
+  "waitlist": {
+    "eyebrow": "Liste d'attente",
+    "title": "Soyez prévenu dès l'ouverture",
+    "points": ["Sans engagement et sans paiement", "Prévenu en premier à l'ouverture", "Ouvert à tous les niveaux d'expérience"],
+    "namePlaceholder": "Nom et prénom",
+    "emailPlaceholder": "E-mail",
+    "phonePlaceholder": "Téléphone / WhatsApp (facultatif)",
+    "companyPlaceholder": "Entreprise ou école (facultatif)",
+    "planPlaceholder": "Forfait qui vous intéresse",
+    "horizonPlaceholder": "Quand comptez-vous passer l'examen ?",
+    "contextPlaceholder": "Votre niveau actuel, les outils que vous utilisez (facultatif)",
+    "consentLabel": "J'accepte d'être contacté(e) au sujet du simulateur PL-300.",
+    "submitLabel": "Rejoindre la liste d'attente",
+    "successTitle": "Vous êtes sur la liste d'attente",
+    "successText": "Merci ! Nous vous écrivons dès l'ouverture du simulateur.",
+    "note": "Nous utilisons vos données uniquement pour vous informer de l'ouverture du simulateur."
+  },
+  "disclaimer": "Model Technologie est indépendant de Microsoft : le simulateur n'est ni affilié à Microsoft ni approuvé par Microsoft. PL-300 et Power BI sont des marques de Microsoft. Aucune question de l'examen réel n'est reproduite et aucune réussite n'est garantie."
+}

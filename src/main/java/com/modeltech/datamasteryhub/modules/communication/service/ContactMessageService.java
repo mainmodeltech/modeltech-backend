@@ -3,6 +3,7 @@ package com.modeltech.datamasteryhub.modules.communication.service;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.ContactMessageRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.DiagnosticRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.PartnerApplicationRequestDTO;
+import com.modeltech.datamasteryhub.modules.communication.dto.request.SimulatorWaitlistRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.UpdateMessageRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.response.ContactMessageResponseDTO;
 import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessageStatus;
@@ -18,6 +19,9 @@ public interface ContactMessageService {
 
     /** Demande de diagnostic entreprise : stockée comme un message de type DIAGNOSTIC. */
     ContactMessageResponseDTO saveDiagnosticRequest(DiagnosticRequestDTO dto);
+
+    /** Liste d'attente du simulateur : stockée comme un message de type SIMULATOR_WAITLIST. */
+    ContactMessageResponseDTO saveSimulatorWaitlist(SimulatorWaitlistRequestDTO dto);
 
     /** Candidature partenaire : stockée comme un message de type PARTNER_APPLICATION. */
     ContactMessageResponseDTO savePartnerApplication(PartnerApplicationRequestDTO dto);

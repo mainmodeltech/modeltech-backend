@@ -93,6 +93,48 @@ class SiteFormsControllerIT extends AbstractIntegrationTest {
         verify(notificationService, never()).notifyNewContactMessage(any());
     }
 
+    // ── POST /simulator/waitlist ─────────────────────────────────────
+
+    @Test
+    void simulatorWaitlist_storesAStructuredMessage_visibleInTheAdminMessages() throws Exception {
+        mockMvc.perform(post("/api/v1/simulator/waitlist").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName":"Moussa","lastName":"Fall","email":"moussa@banque.sn","phone":"+221771112233",
+                                 "company":"Banque X","plan":"PRO","examHorizon":"WITHIN_3_MONTHS",
+                                 "context":"Analyste depuis 4 ans, Excel avance","consent":true}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.type").value("SIMULATOR_WAITLIST"))
+                .andExpect(jsonPath("$.data.subject").value("Liste d'attente simulateur PL-300"))
+                .andExpect(jsonPath("$.data.details.plan").value("PRO"))
+                .andExpect(jsonPath("$.data.details.examHorizon").value("WITHIN_3_MONTHS"))
+                .andExpect(jsonPath("$.data.message").value(
+                        "Forfait souhaité : Pro\nExamen envisagé : Dans les 3 mois\nEntreprise ou école : Banque X\n"
+                                + "Contexte : Analyste depuis 4 ans, Excel avance"));
+
+        verify(notificationService).notifyNewContactMessage(any(ContactMessage.class));
+        assertThat(contactMessageRepository.findAll()).hasSize(1)
+                .allSatisfy(m -> assertThat(m.getType()).isEqualTo(ContactType.SIMULATOR_WAITLIST));
+    }
+
+    @Test
+    void simulatorWaitlist_requiresTheConsent_aKnownPlanAndAHorizon() throws Exception {
+        String base = "\"firstName\":\"Moussa\",\"email\":\"moussa@banque.sn\",\"plan\":\"PRO\",\"examHorizon\":\"LATER\"";
+        // sans accord
+        mockMvc.perform(post("/api/v1/simulator/waitlist").contentType(MediaType.APPLICATION_JSON)
+                .content("{" + base + ",\"consent\":false}")).andExpect(status().isBadRequest());
+        // forfait inconnu
+        mockMvc.perform(post("/api/v1/simulator/waitlist").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"firstName\":\"M\",\"email\":\"m@b.sn\",\"plan\":\"GRATUIT\",\"examHorizon\":\"LATER\",\"consent\":true}"))
+                .andExpect(status().isBadRequest());
+        // e-mail invalide
+        mockMvc.perform(post("/api/v1/simulator/waitlist").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"firstName\":\"M\",\"email\":\"pas-un-mail\",\"plan\":\"PRO\",\"examHorizon\":\"LATER\",\"consent\":true}"))
+                .andExpect(status().isBadRequest());
+
+        verify(notificationService, never()).notifyNewContactMessage(any());
+        assertThat(contactMessageRepository.findAll()).isEmpty();
+    }
+
     // ── POST /diagnostic-requests ────────────────────────────────────
 
     @Test
