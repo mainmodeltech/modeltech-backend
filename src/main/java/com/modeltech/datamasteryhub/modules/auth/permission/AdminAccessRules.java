@@ -30,6 +30,14 @@ public final class AdminAccessRules {
         rule(GET, "/api/v1/admin/stats/**", DASHBOARD_FINANCE, DASHBOARD_ACTIVITY);      // les montants sont masqués sans DASHBOARD_FINANCE
         authority(null, "/api/v1/admin/me/**", Permission.BACKOFFICE_ACCESS);
 
+        // ── Simulateur de certification (le service vérifie en plus : l'auteur ne relit ni ne publie lui-même) ──
+        rule(POST, "/api/v1/admin/simulator/items/import", SIMULATOR_MANAGE);
+        rule(POST, "/api/v1/admin/simulator/items/*/versions/*/publish", SIMULATOR_MANAGE);
+        rule(POST, "/api/v1/admin/simulator/items/*/versions/*/retire", SIMULATOR_MANAGE);
+        rule(POST, "/api/v1/admin/simulator/items/*/versions/*/review", SIMULATOR_REVIEW);
+        rule(GET, "/api/v1/admin/simulator/**", SIMULATOR_VIEW);
+        rule(null, "/api/v1/admin/simulator/**", SIMULATOR_AUTHOR);                       // créer, modifier, soumettre, supprimer un brouillon
+
         // ── Administration ───────────────────────────────────────────────────
         rule(null, "/api/v1/admin/users/**", ACCOUNTS_MANAGE);
         rule(GET, "/api/v1/admin/profiles", PROFILES_MANAGE, ACCOUNTS_MANAGE);             // choisir les profils d'un compte

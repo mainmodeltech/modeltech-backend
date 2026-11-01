@@ -49,6 +49,12 @@ public enum AuditAction {
     ACCOUNT_MFA_RESET("Comptes et droits", "Double authentification réinitialisée"),
     PROFILE_CHANGED("Comptes et droits", "Profil ou droits modifiés"),
 
+    // ── Simulateur ──
+    SIM_ITEM_APPROVED("Simulateur", "Question du simulateur approuvée"),
+    SIM_ITEM_PUBLISHED("Simulateur", "Question du simulateur publiée"),
+    SIM_ITEM_RETIRED("Simulateur", "Question du simulateur retirée"),
+    SIM_ITEMS_IMPORTED("Simulateur", "Questions du simulateur importées"),
+
     // ── Site ──
     SITE_CONTENT_CHANGED("Site", "Contenu du site modifié");
 

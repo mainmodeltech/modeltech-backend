@@ -73,6 +73,12 @@ public enum Permission {
     SITE_CONTENT_VIEW("Relations et contenu", "Voir les pages du site, témoignages, alumni et projets"),
     SITE_CONTENT_MANAGE("Relations et contenu", "Modifier les pages du site, témoignages, alumni et projets"),
 
+    // ── Simulateur de certification ────────────────────────────────
+    SIMULATOR_VIEW("Simulateur", "Voir la banque de questions, les blueprints et la couverture du simulateur"),
+    SIMULATOR_AUTHOR("Simulateur", "Rédiger des questions et les soumettre à relecture"),
+    SIMULATOR_REVIEW("Simulateur", "Relire les questions d'un autre auteur (approuver ou renvoyer)"),
+    SIMULATOR_MANAGE("Simulateur", "Publier et retirer des questions, importer, gérer les blueprints"),
+
     // ── Administration ─────────────────────────────────────────────
     ACCOUNTS_MANAGE("Administration", "Gérer les comptes du back-office (création, profils, désactivation, MFA)"),
     PROFILES_MANAGE("Administration", "Gérer les profils et leurs droits"),
