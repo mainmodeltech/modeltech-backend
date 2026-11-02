@@ -23,6 +23,9 @@ public interface ContactMessageService {
     /** Liste d'attente du simulateur : stockée comme un message de type SIMULATOR_WAITLIST. */
     ContactMessageResponseDTO saveSimulatorWaitlist(SimulatorWaitlistRequestDTO dto);
 
+    /** Prospect ayant demandé l'essai gratuit du simulateur (visible dans « Messages »). */
+    ContactMessageResponseDTO saveSimulatorTrial(String firstName, String lastName, String email, String phone);
+
     /** Candidature partenaire : stockée comme un message de type PARTNER_APPLICATION. */
     ContactMessageResponseDTO savePartnerApplication(PartnerApplicationRequestDTO dto);
 

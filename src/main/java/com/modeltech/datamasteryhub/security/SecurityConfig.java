@@ -92,6 +92,7 @@ public class SecurityConfig {
                                 "/api/v1/contact-messages",
                                 "/api/v1/diagnostic-requests",
                                 "/api/v1/simulator/waitlist",
+                                "/api/v1/simulator/trial",
                                 "/api/v1/partner-applications",
                                 "/api/v1/newsletter/subscriptions",
                                 "/api/v1/newsletter/subscriptions/confirm",

@@ -48,13 +48,16 @@ public final class SimulatorPayloads {
             @Size(max = 4000) String explanationFr) {}
 
     public record ItemSummary(String code, int versionNo, String domainCode, String skillCode, ItemType type, int difficulty,
-                              ItemStatus status, String author, String stemPreview, LocalDateTime updatedAt) {}
+                              ItemStatus status, String author, String stemPreview, LocalDateTime updatedAt,
+                              boolean trialSample) {}
 
     public record ItemVersionView(String code, int versionNo, String domainCode, String skillCode, ItemType type, int difficulty,
                                   String stemEn, Map<String, Object> payload, String explanationFr, ItemStatus status,
                                   String blueprintLabel, String author, String reviewer, String reviewNote, String verifiedBy,
                                   LocalDateTime verifiedAt, String publisher, LocalDateTime createdAt, LocalDateTime publishedAt,
-                                  LocalDateTime retiredAt, String retireReason, List<Integer> versions) {}
+                                  LocalDateTime retiredAt, String retireReason, List<Integer> versions, boolean trialSample) {}
+
+    public record TrialSampleRequest(boolean value) {}
 
     public record ReviewRequest(boolean approve, boolean verified, @Size(max = 2000) String note) {}
 

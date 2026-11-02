@@ -39,3 +39,35 @@
 
 ## Reporté au lot S4 (durcissement anti-fuite)
 Ordre des choix aléatoire par tentative, filigrane, détection de lecture massive, statistiques de qualité des questions.
+
+---
+
+# Lot S2b — essai gratuit (produit d'appel)
+
+## Principe
+Un visiteur laisse nom + e-mail sur la page publique ; un compte apprenant **sans mot de passe** est créé, un droit « Essai » (1 mini-test, 7 jours) lui est accordé et il reçoit un **lien de connexion à usage unique** (valable 10 min). Se connecter avec ce lien vérifie son adresse. La demande apparaît dans *Messages* (type « Essai gratuit simulateur », filtre « Simulateur »).
+
+## Ce que voit un candidat en essai
+- **Mini-test** : 10 questions maximum, 15 minutes, **une seule tentative**, composé **uniquement des questions « échantillon »** (toujours les mêmes, jamais tirées dans toute la banque).
+- **Pas d'entraînement libre** (403) et la taille de la banque n'est pas divulguée.
+- **Rapport** : pourcentage (pas de note /1000 ni « réussi »), résultats par domaine et compétence, **3 corrections détaillées** (les premières erreurs). Les autres questions sont **verrouillées côté serveur** : ni corrigé, ni explication, ni note de la question.
+- Dès qu'un forfait payant est accordé, le candidat retrouve le simulateur complet.
+
+## Sécurité
+- Route publique `POST /api/v1/simulator/trial` : limitée par IP, **même réponse** que l'adresse soit neuve, connue, d'un compte du back-office ou déjà utilisée (pas d'énumération de comptes) ; adresses jetables refusées.
+- **Un seul essai par personne**, garanti par la base (index unique partiel `uq_sim_one_trial_per_learner`) et par le service.
+- Les échantillons se choisissent dans *Simulateur → Questions* (droit `SIMULATOR_MANAGE`, uniquement une question **publiée**, tracé : `SIM_TRIAL_SAMPLE_SET`). La création de comptes à la chaîne ne permet donc d'aspirer que ce petit lot.
+
+## Configuration (valeurs par défaut)
+| Clé | Défaut | Rôle |
+|---|---|---|
+| `app.simulator.trial-questions` | 10 | Taille maximale du mini-test |
+| `app.simulator.trial-minutes` | 15 | Durée |
+| `app.simulator.trial-days` | 7 | Validité du droit « Essai » |
+| `app.simulator.trial-corrections` | 3 | Corrections détaillées offertes |
+
+## Mise en production
+1. Déployer le backend (migration **V43**, automatique).
+2. Marquer **au moins 10 questions publiées** comme échantillon (représentatives de l'examen, **pas les meilleures de la banque**, couvrant les 4 domaines). Sans échantillon, l'essai répond « pas encore disponible » et ne consomme rien.
+3. *Pages du site* → **Menu & pied de page** puis **Simulateur PL-300** → **Restaurer** : les contenus déjà enregistrés ne reprennent pas seuls les nouveaux textes par défaut (menu « Simulateur PL-300 » à la place de « Ressources », bandeau et section d'essai).
+4. Vérifier l'envoi des e-mails de connexion (domaine d'expédition) avant d'ouvrir l'essai au public.

@@ -46,15 +46,21 @@ public class AdminSimulatorController {
             @RequestParam(required = false) ItemType type,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean mine,
+            @RequestParam(required = false) Boolean trialSample,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<ItemSummary> result = bank.search(status, domain, skill, type, q, mine ? Actor.email() : null, page, size);
+        Page<ItemSummary> result = bank.search(status, domain, skill, type, q, mine ? Actor.email() : null, trialSample, page, size);
         return ResponseEntity.ok(ApiResponse.page(result.getTotalElements() + " question(s)", result));
     }
 
     @GetMapping("/items/{code}")
     public ResponseEntity<ApiResponse<ItemVersionView>> get(@PathVariable String code, @RequestParam(required = false) Integer version) {
         return ResponseEntity.ok(ApiResponse.ok("Question", bank.get(code, version)));
+    }
+
+    @PutMapping("/items/{code}/trial-sample")
+    public ResponseEntity<ApiResponse<ItemVersionView>> trialSample(@PathVariable String code, @RequestBody TrialSampleRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Échantillon de l'essai gratuit mis à jour", bank.setTrialSample(code, request.value(), Actor.email())));
     }
 
     @PostMapping("/items")

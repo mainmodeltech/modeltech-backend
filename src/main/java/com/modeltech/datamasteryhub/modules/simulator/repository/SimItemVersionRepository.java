@@ -18,6 +18,11 @@ public interface SimItemVersionRepository extends JpaRepository<SimItemVersion, 
             + "AND v.status = com.modeltech.datamasteryhub.modules.simulator.entity.ItemStatus.PUBLISHED")
     List<SimItemVersion> findPublishedBySkillId(@Param("skillId") UUID skillId);
 
+    /** Versions publiées des questions échantillon de l'essai gratuit. */
+    @Query("SELECT v FROM SimItemVersion v JOIN FETCH v.item i JOIN FETCH i.skill s JOIN FETCH s.domain WHERE i.trialSample = true "
+            + "AND v.status = com.modeltech.datamasteryhub.modules.simulator.entity.ItemStatus.PUBLISHED")
+    List<SimItemVersion> findPublishedTrialSamples();
+
     Optional<SimItemVersion> findByItemIdAndVersionNo(UUID itemId, int versionNo);
 
     Optional<SimItemVersion> findByItemIdAndStatus(UUID itemId, ItemStatus status);

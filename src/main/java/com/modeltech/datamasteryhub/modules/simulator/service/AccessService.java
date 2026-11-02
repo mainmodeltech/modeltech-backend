@@ -7,6 +7,7 @@ import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.repository.LearnerRepository;
 import com.modeltech.datamasteryhub.modules.simulator.dto.GrantPayloads.*;
 import com.modeltech.datamasteryhub.modules.simulator.entity.GrantStatus;
+import com.modeltech.datamasteryhub.modules.simulator.entity.PlanCode;
 import com.modeltech.datamasteryhub.modules.simulator.entity.SimAccessGrant;
 import com.modeltech.datamasteryhub.modules.simulator.entity.SimCertification;
 import com.modeltech.datamasteryhub.modules.simulator.repository.SimAccessGrantRepository;
@@ -46,6 +47,9 @@ public class AccessService {
                 .orElseThrow(() -> new ResourceNotFoundException("Apprenant", "e-mail", req.learnerEmail()));
         SimCertification certification = certifications.findByCodeAndActiveTrue(QuestionBankService.CERTIFICATION)
                 .orElseThrow(() -> new ResourceNotFoundException("Certification", "code", QuestionBankService.CERTIFICATION));
+        if (req.plan() == PlanCode.TRIAL && grants.existsByLearnerIdAndPlanCode(learner.getId(), PlanCode.TRIAL)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cette personne a déjà bénéficié de l'essai gratuit.");
+        }
         LocalDateTime now = LocalDateTime.now();
 
         SimAccessGrant g = new SimAccessGrant();

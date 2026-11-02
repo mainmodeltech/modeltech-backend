@@ -34,6 +34,10 @@ public class SimItem {
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 
+    /** Question échantillon de l'essai gratuit (toujours le même petit lot, jamais tiré au hasard dans toute la banque). */
+    @Column(name = "trial_sample", nullable = false)
+    private boolean trialSample;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

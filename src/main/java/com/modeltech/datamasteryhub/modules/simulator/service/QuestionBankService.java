@@ -77,7 +77,7 @@ public class QuestionBankService {
 
     /** Une ligne par question (sa version la plus récente), filtrable. */
     public Page<ItemSummary> search(ItemStatus status, String domainCode, String skillCode, ItemType type, String q,
-                                    String authorEmail, int page, int size) {
+                                    String authorEmail, Boolean trialSample, int page, int size) {
         Specification<SimItemVersion> spec = (root, query, cb) -> {
             List<Predicate> p = new ArrayList<>();
             Subquery<Integer> latest = query.subquery(Integer.class);
@@ -90,6 +90,7 @@ public class QuestionBankService {
             if (type != null) p.add(cb.equal(root.get("type"), type));
             if (skillCode != null && !skillCode.isBlank()) p.add(cb.equal(skill.get("code"), skillCode.trim()));
             if (domainCode != null && !domainCode.isBlank()) p.add(cb.equal(skill.join("domain").get("code"), domainCode.trim()));
+            if (trialSample != null) p.add(cb.equal(root.get("item").get("trialSample"), trialSample));
             if (authorEmail != null) p.add(cb.equal(cb.lower(root.get("author")), authorEmail.toLowerCase(Locale.ROOT)));
             if (q != null && !q.isBlank()) {
                 String like = "%" + q.trim().toLowerCase(Locale.ROOT) + "%";
@@ -280,6 +281,22 @@ public class QuestionBankService {
                 .orElseThrow(() -> new ResourceNotFoundException("Blueprint", "certification", CERTIFICATION));
     }
 
+    /** Marque (ou démarque) une question comme échantillon de l'essai gratuit : seule une question publiée peut l'être. */
+    @Transactional
+    public ItemVersionView setTrialSample(String code, boolean value, String actor) {
+        SimItem item = requireItem(code);
+        if (value && versions.findByItemIdAndStatus(item.getId(), ItemStatus.PUBLISHED).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Seule une question publiée peut servir d'échantillon pour l'essai gratuit.");
+        }
+        if (item.isTrialSample() != value) {
+            item.setTrialSample(value);
+            items.save(item);
+            audit.record(AuditAction.SIM_TRIAL_SAMPLE_SET, "SimItem", item.getId(),
+                    "Question " + code + (value ? " ajoutée aux" : " retirée des") + " échantillons de l'essai gratuit par " + actor);
+        }
+        return view(latest(item));
+    }
+
     private SimItem requireItem(String code) {
         return items.findByPublicCode(code).orElseThrow(() -> new ResourceNotFoundException("Question", "code", code));
     }
@@ -298,7 +315,7 @@ public class QuestionBankService {
         String stem = v.getStemEn().length() > PREVIEW ? v.getStemEn().substring(0, PREVIEW) + "…" : v.getStemEn();
         return new ItemSummary(v.getItem().getPublicCode(), v.getVersionNo(), v.getItem().getSkill().getDomain().getCode(),
                 v.getItem().getSkill().getCode(), v.getType(), v.getDifficulty(), v.getStatus(), v.getAuthor(), stem,
-                v.getUpdatedAt() != null ? v.getUpdatedAt() : v.getCreatedAt());
+                v.getUpdatedAt() != null ? v.getUpdatedAt() : v.getCreatedAt(), v.getItem().isTrialSample());
     }
 
     private ItemVersionView view(SimItemVersion v) {
@@ -307,7 +324,7 @@ public class QuestionBankService {
         return new ItemVersionView(item.getPublicCode(), v.getVersionNo(), item.getSkill().getDomain().getCode(), item.getSkill().getCode(),
                 v.getType(), v.getDifficulty(), v.getStemEn(), v.getPayload(), v.getExplanationFr(), v.getStatus(),
                 v.getBlueprint().getLabel(), v.getAuthor(), v.getReviewer(), v.getReviewNote(), v.getVerifiedBy(), v.getVerifiedAt(),
-                v.getPublisher(), v.getCreatedAt(), v.getPublishedAt(), v.getRetiredAt(), v.getRetireReason(), all);
+                v.getPublisher(), v.getCreatedAt(), v.getPublishedAt(), v.getRetiredAt(), v.getRetireReason(), all, item.isTrialSample());
     }
 
     private static String blankToNull(String s) {

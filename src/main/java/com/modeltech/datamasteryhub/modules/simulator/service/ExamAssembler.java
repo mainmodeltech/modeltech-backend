@@ -69,6 +69,19 @@ public class ExamAssembler {
         return chosen;
     }
 
+    /** Essai gratuit : les questions échantillon publiées (au plus {@code count}), toujours les mêmes quel que soit le candidat. */
+    public List<Picked> assembleTrial(int count) {
+        List<Picked> pool = new ArrayList<>();
+        for (SimItemVersion v : versions.findPublishedTrialSamples()) {
+            pool.add(new Picked(v, v.getItem().getSkill().getDomain().getCode(), v.getItem().getSkill().getCode()));
+        }
+        if (pool.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "L'essai gratuit n'est pas encore disponible : revenez bientôt.");
+        }
+        Collections.shuffle(pool, random);
+        return new ArrayList<>(pool.subList(0, Math.min(count, pool.size())));
+    }
+
     /** Session d'étude : jusqu'à {@code count} questions du domaine ou de la compétence demandés (ou de tout le blueprint). */
     public List<Picked> assembleStudy(SimBlueprint blueprint, String domainCode, String skillCode, int count, UUID learnerId) {
         Map<UUID, Long> seen = seenBy(learnerId);

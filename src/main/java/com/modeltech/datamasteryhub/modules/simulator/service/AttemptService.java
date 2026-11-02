@@ -62,6 +62,16 @@ public class AttemptService {
     @Value("${app.simulator.study-max:30}")
     private int studyMax;
 
+    /** Essai gratuit : taille du mini-test, durée et nombre de corrections détaillées offertes. */
+    @Value("${app.simulator.trial-questions:10}")
+    private int trialQuestions;
+
+    @Value("${app.simulator.trial-minutes:15}")
+    private int trialMinutes;
+
+    @Value("${app.simulator.trial-corrections:3}")
+    private int trialCorrections;
+
     // ── Catalogue et accès ──────────────────────────────────────────
 
     public CatalogView catalog(String email) {
@@ -71,12 +81,15 @@ public class AttemptService {
         for (Object[] row : itemVersions.countBySkillAndStatus()) {
             if (row[1] == ItemStatus.PUBLISHED) published.put((UUID) row[0], (Long) row[2]);
         }
-        List<DomainInfo> domains = bp.getDomains().stream().map(d -> new DomainInfo(d.getCode(), d.getName(), d.getWeightMin(), d.getWeightMax(),
+        List<SimAccessGrant> usable = grants.findUsable(learner.getId(), LocalDateTime.now());
+        boolean trial = trialOnly(usable);
+        List<DomainInfo> domains = trial ? List.<DomainInfo>of() : bp.getDomains().stream().map(d -> new DomainInfo(d.getCode(), d.getName(), d.getWeightMin(), d.getWeightMax(),
                 (int) d.getSkills().stream().mapToLong(s -> published.getOrDefault(s.getId(), 0L)).sum())).toList();
-        List<AccessView> access = grants.findUsable(learner.getId(), LocalDateTime.now()).stream().map(AttemptService::access).toList();
+        List<AccessView> access = usable.stream().map(AttemptService::access).toList();
         boolean inProgress = attempts.findFirstByLearnerIdAndModeAndStatus(learner.getId(), AttemptMode.EXAM, AttemptStatus.IN_PROGRESS).isPresent();
-        return new CatalogView(bp.getCertification().getCode(), bp.getCertification().getName(), bp.getLabel(), bp.getDurationMinutes(),
-                examQuestions, bp.getPassScore(), domains, access, inProgress);
+        return new CatalogView(bp.getCertification().getCode(), bp.getCertification().getName(), bp.getLabel(),
+                trial ? trialMinutes : bp.getDurationMinutes(), trial ? trialQuestions : examQuestions, bp.getPassScore(), domains, access,
+                inProgress, trial, trialCorrections);
     }
 
     // ── Démarrage ───────────────────────────────────────────────────
@@ -90,6 +103,7 @@ public class AttemptService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'avez pas d'accès actif au simulateur.");
         }
         SimBlueprint bp = blueprint();
+        boolean trial = trialOnly(usable);
         SimAccessGrant grant;
         List<Picked> picked;
         LocalDateTime deadline = null;
@@ -104,14 +118,19 @@ public class AttemptService {
                 }
             });
             grant = usable.stream().filter(g -> g.examAttemptsRemaining() > 0).findFirst()
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "Vous avez utilisé tous les examens de votre forfait."));
-            picked = assembler.assembleExam(bp, examQuestions, learner.getId());
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, trial
+                            ? "Votre essai gratuit a déjà été utilisé. Passez au simulateur complet pour continuer."
+                            : "Vous avez utilisé tous les examens de votre forfait."));
+            picked = trial ? assembler.assembleTrial(trialQuestions) : assembler.assembleExam(bp, examQuestions, learner.getId());
             // Consommation atomique : deux démarrages simultanés ne dépassent jamais le quota
             if (grants.consumeExamAttempt(grant.getId(), now) == 0) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Vous avez utilisé tous les examens de votre forfait.");
             }
-            deadline = now.plusMinutes(bp.getDurationMinutes());
+            deadline = now.plusMinutes(trial ? trialMinutes : bp.getDurationMinutes());
         } else {
+            if (trial) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'entraînement par domaine est réservé aux forfaits payants.");
+            }
             grant = usable.get(0);
             int count = req.count() == null ? studyDefault : Math.min(req.count(), studyMax);
             picked = assembler.assembleStudy(bp, req.domain(), req.skill(), count, learner.getId());
@@ -226,6 +245,29 @@ public class AttemptService {
 
     // ── Privé ───────────────────────────────────────────────────────
 
+    /** Vrai si tous les droits utilisables sont des essais gratuits (il y en a au moins un). */
+    private static boolean trialOnly(List<SimAccessGrant> usable) {
+        return !usable.isEmpty() && usable.stream().allMatch(g -> g.getPlanCode() == PlanCode.TRIAL);
+    }
+
+    private static boolean isTrial(SimAttempt a) {
+        return a.getMode() == AttemptMode.EXAM && a.getGrant() != null && a.getGrant().getPlanCode() == PlanCode.TRIAL;
+    }
+
+    /** Corrections offertes : d'abord les premières erreurs (les plus parlantes), complétées si besoin par les premières questions. */
+    private Set<Integer> unlockedPositions(SimAttempt a, Map<UUID, SimAttemptAnswer> byItem) {
+        List<SimExamFormItem> items = a.getForm().getItems().stream().sorted(Comparator.comparingInt(SimExamFormItem::getPosition)).toList();
+        Set<Integer> out = new LinkedHashSet<>();
+        for (SimExamFormItem i : items) {
+            SimAttemptAnswer ans = byItem.get(i.getId());
+            if (out.size() < trialCorrections && scorer.scoreItem(i, ans == null ? null : ans.getAnswer()) < 1) out.add(i.getPosition());
+        }
+        for (SimExamFormItem i : items) {
+            if (out.size() < trialCorrections) out.add(i.getPosition());
+        }
+        return out;
+    }
+
     private boolean isOverdue(SimAttempt a, LocalDateTime now) {
         return a.getStatus() == AttemptStatus.IN_PROGRESS && a.getDeadlineAt() != null && now.isAfter(a.getDeadlineAt().plusSeconds(graceSeconds));
     }
@@ -246,7 +288,7 @@ public class AttemptService {
         a.setFinishedAt(status == AttemptStatus.EXPIRED && a.getDeadlineAt() != null ? a.getDeadlineAt() : LocalDateTime.now());
         a.setScorePercent(BigDecimal.valueOf(s.percent()));
         a.setScaledScore(s.scaled());
-        a.setPassed(a.getMode() == AttemptMode.EXAM ? s.scaled() >= bp.getPassScore() : null);
+        a.setPassed(a.getMode() == AttemptMode.EXAM && !isTrial(a) ? s.scaled() >= bp.getPassScore() : null);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("domains", s.domains().stream().map(AttemptService::bucketMap).toList());
         result.put("skills", s.skills().stream().map(AttemptService::bucketMap).toList());
@@ -262,17 +304,27 @@ public class AttemptService {
         Map<UUID, SimAttemptAnswer> byItem = new HashMap<>();
         given.forEach(x -> byItem.put(x.getFormItem().getId(), x));
 
+        boolean trial = isTrial(a);
+        Set<Integer> unlocked = trial ? unlockedPositions(a, byItem) : Set.of();
         List<QuestionReport> questions = new ArrayList<>();
         for (SimExamFormItem item : a.getForm().getItems()) {
             SimItemVersion v = item.getItemVersion();
             SimAttemptAnswer ans = byItem.get(item.getId());
             Map<String, Object> your = ans == null ? null : ans.getAnswer();
+            int seconds = ans == null ? 0 : ans.getTimeSpentSeconds();
+            if (trial && !unlocked.contains(item.getPosition())) {
+                // Essai gratuit : la correction détaillée est la contrepartie du forfait payant. Ni corrigé, ni explication, ni
+                // même la note de la question ne sortent du serveur.
+                questions.add(new QuestionReport(item.getPosition(), item.getDomainCode(), item.getSkillCode(), v.getItem().getPublicCode(),
+                        v.getType(), v.getStemEn(), v.getPayload(), your, null, null, null, seconds, true));
+                continue;
+            }
             questions.add(new QuestionReport(item.getPosition(), item.getDomainCode(), item.getSkillCode(), v.getItem().getPublicCode(), v.getType(),
                     v.getStemEn(), v.getPayload(), your, registry.correctAnswer(v.getType(), v.getPayload()), scorer.scoreItem(item, your),
-                    v.getExplanationFr(), ans == null ? 0 : ans.getTimeSpentSeconds()));
+                    v.getExplanationFr(), seconds, false));
         }
         return new ReportView(summary(a), bp.getPassScore(), true, s.domains().stream().map(AttemptService::bucketView).toList(),
-                s.skills().stream().map(AttemptService::bucketView).toList(), questions);
+                s.skills().stream().map(AttemptService::bucketView).toList(), questions, trial, trial ? questions.size() - unlocked.size() : 0);
     }
 
     private AttemptView view(SimAttempt a, List<SimAttemptAnswer> given) {
@@ -288,7 +340,7 @@ public class AttemptService {
                     registry.learnerView(v.getType(), v.getPayload()), ans == null ? null : ans.getAnswer(), ans != null && ans.isFlagged()));
         }
         return new AttemptView(a.getId(), a.getMode(), a.getStatus(), a.getStartedAt(), a.getDeadlineAt(), LocalDateTime.now(),
-                questions.size(), answered, questions);
+                questions.size(), answered, questions, isTrial(a));
     }
 
     private SimAttempt owned(String email, UUID id) {

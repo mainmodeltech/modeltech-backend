@@ -9,6 +9,7 @@ import java.util.List;
 import static com.modeltech.datamasteryhub.modules.auth.permission.Permission.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
 
 /**
  * Qui peut appeler quoi dans le back-office : <b>une seule table</b> relie chaque route {@code /api/v1/admin/**} au(x)
@@ -33,6 +34,7 @@ public final class AdminAccessRules {
         // ── Simulateur de certification (le service vérifie en plus : l'auteur ne relit ni ne publie lui-même) ──
         rule(null, "/api/v1/admin/simulator/grants/**", SIMULATOR_MANAGE);                // droits d'usage : données personnelles, octroi tracé
         rule(POST, "/api/v1/admin/simulator/items/import", SIMULATOR_MANAGE);
+        rule(PUT, "/api/v1/admin/simulator/items/*/trial-sample", SIMULATOR_MANAGE);          // choisit ce que voit un essai gratuit
         rule(POST, "/api/v1/admin/simulator/items/*/versions/*/publish", SIMULATOR_MANAGE);
         rule(POST, "/api/v1/admin/simulator/items/*/versions/*/retire", SIMULATOR_MANAGE);
         rule(POST, "/api/v1/admin/simulator/items/*/versions/*/review", SIMULATOR_REVIEW);

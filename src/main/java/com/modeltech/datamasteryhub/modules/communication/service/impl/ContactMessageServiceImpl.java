@@ -34,6 +34,7 @@ public class ContactMessageServiceImpl implements ContactMessageService {
     static final String DIAGNOSTIC_SUBJECT = "Diagnostic entreprise";
     static final String PARTNER_APPLICATION_SUBJECT = "Candidature partenaire formateur";
     static final String SIMULATOR_WAITLIST_SUBJECT = "Liste d'attente simulateur PL-300";
+    static final String SIMULATOR_TRIAL_SUBJECT = "Essai gratuit simulateur PL-300";
 
     private final ContactMessageRepository contactMessageRepository;
     private final ContactMessageMapper contactMessageMapper;
@@ -108,6 +109,25 @@ public class ContactMessageServiceImpl implements ContactMessageService {
                 .message(message)
                 .status(ContactMessageStatus.unread)
                 .type(ContactType.SIMULATOR_WAITLIST)
+                .details(details)
+                .build();
+        return persistAndNotify(entity);
+    }
+
+    @Override
+    @Transactional
+    public ContactMessageResponseDTO saveSimulatorTrial(String firstName, String lastName, String email, String phone) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("consent", true);
+        ContactMessage entity = ContactMessage.builder()
+                .firstName(firstName.trim())
+                .lastName(emptyIfBlank(lastName))
+                .email(email.trim())
+                .phone(trimToNull(phone))
+                .subject(SIMULATOR_TRIAL_SUBJECT)
+                .message("A demandé l'essai gratuit du simulateur PL-300 (un mini-test). Prospect à relancer après son essai.")
+                .status(ContactMessageStatus.unread)
+                .type(ContactType.SIMULATOR_TRIAL)
                 .details(details)
                 .build();
         return persistAndNotify(entity);

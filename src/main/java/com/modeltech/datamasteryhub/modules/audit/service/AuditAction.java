@@ -56,6 +56,7 @@ public enum AuditAction {
     SIM_ITEMS_IMPORTED("Simulateur", "Questions du simulateur importées"),
     SIM_ACCESS_GRANTED("Simulateur", "Accès au simulateur accordé"),
     SIM_ACCESS_REVOKED("Simulateur", "Accès au simulateur révoqué"),
+    SIM_TRIAL_SAMPLE_SET("Simulateur", "Échantillon de l'essai gratuit modifié"),
 
     // ── Site ──
     SITE_CONTENT_CHANGED("Site", "Contenu du site modifié");

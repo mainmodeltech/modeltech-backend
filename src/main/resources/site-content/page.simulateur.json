@@ -1,10 +1,10 @@
 {
   "hero": {
-    "badge": "Ouverture prochaine · Liste d'attente ouverte",
+    "badge": "Essai gratuit disponible · Forfaits bientôt",
     "eyebrow": "Simulateur de certification",
     "title": "Réussissez le PL-300 : Microsoft Power BI Data Analyst",
     "description": "Vous maîtrisez déjà Power BI ? Entraînez-vous dans les conditions de l'examen, mesurez votre niveau compétence par compétence et révisez uniquement ce qui vous manque, sans suivre un cours complet.",
-    "primary": { "label": "Rejoindre la liste d'attente", "href": "#liste-attente" },
+    "primary": { "label": "Essayer gratuitement", "href": "#essai" },
     "secondary": { "label": "Voir le contenu prévu", "href": "#contenu" },
     "points": [
       "Examens blancs chronométrés (100 minutes)",
@@ -128,6 +128,24 @@
       { "question": "Combien coûte l'examen officiel ?", "answer": "Son prix est fixé par Microsoft selon le pays et n'est pas inclus dans nos forfaits. Consultez la page de l'examen PL-300 sur Microsoft Learn." },
       { "question": "Quand le simulateur ouvre-t-il ?", "answer": "Dès que le contenu est finalisé et relu. Les personnes inscrites sur la liste d'attente sont prévenues en premier." }
     ]
+  },
+  "trial": {
+    "eyebrow": "Essai gratuit",
+    "title": "Testez-vous en 15 minutes, gratuitement",
+    "points": [
+      "10 questions représentatives de l'examen, 15 minutes chrono",
+      "Votre niveau domaine par domaine dès la fin du test",
+      "3 corrections détaillées en français offertes",
+      "Sans carte bancaire, une seule tentative"
+    ],
+    "namePlaceholder": "Nom et prénom",
+    "emailPlaceholder": "E-mail (vous y recevrez votre lien de connexion)",
+    "phonePlaceholder": "Téléphone / WhatsApp (facultatif)",
+    "consentLabel": "J'accepte d'être contacté(e) au sujet du simulateur PL-300.",
+    "submitLabel": "Commencer l'essai gratuit",
+    "successTitle": "Vérifiez votre boîte mail",
+    "successText": "Nous venons de vous envoyer un lien de connexion (valable 10 minutes). Cliquez dessus pour démarrer votre essai. Pensez à regarder vos courriers indésirables.",
+    "note": "Un seul essai par personne. Vos données servent uniquement à vous donner accès au simulateur et à vous informer."
   },
   "waitlist": {
     "eyebrow": "Liste d'attente",

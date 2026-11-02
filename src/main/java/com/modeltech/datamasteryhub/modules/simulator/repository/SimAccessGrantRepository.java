@@ -16,6 +16,8 @@ public interface SimAccessGrantRepository extends JpaRepository<SimAccessGrant, 
 
     List<SimAccessGrant> findAllByLearnerIdOrderByCreatedAtDesc(UUID learnerId);
 
+    boolean existsByLearnerIdAndPlanCode(UUID learnerId, com.modeltech.datamasteryhub.modules.simulator.entity.PlanCode planCode);
+
     Page<SimAccessGrant> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     /** Droits utilisables maintenant (actifs, dans leur période), ceux qui expirent le plus tôt d'abord. */

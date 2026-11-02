@@ -9,5 +9,7 @@ public enum ContactType {
     /** Candidature d'un formateur partenaire (page Partenaires). */
     PARTNER_APPLICATION,
     /** Liste d'attente du simulateur de certification (page Simulateur). */
-    SIMULATOR_WAITLIST
+    SIMULATOR_WAITLIST,
+    /** Demande d'essai gratuit du simulateur (prospect). */
+    SIMULATOR_TRIAL
 }
