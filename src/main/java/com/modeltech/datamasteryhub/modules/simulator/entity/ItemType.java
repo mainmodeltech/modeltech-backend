@@ -4,5 +4,9 @@ package com.modeltech.datamasteryhub.modules.simulator.entity;
 public enum ItemType {
     SINGLE_CHOICE,
     MULTIPLE_CHOICE,
-    YES_NO_SERIES
+    YES_NO_SERIES,
+    /** Glisser-déposer : associer chaque élément à une option. */
+    MATCHING,
+    /** Réponse rédigée, validée par mots-clés. */
+    SHORT_ANSWER
 }

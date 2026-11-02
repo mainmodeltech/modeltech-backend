@@ -45,7 +45,7 @@ public final class LearnerSimulatorPayloads {
     public record AnswerRequest(Map<String, Object> answer, Boolean flagged, @Min(0) @Max(36000) Integer timeSpentSeconds) {}
 
     /** Correction immédiate : renvoyée uniquement en mode étude. */
-    public record Feedback(double score, Map<String, Object> correctAnswer, String explanationFr) {}
+    public record Feedback(double score, Map<String, Object> correctAnswer, String explanationFr, Map<String, Object> detail) {}
 
     public record AnswerResult(boolean saved, Feedback feedback) {}
 
@@ -57,7 +57,7 @@ public final class LearnerSimulatorPayloads {
     /** Question corrigée : réservée à une tentative terminée, pour la revue des erreurs. */
     public record QuestionReport(int position, String domainCode, String skillCode, String itemCode, ItemType type, String stem,
                                  Map<String, Object> payload, Map<String, Object> yourAnswer, Map<String, Object> correctAnswer,
-                                 Double score, String explanationFr, int timeSpentSeconds, boolean locked) {}
+                                 Double score, String explanationFr, int timeSpentSeconds, boolean locked, Map<String, Object> detail) {}
 
     public record ReportView(AttemptSummary summary, int passScore, boolean estimated, List<ScoreBucket> domains,
                              List<ScoreBucket> skills, List<QuestionReport> questions,

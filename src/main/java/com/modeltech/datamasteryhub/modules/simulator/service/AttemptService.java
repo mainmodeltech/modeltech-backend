@@ -200,7 +200,8 @@ public class AttemptService {
 
         Feedback feedback = null;
         if (attempt.getMode() == AttemptMode.STUDY) {    // correction immédiate : étude uniquement, jamais en examen
-            feedback = new Feedback(scorer.scoreItem(formItem, normalized), registry.correctAnswer(v.getType(), v.getPayload()), v.getExplanationFr());
+            feedback = new Feedback(scorer.scoreItem(formItem, normalized), registry.correctAnswer(v.getType(), v.getPayload()), v.getExplanationFr(),
+                    registry.review(v.getType(), v.getPayload(), normalized));
         }
         return new AnswerResult(true, feedback);
     }
@@ -316,12 +317,12 @@ public class AttemptService {
                 // Essai gratuit : la correction détaillée est la contrepartie du forfait payant. Ni corrigé, ni explication, ni
                 // même la note de la question ne sortent du serveur.
                 questions.add(new QuestionReport(item.getPosition(), item.getDomainCode(), item.getSkillCode(), v.getItem().getPublicCode(),
-                        v.getType(), v.getStemEn(), v.getPayload(), your, null, null, null, seconds, true));
+                        v.getType(), v.getStemEn(), v.getPayload(), your, null, null, null, seconds, true, null));
                 continue;
             }
             questions.add(new QuestionReport(item.getPosition(), item.getDomainCode(), item.getSkillCode(), v.getItem().getPublicCode(), v.getType(),
                     v.getStemEn(), v.getPayload(), your, registry.correctAnswer(v.getType(), v.getPayload()), scorer.scoreItem(item, your),
-                    v.getExplanationFr(), seconds, false));
+                    v.getExplanationFr(), seconds, false, registry.review(v.getType(), v.getPayload(), your)));
         }
         return new ReportView(summary(a), bp.getPassScore(), true, s.domains().stream().map(AttemptService::bucketView).toList(),
                 s.skills().stream().map(AttemptService::bucketView).toList(), questions, trial, trial ? questions.size() - unlocked.size() : 0);

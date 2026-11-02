@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ItemScoringTest {
 
     private final ItemTypeRegistry registry = new ItemTypeRegistry(List.of(
-            new SingleChoiceStrategy(), new MultipleChoiceStrategy(), new YesNoSeriesStrategy()));
+            new SingleChoiceStrategy(), new MultipleChoiceStrategy(), new YesNoSeriesStrategy(), new MatchingStrategy(), new ShortAnswerStrategy()));
 
     private Map<String, Object> single() {
         return registry.validateAndNormalize(ItemType.SINGLE_CHOICE, Map.of("choices", List.of(

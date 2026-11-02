@@ -39,4 +39,8 @@ public class ItemTypeRegistry {
     public Map<String, Object> correctAnswer(ItemType type, Map<String, Object> payload) {
         return byType.get(type).correctAnswer(payload);
     }
+
+    public Map<String, Object> review(ItemType type, Map<String, Object> payload, Map<String, Object> answer) {
+        return byType.get(type).review(payload, answer);
+    }
 }

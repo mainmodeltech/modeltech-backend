@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ItemTypeStrategyTest {
 
     private final ItemTypeRegistry registry = new ItemTypeRegistry(List.of(
-            new SingleChoiceStrategy(), new MultipleChoiceStrategy(), new YesNoSeriesStrategy()));
+            new SingleChoiceStrategy(), new MultipleChoiceStrategy(), new YesNoSeriesStrategy(), new MatchingStrategy(), new ShortAnswerStrategy()));
 
     private static Map<String, Object> choice(String id, boolean correct) {
         return Map.of("id", id, "text", "Choice " + id, "correct", correct);

@@ -71,3 +71,26 @@ Un visiteur laisse nom + e-mail sur la page publique ; un compte apprenant **san
 2. Marquer **au moins 10 questions publiées** comme échantillon (représentatives de l'examen, **pas les meilleures de la banque**, couvrant les 4 domaines). Sans échantillon, l'essai répond « pas encore disponible » et ne consomme rien.
 3. *Pages du site* → **Menu & pied de page** puis **Simulateur PL-300** → **Restaurer** : les contenus déjà enregistrés ne reprennent pas seuls les nouveaux textes par défaut (menu « Simulateur PL-300 » à la place de « Ressources », bandeau et section d'essai).
 4. Vérifier l'envoi des e-mails de connexion (domaine d'expédition) avant d'ouvrir l'essai au public.
+
+---
+
+# Lot S2c — questions « Correspondance » et « Réponse libre »
+
+Deux nouveaux types de questions de l'examen PL-300 (migration **V44**, automatique) :
+
+| Type | Principe | Note |
+|---|---|---|
+| `MATCHING` (glisser-déposer) | 2 à 6 éléments à associer à 2 à 8 options (leurres possibles), chaque option une seule fois sauf `reuse` | part d'éléments correctement associés |
+| `SHORT_ANSWER` (réponse libre) | le candidat rédige ; la réponse doit contenir **tous** les mots-clés (1 à 8, plusieurs formulations chacun) | tout ou rien, ou proportionnelle (`partialCredit`) |
+
+## Règles de reconnaissance des mots-clés
+Casse et accents ignorés ; ponctuation = espace ; un mot-clé est reconnu **au début d'un mot** (« mesure » reconnaît « mesures », « pivot » ne reconnaît pas « unpivot ») ; une expression doit apparaître avec ses mots contigus. Aucune expression régulière n'est construite à partir du texte du candidat ; la réponse est limitée à `maxLength` (20 à 2000, 600 par défaut).
+
+## Sécurité
+- La vue du candidat ne contient **ni les associations attendues, ni les mots-clés** : seulement les éléments, les options (**mélangées à chaque affichage**) ou la taille maximale de la réponse (tests unitaires dédiés).
+- Le détail de correction (mots-clés trouvés ou manquants) n'est servi qu'après la remise, ou question par question en mode étude.
+- Les définitions sont revalidées par le serveur à la création, à la modification et à l'import (message précis : élément sans option attendue, option attendue deux fois, mot-clé sans formulation…).
+- Dans l'essai gratuit, les corrections de ces types sont verrouillées comme les autres.
+
+## Mise en production
+Déployer le backend (V44). Aucune action manuelle. Les questions existantes ne changent pas.

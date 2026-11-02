@@ -28,4 +28,9 @@ public interface ItemTypeStrategy {
 
     /** La bonne réponse, dans le même format qu'une réponse d'apprenant (servie seulement à la correction). */
     Map<String, Object> correctAnswer(Map<String, Object> payload);
+
+    /** Détail propre au type pour la correction (ex. mots-clés trouvés ou manquants) ; vide par défaut. Servi seulement à la correction. */
+    default Map<String, Object> review(Map<String, Object> payload, Map<String, Object> answer) {
+        return Map.of();
+    }
 }
