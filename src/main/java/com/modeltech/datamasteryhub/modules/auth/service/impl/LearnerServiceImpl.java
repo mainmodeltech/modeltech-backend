@@ -118,6 +118,17 @@ public class LearnerServiceImpl implements LearnerService {
                 });
     }
 
+    @Override
+    @Transactional
+    public Learner findOrCreateWithoutInvitation(String firstName, String lastName, String email, String phone) {
+        String normalized = normalize(email);
+        if (adminUserRepository.existsByEmailAndIsDeletedFalse(normalized)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Adresse réservée à un compte de back-office.");
+        }
+        return learnerRepository.findByEmailIgnoreCaseAndIsDeletedFalse(normalized)
+                .orElseGet(() -> learnerRepository.save(newLearner(firstName, lastName, normalized, phone, null)));
+    }
+
     // ── Privé ───────────────────────────────────────────────────────
 
     private Learner newLearner(String firstName, String lastName, String email, String phone, String country) {

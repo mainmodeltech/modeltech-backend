@@ -18,8 +18,8 @@
         "href": "/alumni"
       },
       {
-        "label": "Ressources",
-        "href": "/ressources"
+        "label": "Simulateur PL-300",
+        "href": "/simulateur-pl-300"
       },
       {
         "label": "Contact",
@@ -48,6 +48,10 @@
           {
             "label": "Entreprises",
             "href": "/entreprises"
+          },
+          {
+            "label": "Simulateur PL-300",
+            "href": "/simulateur-pl-300"
           },
           {
             "label": "Quiz d'orientation",

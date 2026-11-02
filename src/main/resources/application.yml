@@ -62,6 +62,15 @@ app:
     allowed-hostnames: ${RECAPTCHA_ALLOWED_HOSTNAMES:}
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
+  # Paiement en ligne du simulateur (PayDunya). Les cles viennent UNIQUEMENT de l'environnement : vides = achat en ligne desactive.
+  paydunya:
+    mode: ${PAYDUNYA_MODE:sandbox}                  # sandbox (aucun argent reel) ou live
+    master-key: ${PAYDUNYA_MASTER_KEY:}
+    private-key: ${PAYDUNYA_PRIVATE_KEY:}
+    token: ${PAYDUNYA_TOKEN:}
+    store-name: ${PAYDUNYA_STORE_NAME:Model Technologie}
+    # Adresse publique de notification (IPN) declaree dans l'application PayDunya, ex. https://api-staging.model-technologie.com/api/v1/payments/paydunya/ipn
+    callback-url: ${PAYDUNYA_CALLBACK_URL:}
   invoice:
     vat-percent: ${APP_INVOICE_VAT_PERCENT:0}          # non assujetti a la TVA
     seller:

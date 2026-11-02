@@ -4,6 +4,7 @@ import com.modeltech.datamasteryhub.exception.ResourceNotFoundException;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.ContactMessageRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.DiagnosticRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.PartnerApplicationRequestDTO;
+import com.modeltech.datamasteryhub.modules.communication.dto.request.SimulatorWaitlistRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.request.UpdateMessageRequestDTO;
 import com.modeltech.datamasteryhub.modules.communication.dto.response.ContactMessageResponseDTO;
 import com.modeltech.datamasteryhub.modules.communication.entity.ContactMessage;
@@ -32,6 +33,8 @@ public class ContactMessageServiceImpl implements ContactMessageService {
 
     static final String DIAGNOSTIC_SUBJECT = "Diagnostic entreprise";
     static final String PARTNER_APPLICATION_SUBJECT = "Candidature partenaire formateur";
+    static final String SIMULATOR_WAITLIST_SUBJECT = "Liste d'attente simulateur PL-300";
+    static final String SIMULATOR_TRIAL_SUBJECT = "Essai gratuit simulateur PL-300";
 
     private final ContactMessageRepository contactMessageRepository;
     private final ContactMessageMapper contactMessageMapper;
@@ -76,6 +79,55 @@ public class ContactMessageServiceImpl implements ContactMessageService {
                 .status(ContactMessageStatus.unread)
                 .type(ContactType.DIAGNOSTIC)
                 .requesterType(RequesterType.ENTREPRISE)
+                .details(details)
+                .build();
+        return persistAndNotify(entity);
+    }
+
+    @Override
+    @Transactional
+    public ContactMessageResponseDTO saveSimulatorWaitlist(SimulatorWaitlistRequestDTO dto) {
+        String message = String.join("\n",
+                "Forfait souhaité : " + dto.getPlan().getLabel(),
+                "Examen envisagé : " + dto.getExamHorizon().getLabel(),
+                "Entreprise ou école : " + orDash(dto.getCompany()),
+                "Contexte : " + orDash(dto.getContext()));
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("plan", dto.getPlan().name());
+        details.put("examHorizon", dto.getExamHorizon().name());
+        details.put("context", trimToNull(dto.getContext()));
+        details.put("consent", true);
+
+        ContactMessage entity = ContactMessage.builder()
+                .firstName(dto.getFirstName().trim())
+                .lastName(emptyIfBlank(dto.getLastName()))
+                .email(dto.getEmail().trim())
+                .phone(trimToNull(dto.getPhone()))
+                .company(trimToNull(dto.getCompany()))
+                .subject(SIMULATOR_WAITLIST_SUBJECT)
+                .message(message)
+                .status(ContactMessageStatus.unread)
+                .type(ContactType.SIMULATOR_WAITLIST)
+                .details(details)
+                .build();
+        return persistAndNotify(entity);
+    }
+
+    @Override
+    @Transactional
+    public ContactMessageResponseDTO saveSimulatorTrial(String firstName, String lastName, String email, String phone) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("consent", true);
+        ContactMessage entity = ContactMessage.builder()
+                .firstName(firstName.trim())
+                .lastName(emptyIfBlank(lastName))
+                .email(email.trim())
+                .phone(trimToNull(phone))
+                .subject(SIMULATOR_TRIAL_SUBJECT)
+                .message("A demandé l'essai gratuit du simulateur PL-300 (un mini-test). Prospect à relancer après son essai.")
+                .status(ContactMessageStatus.unread)
+                .type(ContactType.SIMULATOR_TRIAL)
                 .details(details)
                 .build();
         return persistAndNotify(entity);

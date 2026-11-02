@@ -25,4 +25,10 @@ public interface LearnerService {
      * @throws org.springframework.web.server.ResponseStatusException 409 si l'e-mail est celui d'un compte de back-office
      */
     Learner findOrCreateInvited(String firstName, String lastName, String email, String phone, String country);
+
+    /**
+     * Trouve ou crée le compte, sans envoyer d'invitation (le compte n'a pas de mot de passe : la personne se connecte par lien
+     * à usage unique). Refuse l'adresse d'un compte du back-office.
+     */
+    Learner findOrCreateWithoutInvitation(String firstName, String lastName, String email, String phone);
 }

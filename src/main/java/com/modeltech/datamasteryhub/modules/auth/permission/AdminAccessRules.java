@@ -9,6 +9,7 @@ import java.util.List;
 import static com.modeltech.datamasteryhub.modules.auth.permission.Permission.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
 
 /**
  * Qui peut appeler quoi dans le back-office : <b>une seule table</b> relie chaque route {@code /api/v1/admin/**} au(x)
@@ -29,6 +30,20 @@ public final class AdminAccessRules {
         authority(GET, "/api/v1/admin/stats/actions", Permission.BACKOFFICE_ACCESS);   // pastilles du menu (filtrées par droit côté service)
         rule(GET, "/api/v1/admin/stats/**", DASHBOARD_FINANCE, DASHBOARD_ACTIVITY);      // les montants sont masqués sans DASHBOARD_FINANCE
         authority(null, "/api/v1/admin/me/**", Permission.BACKOFFICE_ACCESS);
+
+        // ── Simulateur de certification (le service vérifie en plus : l'auteur ne relit ni ne publie lui-même) ──
+        rule(null, "/api/v1/admin/simulator/grants/**", SIMULATOR_MANAGE);                // droits d'usage : données personnelles, octroi tracé
+        rule(PUT, "/api/v1/admin/simulator/plans/*", SIMULATOR_MANAGE);                      // prix et quotas des forfaits
+        rule(GET, "/api/v1/admin/simulator/orders/**", SIMULATOR_MANAGE, PAYMENTS_VIEW);     // commandes en ligne : données personnelles et financières
+        rule(POST, "/api/v1/admin/simulator/orders/*/verify", SIMULATOR_MANAGE);
+        rule(GET, "/api/v1/admin/simulator/payments/**", SIMULATOR_MANAGE);                  // état de la passerelle de paiement
+        rule(POST, "/api/v1/admin/simulator/items/import", SIMULATOR_MANAGE);
+        rule(PUT, "/api/v1/admin/simulator/items/*/trial-sample", SIMULATOR_MANAGE);          // choisit ce que voit un essai gratuit
+        rule(POST, "/api/v1/admin/simulator/items/*/versions/*/publish", SIMULATOR_MANAGE);
+        rule(POST, "/api/v1/admin/simulator/items/*/versions/*/retire", SIMULATOR_MANAGE);
+        rule(POST, "/api/v1/admin/simulator/items/*/versions/*/review", SIMULATOR_REVIEW);
+        rule(GET, "/api/v1/admin/simulator/**", SIMULATOR_VIEW);
+        rule(null, "/api/v1/admin/simulator/**", SIMULATOR_AUTHOR);                       // créer, modifier, soumettre, supprimer un brouillon
 
         // ── Administration ───────────────────────────────────────────────────
         rule(null, "/api/v1/admin/users/**", ACCOUNTS_MANAGE);
