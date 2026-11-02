@@ -49,6 +49,15 @@ services:
       MASTERCLASS_MEET_LINK: ${MASTERCLASS_MEET_LINK}
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
       RECAPTCHA_ALLOWED_HOSTNAMES: ${RECAPTCHA_ALLOWED_HOSTNAMES:-}
+      # Paiement en ligne du simulateur (PayDunya). Cles vides = achat en ligne desactive (aucun bouton « Acheter »).
+      # Les trois cles doivent etre du MEME mode que PAYDUNYA_MODE : cles de test avec « sandbox », cles de production avec « live ».
+      PAYDUNYA_MODE: ${PAYDUNYA_MODE:-sandbox}
+      PAYDUNYA_MASTER_KEY: ${PAYDUNYA_MASTER_KEY:-}
+      PAYDUNYA_PRIVATE_KEY: ${PAYDUNYA_PRIVATE_KEY:-}
+      PAYDUNYA_TOKEN: ${PAYDUNYA_TOKEN:-}
+      PAYDUNYA_STORE_NAME: ${PAYDUNYA_STORE_NAME:-Model Technologie}
+      # Adresse de notification (IPN) declaree chez PayDunya, ex. https://api.model-technologie.com/api/v1/payments/paydunya/ipn
+      PAYDUNYA_CALLBACK_URL: ${PAYDUNYA_CALLBACK_URL:-}
     depends_on:
       - db
       - minio
