@@ -68,6 +68,25 @@ public class AccessService {
         return view(saved);
     }
 
+    /** Accès ouvert par un achat en ligne confirmé (appelé par la vérification d'une commande, jamais depuis une requête du navigateur). */
+    @Transactional
+    public UUID grantPurchased(Learner learner, PlanCode plan, int days, int examAttempts, UUID orderId, String reason) {
+        SimCertification certification = certifications.findByCodeAndActiveTrue(QuestionBankService.CERTIFICATION)
+                .orElseThrow(() -> new ResourceNotFoundException("Certification", "code", QuestionBankService.CERTIFICATION));
+        LocalDateTime now = LocalDateTime.now();
+        SimAccessGrant g = new SimAccessGrant();
+        g.setLearner(learner);
+        g.setCertification(certification);
+        g.setPlanCode(plan);
+        g.setStartsAt(now);
+        g.setExpiresAt(now.plusDays(days));
+        g.setExamAttemptsTotal(examAttempts);
+        g.setGrantedBy("paiement-en-ligne");
+        g.setReason(reason);
+        g.setSourcePaymentId(orderId);
+        return grants.save(g).getId();
+    }
+
     @Transactional
     public GrantView revoke(UUID id, String reason, String actor) {
         SimAccessGrant g = grants.findById(id).orElseThrow(() -> new ResourceNotFoundException("Droit d'usage", "id", id));

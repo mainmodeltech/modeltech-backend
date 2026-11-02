@@ -20,7 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * Essai gratuit, produit d'appel du simulateur : le visiteur laisse son nom et son e-mail, un compte apprenant est créé
@@ -35,11 +34,6 @@ import java.util.Set;
 @Slf4j
 public class TrialService {
 
-    /** Adresses jetables courantes : un essai gratuit à la chaîne n'aurait aucun intérêt commercial et vide la banque. */
-    private static final Set<String> DISPOSABLE = Set.of("mailinator.com", "yopmail.com", "yopmail.fr", "guerrillamail.com", "sharklasers.com",
-            "10minutemail.com", "tempmail.com", "temp-mail.org", "trashmail.com", "getnada.com", "dispostable.com", "maildrop.cc",
-            "throwawaymail.com", "fakeinbox.com", "mintemail.com", "mohmal.com");
-
     private final LearnerService learnerService;
     private final PasswordlessLoginService passwordless;
     private final SimAccessGrantRepository grants;
@@ -52,8 +46,7 @@ public class TrialService {
     @Transactional
     public void start(TrialRequest req) {
         String email = req.email().trim().toLowerCase(Locale.ROOT);
-        String domain = email.substring(email.indexOf('@') + 1);
-        if (DISPOSABLE.contains(domain)) {
+        if (DisposableEmails.isDisposable(email)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisez une adresse e-mail durable (les adresses jetables ne sont pas acceptées).");
         }
         Learner learner;

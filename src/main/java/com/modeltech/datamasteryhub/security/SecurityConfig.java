@@ -93,6 +93,9 @@ public class SecurityConfig {
                                 "/api/v1/diagnostic-requests",
                                 "/api/v1/simulator/waitlist",
                                 "/api/v1/simulator/trial",
+                                "/api/v1/simulator/orders",
+                                // Notification du prestataire de paiement : rien n'y est cru, l'etat est relu aupres de lui (voir PayDunyaIpnController)
+                                "/api/v1/payments/paydunya/ipn",
                                 "/api/v1/partner-applications",
                                 "/api/v1/newsletter/subscriptions",
                                 "/api/v1/newsletter/subscriptions/confirm",
@@ -104,6 +107,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/auth/options",
+                                "/api/v1/simulator/plans",
+                                "/api/v1/simulator/orders/*",
                                 "/api/v1/masterclass/upcoming",
                                 "/api/v1/masterclass/*",
                                 "/api/v1/bootcamps",
