@@ -23,4 +23,20 @@ public class ItemTypeRegistry {
     public Map<String, Object> validateAndNormalize(ItemType type, Map<String, Object> payload) {
         return byType.get(type).validateAndNormalize(payload);
     }
+
+    public Map<String, Object> learnerView(ItemType type, Map<String, Object> payload) {
+        return byType.get(type).learnerView(payload);
+    }
+
+    public Map<String, Object> normalizeAnswer(ItemType type, Map<String, Object> payload, Map<String, Object> answer) {
+        return byType.get(type).normalizeAnswer(payload, answer);
+    }
+
+    public double score(ItemType type, Map<String, Object> payload, Map<String, Object> answer) {
+        return byType.get(type).score(payload, answer);
+    }
+
+    public Map<String, Object> correctAnswer(ItemType type, Map<String, Object> payload) {
+        return byType.get(type).correctAnswer(payload);
+    }
 }

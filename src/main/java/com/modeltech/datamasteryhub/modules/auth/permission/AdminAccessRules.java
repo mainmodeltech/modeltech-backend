@@ -31,6 +31,7 @@ public final class AdminAccessRules {
         authority(null, "/api/v1/admin/me/**", Permission.BACKOFFICE_ACCESS);
 
         // ── Simulateur de certification (le service vérifie en plus : l'auteur ne relit ni ne publie lui-même) ──
+        rule(null, "/api/v1/admin/simulator/grants/**", SIMULATOR_MANAGE);                // droits d'usage : données personnelles, octroi tracé
         rule(POST, "/api/v1/admin/simulator/items/import", SIMULATOR_MANAGE);
         rule(POST, "/api/v1/admin/simulator/items/*/versions/*/publish", SIMULATOR_MANAGE);
         rule(POST, "/api/v1/admin/simulator/items/*/versions/*/retire", SIMULATOR_MANAGE);

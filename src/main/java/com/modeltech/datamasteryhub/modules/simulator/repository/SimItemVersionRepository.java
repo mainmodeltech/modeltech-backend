@@ -13,6 +13,11 @@ import java.util.UUID;
 
 public interface SimItemVersionRepository extends JpaRepository<SimItemVersion, UUID>, JpaSpecificationExecutor<SimItemVersion> {
 
+    /** Versions publiées d'une compétence, avec leur question, leur compétence et leur domaine (assemblage d'un examen). */
+    @Query("SELECT v FROM SimItemVersion v JOIN FETCH v.item i JOIN FETCH i.skill s JOIN FETCH s.domain WHERE s.id = :skillId "
+            + "AND v.status = com.modeltech.datamasteryhub.modules.simulator.entity.ItemStatus.PUBLISHED")
+    List<SimItemVersion> findPublishedBySkillId(@Param("skillId") UUID skillId);
+
     Optional<SimItemVersion> findByItemIdAndVersionNo(UUID itemId, int versionNo);
 
     Optional<SimItemVersion> findByItemIdAndStatus(UUID itemId, ItemStatus status);

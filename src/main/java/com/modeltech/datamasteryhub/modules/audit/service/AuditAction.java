@@ -54,6 +54,8 @@ public enum AuditAction {
     SIM_ITEM_PUBLISHED("Simulateur", "Question du simulateur publiée"),
     SIM_ITEM_RETIRED("Simulateur", "Question du simulateur retirée"),
     SIM_ITEMS_IMPORTED("Simulateur", "Questions du simulateur importées"),
+    SIM_ACCESS_GRANTED("Simulateur", "Accès au simulateur accordé"),
+    SIM_ACCESS_REVOKED("Simulateur", "Accès au simulateur révoqué"),
 
     // ── Site ──
     SITE_CONTENT_CHANGED("Site", "Contenu du site modifié");
