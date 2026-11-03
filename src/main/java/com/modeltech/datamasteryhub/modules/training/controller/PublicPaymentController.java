@@ -3,6 +3,10 @@ package com.modeltech.datamasteryhub.modules.training.controller;
 import com.modeltech.datamasteryhub.common.dto.ApiResponse;
 import com.modeltech.datamasteryhub.common.ratelimit.IpRateLimiter;
 import com.modeltech.datamasteryhub.modules.training.dto.request.DeclarePaymentRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.response.OnlineCheckoutPayloads.CheckoutView;
+import com.modeltech.datamasteryhub.modules.training.dto.response.OnlineCheckoutPayloads.StartRequest;
+import com.modeltech.datamasteryhub.modules.training.dto.response.OnlineCheckoutPayloads.StartResponse;
+import com.modeltech.datamasteryhub.modules.training.service.RegistrationCheckoutService;
 import com.modeltech.datamasteryhub.modules.training.dto.response.PublicPaymentResponse;
 import com.modeltech.datamasteryhub.modules.training.service.PaymentService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class PublicPaymentController {
 
     private final PaymentService paymentService;
+    private final RegistrationCheckoutService checkoutService;
     private final IpRateLimiter rateLimiter;
     private final com.modeltech.datamasteryhub.modules.training.service.InvoiceService invoiceService;
     private final com.modeltech.datamasteryhub.modules.training.service.LearnerBillingService billingService;
@@ -29,7 +34,26 @@ public class PublicPaymentController {
     @GetMapping("/{token}")
     public ResponseEntity<ApiResponse<PublicPaymentResponse>> get(@PathVariable String token, HttpServletRequest httpRequest) {
         rateLimiter.check(httpRequest, IpRateLimiter.TOKEN_VIEW_SCOPE);   // freine le balayage de jetons
-        return ResponseEntity.ok(ApiResponse.ok("Paiement", paymentService.getByToken(token)));
+        PublicPaymentResponse response = paymentService.getByToken(token);
+        response.setOnline(checkoutService.optionsFor(token));
+        return ResponseEntity.ok(ApiResponse.ok("Paiement", response));
+    }
+
+    /** Démarre le paiement en ligne d'une échéance ou de tout le solde : renvoie l'adresse de la page du prestataire. */
+    @PostMapping("/{token}/online")
+    public ResponseEntity<ApiResponse<StartResponse>> startOnline(
+            @PathVariable String token,
+            @Valid @RequestBody StartRequest request,
+            HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, "payment-online");
+        return ResponseEntity.ok(ApiResponse.ok("Paiement en ligne", checkoutService.start(token, request.scope())));
+    }
+
+    /** Suivi d'une tentative au retour du prestataire (référence opaque) ; relit le prestataire si elle est encore en attente. */
+    @GetMapping("/online-checkouts/{ref}")
+    public ResponseEntity<ApiResponse<CheckoutView>> checkoutStatus(@PathVariable java.util.UUID ref, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest, IpRateLimiter.TOKEN_VIEW_SCOPE);
+        return ResponseEntity.ok(ApiResponse.ok("Paiement en ligne", checkoutService.status(ref)));
     }
 
     /** Facture de l'inscription (entreprises), téléchargeable depuis le lien de paiement. */

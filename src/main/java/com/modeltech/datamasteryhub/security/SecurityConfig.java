@@ -105,6 +105,7 @@ public class SecurityConfig {
                                 "/api/v1/registrations",
                                 // Lien de paiement : le jeton (256 bits, expirant) fait office d'authentification
                                 "/api/v1/payments/*/declaration",
+                                "/api/v1/payments/*/online",
                                 "/api/v1/payments/*/proof"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
@@ -126,6 +127,7 @@ public class SecurityConfig {
                                 "/api/v1/payments/*",
                                 "/api/v1/payments/*/invoice",
                                 "/api/v1/payments/*/receipt",
+                                "/api/v1/payments/online-checkouts/*",
                                 "/api/v1/certificates/*",
                                 "/api/v1/certificates/*/pdf",
                                 "/api/v1/site-settings",

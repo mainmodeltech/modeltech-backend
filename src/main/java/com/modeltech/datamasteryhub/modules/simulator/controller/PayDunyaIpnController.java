@@ -2,6 +2,7 @@ package com.modeltech.datamasteryhub.modules.simulator.controller;
 
 import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway;
 import com.modeltech.datamasteryhub.modules.simulator.service.OrderService;
+import com.modeltech.datamasteryhub.modules.training.service.RegistrationCheckoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PayDunyaIpnController {
 
     private final OrderService orders;
+    private final RegistrationCheckoutService registrationCheckouts;
     private final PaymentGateway gateway;
 
     @PostMapping(value = "/ipn", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.ALL_VALUE})
@@ -44,7 +46,9 @@ public class PayDunyaIpnController {
             log.warn("Notification PayDunya avec un hash inattendu (ignorée)");
         } else {
             try {
-                orders.onNotification(token);
+                if (!orders.onNotification(token) && !registrationCheckouts.onNotification(token)) {
+                    log.warn("Notification de paiement pour un jeton inconnu (ignorée)");
+                }
             } catch (RuntimeException e) {
                 log.error("Traitement de la notification PayDunya en échec : {}", e.getMessage());
             }

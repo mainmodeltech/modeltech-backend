@@ -41,6 +41,9 @@ public class PublicPaymentResponse {
     /** Où payer : numéro Wave / Orange Money et moyens acceptés. */
     private PayTo payTo;
 
+    /** Paiement en ligne et/ou manuel proposés, avec les montants (frais compris) d'une échéance et du solde. */
+    private OnlineCheckoutPayloads.OnlineOptions online;
+
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ScheduleItem {
         private Integer installmentNumber;

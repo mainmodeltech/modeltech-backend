@@ -7,6 +7,8 @@ import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.service.LearnerService;
 import com.modeltech.datamasteryhub.modules.networking.service.StorageService;
 import com.modeltech.datamasteryhub.modules.payments.GatewayHealth;
+import com.modeltech.datamasteryhub.modules.payments.OnlineCheckoutVerifier;
+import com.modeltech.datamasteryhub.modules.payments.OnlineCheckoutVerifier.Verdict;
 import com.modeltech.datamasteryhub.modules.payments.PayableService;
 import com.modeltech.datamasteryhub.modules.payments.PaymentFees;
 import com.modeltech.datamasteryhub.modules.payments.PaymentOptions;
@@ -15,7 +17,6 @@ import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway;
 import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.CheckoutRequest;
 import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.CheckoutSession;
 import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.GatewayException;
-import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.GatewayPayment;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.DeclareRequest;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.OrderStatusView;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.OrderView;
@@ -76,6 +77,7 @@ public class OrderService {
     private final PaymentPolicy policy;
     private final PaymentFees fees;
     private final GatewayHealth health;
+    private final OnlineCheckoutVerifier verifier;
     private final StorageService storage;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
@@ -85,7 +87,7 @@ public class OrderService {
     private String frontendUrl;
 
     public OrderService(SimPlanRepository plans, SimOrderRepository orders, LearnerService learnerService, AccessService access,
-                        PaymentGateway gateway, PaymentPolicy policy, PaymentFees fees, GatewayHealth health, StorageService storage,
+                        PaymentGateway gateway, PaymentPolicy policy, PaymentFees fees, GatewayHealth health, OnlineCheckoutVerifier verifier, StorageService storage,
                         AuditService audit, ApplicationEventPublisher events, PlatformTransactionManager txManager) {
         this.plans = plans;
         this.orders = orders;
@@ -95,6 +97,7 @@ public class OrderService {
         this.policy = policy;
         this.fees = fees;
         this.health = health;
+        this.verifier = verifier;
         this.storage = storage;
         this.audit = audit;
         this.events = events;
@@ -179,10 +182,11 @@ public class OrderService {
     // ── Paiement en ligne : vérification (notification, retour du client, rapprochement, administrateur) ─────
 
     /** Notification du prestataire : le contenu reçu n'est qu'un déclencheur, l'état est relu auprès de lui. Jeton inconnu = ignoré. */
-    public void onNotification(String providerToken) {
-        if (providerToken == null || providerToken.isBlank()) return;
-        orders.findByProviderToken(providerToken.trim()).ifPresentOrElse(o -> settle(o.getId()),
-                () -> log.warn("Notification de paiement pour un jeton inconnu (ignorée)"));
+    public boolean onNotification(String providerToken) {
+        if (providerToken == null || providerToken.isBlank()) return false;
+        var order = orders.findByProviderToken(providerToken.trim());
+        order.ifPresent(o -> settle(o.getId()));
+        return order.isPresent();
     }
 
     /** Relit l'état du paiement auprès du prestataire et applique le résultat, une seule fois. Sans effet sur une commande manuelle. */
@@ -194,35 +198,22 @@ public class OrderService {
         SimOrder o = orders.lockById(id).orElseThrow(() -> new ResourceNotFoundException("Commande", "id", id));
         if (o.getStatus().isFinal() || o.getChannel() != OrderChannel.ONLINE || o.getProviderToken() == null) return o;
         o.setLastCheckedAt(LocalDateTime.now());
-        GatewayPayment p;
-        try {
-            p = gateway.fetchStatus(o.getProviderToken());
-        } catch (GatewayException e) {
-            log.warn("Vérification du paiement {} impossible pour l'instant : {}", o.getPublicRef(), e.getMessage());
-            return orders.save(o);   // on réessaiera (rapprochement)
-        }
-        switch (p.state()) {
-            case COMPLETED -> complete(o, p);
-            case CANCELLED -> close(o, OrderStatus.CANCELLED, "Paiement annulé");
-            case FAILED -> close(o, OrderStatus.FAILED, p.failReason() != null ? p.failReason() : "Paiement refusé");
-            default -> { /* en attente, ou inconnu du prestataire : la commande reste ouverte jusqu'à expiration */ }
+        Verdict v = verifier.verify(o.getProviderToken(), o.getChargedXof(), o.getPublicRef().toString());
+        switch (v.outcome()) {
+            case PAID -> {
+                o.setReceiptUrl(v.payment().receiptUrl());
+                open(o, "payé en ligne", null);
+            }
+            case MISMATCH -> {
+                // L'argent a peut-être été encaissé : on n'ouvre rien automatiquement, on alerte pour un contrôle humain.
+                log.error("Paiement {} confirmé par le prestataire mais incohérent ({}) : à contrôler manuellement.", o.getPublicRef(), v.detail());
+                close(o, OrderStatus.FAILED, "Vérification impossible (" + v.detail() + ") : à contrôler manuellement.");
+            }
+            case CANCELLED -> close(o, OrderStatus.CANCELLED, v.detail());
+            case FAILED -> close(o, OrderStatus.FAILED, v.detail());
+            default -> { /* en attente, ou injoignable : la commande reste ouverte (rapprochement), jusqu'à expiration */ }
         }
         return orders.save(o);
-    }
-
-    private void complete(SimOrder o, GatewayPayment p) {
-        List<String> problems = new ArrayList<>();
-        if (p.totalAmount() != o.getChargedXof()) problems.add("montant reçu " + p.totalAmount() + " au lieu de " + o.getChargedXof());
-        if (!o.getPublicRef().toString().equals(p.orderRef())) problems.add("référence de commande différente");
-        if (!modeMatches(p.mode())) problems.add("mode « " + p.mode() + " » inattendu (attendu : " + gateway.mode() + ")");
-        if (!problems.isEmpty()) {
-            // L'argent a peut-être été encaissé : on n'ouvre rien automatiquement, on alerte pour un contrôle humain.
-            log.error("Paiement {} confirmé par le prestataire mais incohérent ({}) : à contrôler manuellement.", o.getPublicRef(), String.join(" ; ", problems));
-            close(o, OrderStatus.FAILED, "Vérification impossible (" + String.join(" ; ", problems) + ") : à contrôler manuellement.");
-            return;
-        }
-        o.setReceiptUrl(p.receiptUrl());
-        open(o, "payé en ligne", null);
     }
 
     /** Ouvre l'accès d'une commande dont le paiement est établi (en ligne vérifié, ou manuel confirmé), une seule fois. */
@@ -242,12 +233,6 @@ public class OrderService {
                 "Forfait " + o.getPlanName() + " " + how + " par " + o.getLearner().getFullName() + " (" + o.getChargedXof() + " XOF)"
                         + (confirmedBy != null ? ", confirmé par " + confirmedBy : ""));
         events.publishEvent(new OrderPaid(o.getId()));
-    }
-
-    private boolean modeMatches(String providerMode) {
-        if (providerMode == null || providerMode.isBlank()) return true;   // non communiqué : le jeton (préfixe « test_ ») et la clé suffisent
-        String m = providerMode.trim().toLowerCase(Locale.ROOT);
-        return gateway.mode().equals("live") ? m.equals("live") : (m.equals("test") || m.equals("sandbox"));
     }
 
     private void close(SimOrder o, OrderStatus status, String reason) {

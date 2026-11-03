@@ -168,6 +168,7 @@ public class LearnerBillingServiceImpl implements LearnerBillingService {
             case VIREMENT -> "Virement bancaire";
             case ENTREPRISE -> "Paiement par l'entreprise";
             case ESPECES -> "Espèces";
+            case PAYDUNYA -> "Paiement en ligne (Wave, Orange Money, carte)";
         };
     }
 }
