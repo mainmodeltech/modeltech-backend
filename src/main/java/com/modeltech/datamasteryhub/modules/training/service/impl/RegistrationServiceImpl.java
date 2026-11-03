@@ -55,6 +55,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final NotificationService       notificationService;
     private final RecaptchaService          recaptchaService;
     private final AuditService              audit;
+    private final com.modeltech.datamasteryhub.modules.legal.service.LegalService legal;
 
     // =========================================================================
     //  INSCRIPTION PUBLIQUE
@@ -71,7 +72,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (!recaptchaService.verify(request.getRecaptchaToken(), "bootcamp_register")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vérification anti-robot échouée. Veuillez réessayer.");
         }
+        // Conditions en vigueur acceptées avant la candidature (contrôle serveur), preuve enregistrée avec elle
+        legal.requireAccepted(com.modeltech.datamasteryhub.modules.legal.LegalContext.REGISTRATION, request.getAcceptedDocuments());
         Registration saved = persistNew(request, "WEBSITE");
+        legal.record(com.modeltech.datamasteryhub.modules.legal.LegalContext.REGISTRATION, "REGISTRATION", saved.getId().toString(), saved.getEmail(),
+                saved.getFirstName() + " " + saved.getLastName(), request.getAcceptedDocuments());
 
         notificationService.notifyNewRegistration(saved);
 

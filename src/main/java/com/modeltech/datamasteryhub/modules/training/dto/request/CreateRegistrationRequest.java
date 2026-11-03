@@ -15,6 +15,9 @@ public class CreateRegistrationRequest {
 
     private UUID sessionId;
 
+    /** Textes légaux affichés au moment de l'acceptation (identifiants des versions en vigueur) : le serveur vérifie qu'ils sont à jour. */
+    private java.util.List<UUID> acceptedDocuments;
+
     private String bootcampTitle;
 
     /** Code promo/parrainage saisi par le visiteur (optionnel) */

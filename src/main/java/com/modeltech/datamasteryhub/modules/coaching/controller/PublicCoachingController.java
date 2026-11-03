@@ -9,6 +9,7 @@ import com.modeltech.datamasteryhub.modules.coaching.dto.CoachingPayloads.Reques
 import com.modeltech.datamasteryhub.modules.coaching.dto.CoachingPayloads.StartResponse;
 import com.modeltech.datamasteryhub.modules.coaching.service.CoachingPaymentService;
 import com.modeltech.datamasteryhub.modules.coaching.service.CoachingService;
+import com.modeltech.datamasteryhub.modules.legal.dto.LegalPayloads.AcceptRequest;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.DeclareRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,6 +53,13 @@ public class PublicCoachingController {
     public ResponseEntity<ApiResponse<PayView>> view(@PathVariable String token, HttpServletRequest http) {
         rateLimiter.check(http, IpRateLimiter.TOKEN_VIEW_SCOPE);   // freine le balayage de jetons
         return ResponseEntity.ok(ApiResponse.ok("Coaching", payments.view(token)));
+    }
+
+    /** Acceptation des conditions de vente en vigueur, préalable au paiement. */
+    @PostMapping("/api/v1/coaching/payments/{token}/accept")
+    public ResponseEntity<ApiResponse<PayView>> accept(@PathVariable String token, @Valid @RequestBody AcceptRequest body, HttpServletRequest http) {
+        rateLimiter.check(http, "coaching-payment-accept");
+        return ResponseEntity.ok(ApiResponse.ok("Conditions acceptées", payments.acceptTerms(token, body.documents())));
     }
 
     @PostMapping("/api/v1/coaching/payments/{token}/online")

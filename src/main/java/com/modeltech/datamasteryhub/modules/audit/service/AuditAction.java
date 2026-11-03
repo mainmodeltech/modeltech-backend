@@ -64,6 +64,7 @@ public enum AuditAction {
     SIM_ORDER_REJECTED("Simulateur", "Paiement manuel d'une commande du simulateur refusé"),
     PAYMENT_SETTINGS_CHANGED("Paiements", "Réglages de paiement modifiés"),
     PAYMENT_ONLINE_MISMATCH("Paiements", "Paiement en ligne encaissé mais incohérent : à contrôler"),
+    LEGAL_PUBLISHED("Juridique", "Texte légal publié"),
     COACHING_VALIDATED("Coaching", "Demande de coaching validée, lien de paiement envoyé"),
     COACHING_DECLINED("Coaching", "Demande de coaching refusée"),
     COACHING_CANCELLED("Coaching", "Coaching annulé avant paiement"),

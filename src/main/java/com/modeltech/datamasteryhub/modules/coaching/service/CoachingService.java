@@ -12,6 +12,8 @@ import com.modeltech.datamasteryhub.modules.coaching.dto.CoachingPayloads.Valida
 import com.modeltech.datamasteryhub.modules.coaching.entity.CoachingRequest;
 import com.modeltech.datamasteryhub.modules.coaching.entity.CoachingStatus;
 import com.modeltech.datamasteryhub.modules.coaching.repository.CoachingRequestRepository;
+import com.modeltech.datamasteryhub.modules.legal.LegalContext;
+import com.modeltech.datamasteryhub.modules.legal.service.LegalService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -45,16 +47,18 @@ public class CoachingService {
     private final CoachingRequestRepository requests;
     private final CoachingMailer mailer;
     private final AuditService audit;
+    private final LegalService legal;
     private final TransactionTemplate tx;
 
     /** Durée de validité du lien de paiement après la validation. */
     @Value("${app.coaching.link-validity-days:30}")
     private int linkValidityDays;
 
-    public CoachingService(CoachingRequestRepository requests, CoachingMailer mailer, AuditService audit, PlatformTransactionManager txManager) {
+    public CoachingService(CoachingRequestRepository requests, CoachingMailer mailer, AuditService audit, LegalService legal, PlatformTransactionManager txManager) {
         this.requests = requests;
         this.mailer = mailer;
         this.audit = audit;
+        this.legal = legal;
         this.tx = new TransactionTemplate(txManager);
     }
 
@@ -62,6 +66,7 @@ public class CoachingService {
 
     public RequestReceipt submit(RequestForm form) {
         String email = form.email().trim().toLowerCase(Locale.ROOT);
+        legal.requireAccepted(LegalContext.COACHING_REQUEST, form.acceptedDocuments());   // contrôle serveur des conditions en vigueur
         CoachingRequest saved = tx.execute(s -> {
             if (requests.countByEmailIgnoreCaseAndCreatedAtAfter(email, LocalDateTime.now().minusDays(1)) >= MAX_REQUESTS_PER_DAY_PER_EMAIL) {
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Vous avez déjà envoyé plusieurs demandes : nous vous répondons très vite.");
@@ -76,7 +81,9 @@ public class CoachingService {
             r.setSlot(blankToNull(form.slot()));
             r.setMessage(blankToNull(form.message()));
             r.setTermsAcceptedAt(LocalDateTime.now());
-            return requests.save(r);
+            CoachingRequest created = requests.save(r);
+            legal.record(LegalContext.COACHING_REQUEST, "COACHING_REQUEST", created.getId().toString(), email, created.fullName(), form.acceptedDocuments());
+            return created;
         });
         mailer.requestReceived(saved);
         mailer.staffNewRequest(saved);

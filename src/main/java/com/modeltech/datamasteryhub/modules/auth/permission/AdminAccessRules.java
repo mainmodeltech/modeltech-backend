@@ -33,6 +33,7 @@ public final class AdminAccessRules {
 
         // ── Simulateur de certification (le service vérifie en plus : l'auteur ne relit ni ne publie lui-même) ──
         rule(null, "/api/v1/admin/simulator/grants/**", SIMULATOR_MANAGE);                // droits d'usage : données personnelles, octroi tracé
+        rule(null, "/api/v1/admin/legal/**", LEGAL_MANAGE);                                  // Direction seule : textes légaux et preuves d'acceptation
         rule(null, "/api/v1/admin/payment-settings/**", PAYMENT_SETTINGS_MANAGE);             // Direction seule : moyens de paiement, interrupteur du paiement en ligne
         rule(POST, "/api/v1/admin/simulator/orders/*/confirm", SIMULATOR_MANAGE, PAYMENTS_MANAGE);   // confirmer un paiement manuel de commande
         rule(POST, "/api/v1/admin/simulator/orders/*/reject", SIMULATOR_MANAGE, PAYMENTS_MANAGE);

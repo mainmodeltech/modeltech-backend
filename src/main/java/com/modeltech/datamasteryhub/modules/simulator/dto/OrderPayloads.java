@@ -37,7 +37,9 @@ public final class OrderPayloads {
             @Size(max = 100) String lastName,
             @NotBlank(message = "L'e-mail est obligatoire") @Email(message = "E-mail invalide") @Size(max = 255) String email,
             @Size(max = 50) String phone,
-            @AssertTrue(message = "Vous devez accepter les conditions d'utilisation et de vente") boolean acceptTerms) {}
+            @AssertTrue(message = "Vous devez accepter les conditions d'utilisation et de vente") boolean acceptTerms,
+            /** Textes légaux affichés au moment de l'acceptation (identifiants des versions en vigueur) : le serveur vérifie qu'ils sont à jour. */
+            List<UUID> acceptedDocuments) {}
 
     /** {@code checkoutUrl} est vide pour un paiement manuel : l'acheteur est dirigé vers la page de suivi, qui affiche les consignes. */
     public record PurchaseResponse(UUID orderRef, String checkoutUrl, OrderChannel channel) {}

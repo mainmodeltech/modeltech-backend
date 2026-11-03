@@ -87,6 +87,7 @@ public enum Permission {
     PROFILES_MANAGE("Administration", "Gérer les profils et leurs droits"),
     SYSTEM_MANAGE("Administration", "Réglages techniques (e-mail de test…)"),
     PAYMENT_SETTINGS_MANAGE("Administration", "Choisir les moyens de paiement (en ligne ou manuel) et couper le paiement en ligne — réservé à la Direction"),
+    LEGAL_MANAGE("Administration", "Publier les textes légaux (CGU, CGV, mentions, confidentialité) et consulter les preuves d'acceptation — réservé à la Direction"),
     AUDIT_VIEW("Administration", "Consulter le journal d'audit");
 
     private final String group;

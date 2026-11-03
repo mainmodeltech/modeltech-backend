@@ -41,6 +41,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("JWT_SECRET", () -> "test-only-jwt-secret-".concat("x".repeat(80)));
         // Les valeurs par défaut du site ne sont pas semées : chaque test part d'une table vide
         registry.add("app.site-content.seed-defaults", () -> "false");
+        registry.add("app.legal.seed-templates", () -> "false");
         registry.add("MINIO_ROOT_USER", () -> "test-user");
         registry.add("MINIO_ROOT_PASSWORD", () -> "test-password");
         // Tous les tests partagent la même IP (127.0.0.1) : la limite des formulaires est relevée.
