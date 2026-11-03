@@ -136,6 +136,12 @@ app:
     max-attempts: ${MAIL_MAX_ATTEMPTS:3}
     retry-delay-ms: ${MAIL_RETRY_DELAY_MS:2000}
     log-retention-days: ${MAIL_LOG_RETENTION_DAYS:90}
+  coaching:
+    # Lien de réservation d'un échange de présentation de 15 à 20 minutes (vide = non proposé)
+    booking-url: ${COACHING_BOOKING_URL:}
+    # Destinataires internes des alertes de coaching, séparés par des virgules (défaut : adresse de notification générale)
+    notify-to: ${COACHING_NOTIFY_TO:}
+    link-validity-days: 30
   notifications:
     phone:
       to: ${NOTIFICATION_PHONE_TO:788625238}

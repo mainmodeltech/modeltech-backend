@@ -5,7 +5,7 @@
     "description": "Un accompagnement 1:1 sur vos propres données, sans attendre la prochaine cohorte.",
     "primary": {
       "label": "Réserver un appel diagnostic",
-      "href": "/contact?sujet=coaching"
+      "href": "/coaching/demande"
     },
     "secondary": {
       "label": "Voir les formules",
@@ -18,7 +18,7 @@
   "slots": {
     "title": "Créneaux cette semaine",
     "badge": "3 places / semaine",
-    "bookHref": "/contact?sujet=coaching",
+    "bookHref": "/coaching/demande",
     "items": [],
     "formatNote": "Visio ou présentiel à Dakar",
     "durationNote": "1h30 par séance"
@@ -123,7 +123,7 @@
     "title": "Vos questions",
     "cta": {
       "label": "Réserver mon appel",
-      "href": "/contact?sujet=coaching"
+      "href": "/coaching/demande"
     },
     "items": [
       {

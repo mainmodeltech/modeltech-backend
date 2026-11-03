@@ -79,6 +79,9 @@ public enum Permission {
     SIMULATOR_REVIEW("Simulateur", "Relire les questions d'un autre auteur (approuver ou renvoyer)"),
     SIMULATOR_MANAGE("Simulateur", "Publier et retirer des questions, importer, gérer les blueprints"),
 
+    // ── Coaching ───────────────────────────────────────────────────
+    COACHING_MANAGE("Coaching", "Traiter les demandes de coaching : analyser, choisir le formateur, valider, fixer le montant et envoyer le lien de paiement"),
+
     // ── Administration ─────────────────────────────────────────────
     ACCOUNTS_MANAGE("Administration", "Gérer les comptes du back-office (création, profils, désactivation, MFA)"),
     PROFILES_MANAGE("Administration", "Gérer les profils et leurs droits"),

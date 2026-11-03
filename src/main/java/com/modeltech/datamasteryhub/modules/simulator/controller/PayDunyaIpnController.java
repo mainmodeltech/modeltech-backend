@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.modules.simulator.controller;
 
 import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway;
+import com.modeltech.datamasteryhub.modules.coaching.service.CoachingPaymentService;
 import com.modeltech.datamasteryhub.modules.simulator.service.OrderService;
 import com.modeltech.datamasteryhub.modules.training.service.RegistrationCheckoutService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,7 @@ public class PayDunyaIpnController {
 
     private final OrderService orders;
     private final RegistrationCheckoutService registrationCheckouts;
+    private final CoachingPaymentService coachingPayments;
     private final PaymentGateway gateway;
 
     @PostMapping(value = "/ipn", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.ALL_VALUE})
@@ -46,7 +48,7 @@ public class PayDunyaIpnController {
             log.warn("Notification PayDunya avec un hash inattendu (ignorée)");
         } else {
             try {
-                if (!orders.onNotification(token) && !registrationCheckouts.onNotification(token)) {
+                if (!orders.onNotification(token) && !registrationCheckouts.onNotification(token) && !coachingPayments.onNotification(token)) {
                     log.warn("Notification de paiement pour un jeton inconnu (ignorée)");
                 }
             } catch (RuntimeException e) {

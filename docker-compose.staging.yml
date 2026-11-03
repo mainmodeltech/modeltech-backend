@@ -78,6 +78,9 @@ services:
       PAYMENTS_FEES_MODE: ${PAYMENTS_FEES_MODE:-ABSORB}
       PAYMENTS_FEES_PERCENT: ${PAYMENTS_FEES_PERCENT:-0}
       PAYMENTS_FEES_FIXED_XOF: ${PAYMENTS_FEES_FIXED_XOF:-0}
+      # Coaching : lien de reservation d'un echange de presentation (15 a 20 min, vide = non propose) et destinataires internes des alertes (vide = adresse generale)
+      COACHING_BOOKING_URL: ${COACHING_BOOKING_URL:-}
+      COACHING_NOTIFY_TO: ${COACHING_NOTIFY_TO:-}
     depends_on:
       - db-staging
       - minio-staging

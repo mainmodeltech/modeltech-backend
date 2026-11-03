@@ -48,6 +48,11 @@ public final class AdminAccessRules {
         rule(GET, "/api/v1/admin/simulator/**", SIMULATOR_VIEW);
         rule(null, "/api/v1/admin/simulator/**", SIMULATOR_AUTHOR);                       // créer, modifier, soumettre, supprimer un brouillon
 
+        // ── Coaching : la pédagogie traite et valide, la Finance confirme l'argent (séparation des tâches) ──
+        rule(POST, "/api/v1/admin/coaching-requests/*/payment/*", PAYMENTS_MANAGE);
+        rule(GET, "/api/v1/admin/coaching-requests/**", COACHING_MANAGE, PAYMENTS_VIEW);
+        rule(null, "/api/v1/admin/coaching-requests/**", COACHING_MANAGE);
+
         // ── Administration ───────────────────────────────────────────────────
         rule(null, "/api/v1/admin/users/**", ACCOUNTS_MANAGE);
         rule(GET, "/api/v1/admin/profiles", PROFILES_MANAGE, ACCOUNTS_MANAGE);             // choisir les profils d'un compte

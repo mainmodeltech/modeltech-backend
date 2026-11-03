@@ -39,11 +39,11 @@ public final class DefaultProfiles {
                         LEARNERS_VIEW, LEARNERS_MANAGE, CATALOG_VIEW, SESSIONS_VIEW, CERTIFICATES_VIEW,
                         MASTERCLASS_VIEW, MESSAGES_MANAGE, EMAIL_LOGS_VIEW));
 
-        add(RoleNames.PEDAGOGY, "Pédagogie", "Formations, programme, sessions, évaluations, certificats, simulateur de certification, suivi et communauté.",
+        add(RoleNames.PEDAGOGY, "Pédagogie", "Formations, programme, sessions, évaluations, certificats, simulateur de certification, demandes de coaching, suivi et communauté.",
                 EnumSet.of(DASHBOARD_ACTIVITY, CATALOG_VIEW, CATALOG_MANAGE, PROGRAM_MANAGE, SESSIONS_VIEW, SESSIONS_TRACK, SESSIONS_ASSIGN,
                         CERTIFICATES_VIEW, CERTIFICATES_MANAGE, CERTIFICATES_OVERRIDE, SCOPE_ALL_SESSIONS, SCOPE_ALL_FORMATIONS,
                         LEARNERS_VIEW, PARTNERS_VIEW, PARTNERS_MANAGE, MASTERCLASS_VIEW, MASTERCLASS_MANAGE, COMMUNITY_MODERATE, SITE_CONTENT_VIEW,
-                        SIMULATOR_VIEW, SIMULATOR_AUTHOR, SIMULATOR_REVIEW, SIMULATOR_MANAGE));
+                        SIMULATOR_VIEW, SIMULATOR_AUTHOR, SIMULATOR_REVIEW, SIMULATOR_MANAGE, COACHING_MANAGE));
 
         add(RoleNames.COMMUNICATION, "Communication", "Site, newsletter, témoignages, alumni, masterclass, messages et communauté.",
                 EnumSet.of(MASTERCLASS_VIEW, MASTERCLASS_MANAGE, MESSAGES_MANAGE, NEWSLETTER_MANAGE, COMMUNITY_MODERATE,
