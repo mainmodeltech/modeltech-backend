@@ -6,6 +6,8 @@ import com.modeltech.datamasteryhub.modules.audit.service.AuditService;
 import com.modeltech.datamasteryhub.modules.auth.entity.Learner;
 import com.modeltech.datamasteryhub.modules.auth.service.LearnerService;
 import com.modeltech.datamasteryhub.modules.networking.service.StorageService;
+import com.modeltech.datamasteryhub.modules.legal.LegalContext;
+import com.modeltech.datamasteryhub.modules.legal.service.LegalService;
 import com.modeltech.datamasteryhub.modules.payments.GatewayHealth;
 import com.modeltech.datamasteryhub.modules.payments.OnlineCheckoutVerifier;
 import com.modeltech.datamasteryhub.modules.payments.OnlineCheckoutVerifier.Verdict;
@@ -78,6 +80,7 @@ public class OrderService {
     private final PaymentFees fees;
     private final GatewayHealth health;
     private final OnlineCheckoutVerifier verifier;
+    private final LegalService legal;
     private final StorageService storage;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
@@ -87,7 +90,7 @@ public class OrderService {
     private String frontendUrl;
 
     public OrderService(SimPlanRepository plans, SimOrderRepository orders, LearnerService learnerService, AccessService access,
-                        PaymentGateway gateway, PaymentPolicy policy, PaymentFees fees, GatewayHealth health, OnlineCheckoutVerifier verifier, StorageService storage,
+                        PaymentGateway gateway, PaymentPolicy policy, PaymentFees fees, GatewayHealth health, OnlineCheckoutVerifier verifier, LegalService legal, StorageService storage,
                         AuditService audit, ApplicationEventPublisher events, PlatformTransactionManager txManager) {
         this.plans = plans;
         this.orders = orders;
@@ -98,6 +101,7 @@ public class OrderService {
         this.fees = fees;
         this.health = health;
         this.verifier = verifier;
+        this.legal = legal;
         this.storage = storage;
         this.audit = audit;
         this.events = events;
@@ -121,6 +125,8 @@ public class OrderService {
         if (DisposableEmails.isDisposable(email)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisez une adresse e-mail durable : l'accès vous y est envoyé.");
         }
+        // Les conditions en vigueur doivent être acceptées avant tout (contrôle serveur) ; la preuve est enregistrée avec la commande
+        legal.requireAccepted(LegalContext.SIMULATOR_ORDER, req.acceptedDocuments());
         Prepared p = tx.execute(s -> prepare(req, email, channel));
         if (channel == OrderChannel.MANUAL) return new PurchaseResponse(p.ref(), null, OrderChannel.MANUAL);
 
@@ -175,6 +181,7 @@ public class OrderService {
         o.setProvider(channel == OrderChannel.ONLINE ? gateway.provider() : "MANUAL");
         o.setProviderMode(channel == OrderChannel.ONLINE ? gateway.mode() : null);
         orders.save(o);
+        legal.record(LegalContext.SIMULATOR_ORDER, "SIM_ORDER", o.getPublicRef().toString(), email, learner.getFullName(), req.acceptedDocuments());
         return new Prepared(o.getId(), o.getPublicRef(), plan.getName(), price, charged, learner.getFullName(), email,
                 req.phone() == null || req.phone().isBlank() ? null : req.phone().trim());
     }

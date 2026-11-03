@@ -1,6 +1,7 @@
 package com.modeltech.datamasteryhub.modules.coaching.dto;
 
 import com.modeltech.datamasteryhub.modules.coaching.entity.CoachingStatus;
+import com.modeltech.datamasteryhub.modules.legal.dto.LegalPayloads;
 import com.modeltech.datamasteryhub.modules.simulator.entity.ManualMethod;
 import com.modeltech.datamasteryhub.modules.simulator.entity.OrderChannel;
 import com.modeltech.datamasteryhub.modules.training.enums.CheckoutStatus;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,7 +33,9 @@ public final class CoachingPayloads {
             @Size(max = 160) String tier,
             @Size(max = 200) String slot,
             @Size(max = 4000) String message,
-            @AssertTrue(message = "Vous devez accepter les conditions pour envoyer votre demande") boolean acceptTerms) {}
+            @AssertTrue(message = "Vous devez accepter les conditions pour envoyer votre demande") boolean acceptTerms,
+            /** Textes légaux affichés au moment de l'acceptation (identifiants des versions en vigueur) : le serveur vérifie qu'ils sont à jour. */
+            List<UUID> acceptedDocuments) {}
 
     /** @param bookingUrl lien de réservation d'un échange de présentation (15 à 20 minutes), absent s'il n'est pas configuré */
     public record RequestReceipt(String message, String bookingUrl) {}
@@ -44,7 +48,9 @@ public final class CoachingPayloads {
     /** Ce que voit le détenteur du lien : jamais d'e-mail, de téléphone ni de note interne. */
     public record PayView(String firstName, String offerLabel, String trainerName, CoachingStatus status, long amountXof, PayOptions options,
                           ManualMethod declaredMethod, boolean proofUploaded, String rejectNote, OrderChannel paidChannel, String receiptUrl,
-                          String bookingUrl, LocalDateTime expiresAt) {}
+                          String bookingUrl, LocalDateTime expiresAt,
+                          /** Textes de vente à accepter avant de payer (vide : rien à accepter, ou déjà accepté). */
+                          List<LegalPayloads.DocumentRef> termsToAccept) {}
 
     public record StartResponse(UUID checkoutRef, String checkoutUrl) {}
 

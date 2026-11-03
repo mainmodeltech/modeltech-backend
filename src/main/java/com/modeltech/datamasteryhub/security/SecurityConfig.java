@@ -110,6 +110,7 @@ public class SecurityConfig {
                                 "/api/v1/coaching-requests",
                                 "/api/v1/coaching/payments/*/online",
                                 "/api/v1/coaching/payments/*/declaration",
+                                "/api/v1/coaching/payments/*/accept",
                                 "/api/v1/coaching/payments/*/proof",
                                 "/api/v1/payments/*/proof"
                         ).permitAll()
@@ -133,6 +134,10 @@ public class SecurityConfig {
                                 "/api/v1/payments/*/invoice",
                                 "/api/v1/payments/*/receipt",
                                 "/api/v1/payments/online-checkouts/*",
+                                // Textes légaux en vigueur et textes à accepter avant un acte : lisibles par tous
+                                "/api/v1/legal/documents",
+                                "/api/v1/legal/documents/*",
+                                "/api/v1/legal/requirements",
                                 "/api/v1/coaching/payments/*",
                                 "/api/v1/coaching/checkouts/*",
                                 "/api/v1/certificates/*",

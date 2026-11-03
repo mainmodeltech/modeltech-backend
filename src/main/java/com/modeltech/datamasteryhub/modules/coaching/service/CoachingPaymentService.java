@@ -13,6 +13,8 @@ import com.modeltech.datamasteryhub.modules.coaching.entity.CoachingRequest;
 import com.modeltech.datamasteryhub.modules.coaching.entity.CoachingStatus;
 import com.modeltech.datamasteryhub.modules.coaching.repository.CoachingCheckoutRepository;
 import com.modeltech.datamasteryhub.modules.coaching.repository.CoachingRequestRepository;
+import com.modeltech.datamasteryhub.modules.legal.LegalContext;
+import com.modeltech.datamasteryhub.modules.legal.service.LegalService;
 import com.modeltech.datamasteryhub.modules.networking.service.StorageService;
 import com.modeltech.datamasteryhub.modules.payments.GatewayHealth;
 import com.modeltech.datamasteryhub.modules.payments.OnlineCheckoutVerifier;
@@ -63,6 +65,7 @@ public class CoachingPaymentService {
     private static final Duration RECHECK_DELAY = Duration.ofSeconds(3);
     private static final Duration ABANDON_AFTER = Duration.ofHours(48);
     private static final int PROOF_LINK_MINUTES = 10;
+    private static final String SUBJECT = "COACHING_PAYMENT";
 
     private final CoachingRequestRepository requests;
     private final CoachingCheckoutRepository checkouts;
@@ -75,6 +78,7 @@ public class CoachingPaymentService {
     private final AuditService audit;
     private final CoachingMailer mailer;
     private final CoachingService coaching;
+    private final LegalService legal;
     private final TransactionTemplate tx;
 
     @Value("${app.frontend.url:http://localhost:8088}")
@@ -82,7 +86,7 @@ public class CoachingPaymentService {
 
     public CoachingPaymentService(CoachingRequestRepository requests, CoachingCheckoutRepository checkouts, PaymentGateway gateway, PaymentPolicy policy,
                                   PaymentFees fees, GatewayHealth health, OnlineCheckoutVerifier verifier, StorageService storage, AuditService audit,
-                                  CoachingMailer mailer, CoachingService coaching, PlatformTransactionManager txManager) {
+                                  CoachingMailer mailer, CoachingService coaching, LegalService legal, PlatformTransactionManager txManager) {
         this.requests = requests;
         this.checkouts = checkouts;
         this.gateway = gateway;
@@ -94,6 +98,7 @@ public class CoachingPaymentService {
         this.audit = audit;
         this.mailer = mailer;
         this.coaching = coaching;
+        this.legal = legal;
         this.tx = new TransactionTemplate(txManager);
     }
 
@@ -112,7 +117,29 @@ public class CoachingPaymentService {
         return new PayView(r.getFirstName(), r.getOfferLabel(), r.getTrainerName(), r.getStatus(), amount,
                 new PayOptions(o.online(), o.manual(), o.fallback(), o.reason(), total - amount, total),
                 r.getManualMethod(), r.getProofObjectKey() != null, note, r.getPaidChannel(),
-                r.getStatus() == CoachingStatus.PAID ? r.getReceiptUrl() : null, mailer.bookingUrl(), r.getTokenExpiresAt());
+                r.getStatus() == CoachingStatus.PAID ? r.getReceiptUrl() : null, mailer.bookingUrl(), r.getTokenExpiresAt(),
+                r.getStatus() == CoachingStatus.AWAITING_PAYMENT ? legal.pendingForSubject(LegalContext.COACHING_PAYMENT, SUBJECT, r.getId().toString()) : List.of());
+    }
+
+    // ── Conditions de vente : à accepter avant de payer ─────────────
+
+    /** Le client accepte les conditions de vente en vigueur ; la preuve est enregistrée. Rien d'exigé : sans effet. */
+    public PayView acceptTerms(String token, List<UUID> documentIds) {
+        tx.executeWithoutResult(s -> {
+            CoachingRequest r = byToken(token);
+            if (r.getStatus() != CoachingStatus.AWAITING_PAYMENT) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce coaching n'attend plus de paiement.");
+            }
+            legal.requireAccepted(LegalContext.COACHING_PAYMENT, documentIds);
+            legal.record(LegalContext.COACHING_PAYMENT, SUBJECT, r.getId().toString(), r.getEmail(), r.fullName(), documentIds);
+        });
+        return view(token);
+    }
+
+    private void requireTerms(CoachingRequest r) {
+        if (!legal.hasAccepted(LegalContext.COACHING_PAYMENT, SUBJECT, r.getId().toString())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Acceptez d'abord les conditions générales de vente pour payer.");
+        }
     }
 
     // ── Paiement en ligne : démarrage ───────────────────────────────
@@ -129,6 +156,7 @@ public class CoachingPaymentService {
             if (r.getStatus() != CoachingStatus.AWAITING_PAYMENT) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce coaching n'attend plus de paiement.");
             }
+            requireTerms(r);
             PaymentOptions options = policy.optionsFor(PayableService.COACHING, false);
             if (!options.online()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, options.reason() != null ? options.reason() : "Le paiement en ligne n'est pas proposé pour ce coaching.");
@@ -297,6 +325,7 @@ public class CoachingPaymentService {
             if (locked.getStatus() != CoachingStatus.AWAITING_PAYMENT) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ce coaching n'attend plus de paiement.");
             }
+            requireTerms(locked);
             // Le manuel n'est qu'un secours quand le service est réglé « en ligne » et que la passerelle répond
             if (!policy.optionsFor(PayableService.COACHING, false).manual()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Le paiement manuel n'est pas proposé : réglez en ligne.");
