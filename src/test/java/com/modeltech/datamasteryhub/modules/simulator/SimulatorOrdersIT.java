@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modeltech.datamasteryhub.AbstractIntegrationTest;
 import com.modeltech.datamasteryhub.TestAuth;
 import com.modeltech.datamasteryhub.modules.audit.repository.AuditRepository;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.CheckoutRequest;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.CheckoutSession;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.GatewayException;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.GatewayPayment;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.PaymentState;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.CheckoutRequest;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.CheckoutSession;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.GatewayException;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.GatewayPayment;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.PaymentState;
 import com.modeltech.datamasteryhub.modules.simulator.service.OrderService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,8 +59,11 @@ class SimulatorOrdersIT extends AbstractIntegrationTest {
     private final AtomicInteger sequence = new AtomicInteger();
     private CheckoutRequest lastRequest;
 
+    @Autowired private com.modeltech.datamasteryhub.modules.payments.GatewayHealth health;
+
     @BeforeEach
     void gateway() {
+        health.reset();
         when(gateway.configured()).thenReturn(true);
         when(gateway.provider()).thenReturn("PAYDUNYA");
         when(gateway.mode()).thenReturn("sandbox");
@@ -109,14 +112,23 @@ class SimulatorOrdersIT extends AbstractIntegrationTest {
     @Test
     void thePublicPlansShowTheRealPrices_andOnlineSalesAreOffUntilTheGatewayIsConfigured() throws Exception {
         JsonNode plans = json(mockMvc.perform(get(API + "/plans")).andExpect(status().isOk())).at("/data");
-        assertThat(plans.at("/paymentsEnabled").asBoolean()).isTrue();
+        assertThat(plans.at("/online").asBoolean()).isTrue();
+        assertThat(plans.at("/manual").asBoolean()).isFalse();   // « en ligne » seulement tant que la passerelle répond
         assertThat(plans.at("/plans")).hasSize(3);
         assertThat(plans.at("/plans/1/code").asText()).isEqualTo("PRO");
         assertThat(plans.at("/plans/1/priceXof").asInt()).isEqualTo(45000);
 
+        // clés absentes : le paiement en ligne n'est plus proposé, le manuel prend le relais (jamais « aucun moyen de payer »)
         when(gateway.configured()).thenReturn(false);
-        assertThat(json(mockMvc.perform(get(API + "/plans"))).at("/data/paymentsEnabled").asBoolean()).isFalse();
-        mockMvc.perform(post(API + "/orders").contentType(MediaType.APPLICATION_JSON).content(body("PRO", "awa@test.local"))).andExpect(status().isServiceUnavailable());
+        JsonNode degraded = json(mockMvc.perform(get(API + "/plans"))).at("/data");
+        assertThat(degraded.at("/online").asBoolean()).isFalse();
+        assertThat(degraded.at("/manual").asBoolean()).isTrue();
+        assertThat(degraded.at("/fallback").asBoolean()).isTrue();
+        assertThat(degraded.at("/fallbackReason").asText()).contains("Wave");
+        mockMvc.perform(post(API + "/orders").contentType(MediaType.APPLICATION_JSON)
+                .content(body("PRO", "awa@test.local").replace("\"plan\"", "\"channel\":\"ONLINE\",\"plan\""))).andExpect(status().isConflict());
+        assertThat(json(mockMvc.perform(post(API + "/orders").contentType(MediaType.APPLICATION_JSON).content(body("PRO", "awa@test.local")))
+                .andExpect(status().isCreated())).at("/data/channel").asText()).isEqualTo("MANUAL");
     }
 
     // ── Commande ─────────────────────────────────────────────────────

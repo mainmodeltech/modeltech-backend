@@ -94,6 +94,8 @@ public class SecurityConfig {
                                 "/api/v1/simulator/waitlist",
                                 "/api/v1/simulator/trial",
                                 "/api/v1/simulator/orders",
+                                "/api/v1/simulator/orders/*/declare",
+                                "/api/v1/simulator/orders/*/proof",
                                 // Notification du prestataire de paiement : rien n'y est cru, l'etat est relu aupres de lui (voir PayDunyaIpnController)
                                 "/api/v1/payments/paydunya/ipn",
                                 "/api/v1/partner-applications",
@@ -103,6 +105,12 @@ public class SecurityConfig {
                                 "/api/v1/registrations",
                                 // Lien de paiement : le jeton (256 bits, expirant) fait office d'authentification
                                 "/api/v1/payments/*/declaration",
+                                "/api/v1/payments/*/online",
+                                // Coaching : la demande est publique ; la page de paiement s'ouvre avec son jeton secret
+                                "/api/v1/coaching-requests",
+                                "/api/v1/coaching/payments/*/online",
+                                "/api/v1/coaching/payments/*/declaration",
+                                "/api/v1/coaching/payments/*/proof",
                                 "/api/v1/payments/*/proof"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
@@ -124,6 +132,9 @@ public class SecurityConfig {
                                 "/api/v1/payments/*",
                                 "/api/v1/payments/*/invoice",
                                 "/api/v1/payments/*/receipt",
+                                "/api/v1/payments/online-checkouts/*",
+                                "/api/v1/coaching/payments/*",
+                                "/api/v1/coaching/checkouts/*",
                                 "/api/v1/certificates/*",
                                 "/api/v1/certificates/*/pdf",
                                 "/api/v1/site-settings",

@@ -79,10 +79,14 @@ public enum Permission {
     SIMULATOR_REVIEW("Simulateur", "Relire les questions d'un autre auteur (approuver ou renvoyer)"),
     SIMULATOR_MANAGE("Simulateur", "Publier et retirer des questions, importer, gérer les blueprints"),
 
+    // ── Coaching ───────────────────────────────────────────────────
+    COACHING_MANAGE("Coaching", "Traiter les demandes de coaching : analyser, choisir le formateur, valider, fixer le montant et envoyer le lien de paiement"),
+
     // ── Administration ─────────────────────────────────────────────
     ACCOUNTS_MANAGE("Administration", "Gérer les comptes du back-office (création, profils, désactivation, MFA)"),
     PROFILES_MANAGE("Administration", "Gérer les profils et leurs droits"),
     SYSTEM_MANAGE("Administration", "Réglages techniques (e-mail de test…)"),
+    PAYMENT_SETTINGS_MANAGE("Administration", "Choisir les moyens de paiement (en ligne ou manuel) et couper le paiement en ligne — réservé à la Direction"),
     AUDIT_VIEW("Administration", "Consulter le journal d'audit");
 
     private final String group;

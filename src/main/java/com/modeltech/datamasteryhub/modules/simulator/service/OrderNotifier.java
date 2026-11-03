@@ -57,7 +57,7 @@ public class OrderNotifier {
     void send(SimOrder o) {
         String email = o.getLearner().getEmail();
         String name = o.getLearner().getFirstName();
-        String amount = NumberFormat.getIntegerInstance(Locale.FRANCE).format(o.getAmountXof()).replace(' ', ' ').replace(' ', ' ') + " FCFA";
+        String amount = NumberFormat.getIntegerInstance(Locale.FRANCE).format(o.getChargedXof()).replace(' ', ' ').replace(' ', ' ') + " FCFA";
         LocalDateTime until = o.getPaidAt().plusDays(o.getDurationDays());
         EmailContent.Builder b = EmailContent.builder("Votre accès au simulateur PL-300 est ouvert")
                 .preheader("Paiement confirmé : " + amount)

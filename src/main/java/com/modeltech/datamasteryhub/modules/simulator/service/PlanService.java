@@ -9,7 +9,10 @@ import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.PlanView
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.PlansView;
 import com.modeltech.datamasteryhub.modules.simulator.entity.PlanCode;
 import com.modeltech.datamasteryhub.modules.simulator.entity.SimPlan;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway;
+import com.modeltech.datamasteryhub.modules.payments.PayableService;
+import com.modeltech.datamasteryhub.modules.payments.PaymentFees;
+import com.modeltech.datamasteryhub.modules.payments.PaymentOptions;
+import com.modeltech.datamasteryhub.modules.payments.PaymentPolicy;
 import com.modeltech.datamasteryhub.modules.simulator.repository.SimPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,13 +30,16 @@ import java.util.List;
 public class PlanService {
 
     private final SimPlanRepository plans;
-    private final PaymentGateway gateway;
+    private final PaymentPolicy policy;
+    private final PaymentFees fees;
     private final AuditService audit;
 
     public PlansView publicPlans() {
         List<PlanView> items = plans.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
-                .map(p -> new PlanView(p.getCode(), p.getName(), p.getPriceXof(), p.getDurationDays(), p.getExamAttempts())).toList();
-        return new PlansView(gateway.configured(), items);
+                .map(p -> new PlanView(p.getCode(), p.getName(), p.getPriceXof(), p.getDurationDays(), p.getExamAttempts(),
+                        (int) fees.onlineFee(p.getPriceXof()), (int) fees.onlineTotal(p.getPriceXof()))).toList();
+        PaymentOptions o = policy.optionsFor(PayableService.SIMULATOR, false);
+        return new PlansView(o.online(), o.manual(), o.fallback(), o.reason(), items);
     }
 
     public List<AdminPlanView> adminPlans() {

@@ -60,6 +60,16 @@ public enum AuditAction {
     SIM_ORDER_PAID("Simulateur", "Forfait du simulateur payé en ligne"),
     SIM_ORDER_VERIFIED("Simulateur", "Commande du simulateur revérifiée"),
     SIM_PLAN_UPDATED("Simulateur", "Forfait du simulateur modifié"),
+    SIM_ORDER_DECLARED("Simulateur", "Paiement manuel d'une commande du simulateur déclaré"),
+    SIM_ORDER_REJECTED("Simulateur", "Paiement manuel d'une commande du simulateur refusé"),
+    PAYMENT_SETTINGS_CHANGED("Paiements", "Réglages de paiement modifiés"),
+    PAYMENT_ONLINE_MISMATCH("Paiements", "Paiement en ligne encaissé mais incohérent : à contrôler"),
+    COACHING_VALIDATED("Coaching", "Demande de coaching validée, lien de paiement envoyé"),
+    COACHING_DECLINED("Coaching", "Demande de coaching refusée"),
+    COACHING_CANCELLED("Coaching", "Coaching annulé avant paiement"),
+    COACHING_PAYMENT_DECLARED("Coaching", "Paiement manuel d'un coaching déclaré"),
+    COACHING_PAYMENT_REJECTED("Coaching", "Paiement manuel d'un coaching refusé"),
+    COACHING_PAID("Coaching", "Coaching payé"),
 
     // ── Site ──
     SITE_CONTENT_CHANGED("Site", "Contenu du site modifié");

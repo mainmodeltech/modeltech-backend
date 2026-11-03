@@ -1,10 +1,10 @@
-package com.modeltech.datamasteryhub.modules.simulator.payment;
+package com.modeltech.datamasteryhub.modules.payments.gateway;
 
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.CheckoutRequest;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.CheckoutSession;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.GatewayException;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.GatewayPayment;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway.PaymentState;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.CheckoutRequest;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.CheckoutSession;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.GatewayException;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.GatewayPayment;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway.PaymentState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;

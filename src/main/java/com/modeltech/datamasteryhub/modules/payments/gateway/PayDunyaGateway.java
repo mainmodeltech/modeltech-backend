@@ -1,4 +1,4 @@
-package com.modeltech.datamasteryhub.modules.simulator.payment;
+package com.modeltech.datamasteryhub.modules.payments.gateway;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;

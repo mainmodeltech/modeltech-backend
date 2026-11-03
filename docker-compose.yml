@@ -58,6 +58,13 @@ services:
       PAYDUNYA_STORE_NAME: ${PAYDUNYA_STORE_NAME:-Model Technologie}
       # Adresse de notification (IPN) declaree chez PayDunya, ex. https://api.model-technologie.com/api/v1/payments/paydunya/ipn
       PAYDUNYA_CALLBACK_URL: ${PAYDUNYA_CALLBACK_URL:-}
+      # Frais du prestataire : ABSORB (defaut, les prix du catalogue les absorbent) ou PASS_ON (repercutes au client, paiement en ligne seulement)
+      PAYMENTS_FEES_MODE: ${PAYMENTS_FEES_MODE:-ABSORB}
+      PAYMENTS_FEES_PERCENT: ${PAYMENTS_FEES_PERCENT:-0}
+      PAYMENTS_FEES_FIXED_XOF: ${PAYMENTS_FEES_FIXED_XOF:-0}
+      # Coaching : lien de reservation d'un echange de presentation (15 a 20 min, vide = non propose) et destinataires internes des alertes (vide = adresse generale)
+      COACHING_BOOKING_URL: ${COACHING_BOOKING_URL:-}
+      COACHING_NOTIFY_TO: ${COACHING_NOTIFY_TO:-}
     depends_on:
       - db
       - minio

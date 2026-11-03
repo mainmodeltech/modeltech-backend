@@ -80,6 +80,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final com.modeltech.datamasteryhub.modules.training.repository.InvoiceRepository invoiceRepository;
     private final AuditService audit;
     private final FourEyes fourEyes;
+    private final com.modeltech.datamasteryhub.modules.payments.PaymentPolicy paymentPolicy;
 
     /** Délai (jours) laissé pour payer quand l'admin ne fixe pas d'échéance. */
     @Value("${app.payment.default-due-days:2}")
@@ -182,6 +183,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public AdminPaymentResponse recordManualPayment(UUID registrationId, ManualPaymentRequest request) {
         Registration reg = getRegistration(registrationId);
+        if (request.getMethod() == com.modeltech.datamasteryhub.modules.training.enums.PaymentMethod.PAYDUNYA) {
+            // Réservé au serveur : seul un paiement relu chez le prestataire peut porter ce moyen.
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le paiement en ligne ne se saisit pas à la main.");
+        }
         if (!AWAITING_PAYMENT.contains(reg.getStatus()) && reg.getStatus() != RegistrationStatus.CONFIRMED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cette candidature n'a pas d'échéance à régler (statut : " + reg.getStatus() + ").");
@@ -429,6 +434,46 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
+    public AdminPaymentResponse confirmOnline(UUID paymentId, String reference) {
+        Payment payment = getPayment(paymentId);
+        if (payment.getStatus() != PaymentStatus.DECLARED && payment.getStatus() != PaymentStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ce paiement ne peut pas être confirmé (statut : " + payment.getStatus() + ").");
+        }
+        Registration reg = payment.getRegistration();
+        if (reg.getStatus() == RegistrationStatus.CANCELLED || reg.getStatus() == RegistrationStatus.REJECTED
+                || reg.getStatus() == RegistrationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "L'inscription n'est plus active (statut : " + reg.getStatus() + ").");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        deleteProofQuietly(payment);   // une éventuelle déclaration manuelle antérieure n'a plus d'objet
+        payment.setStatus(PaymentStatus.CONFIRMED);
+        payment.setMethod(com.modeltech.datamasteryhub.modules.training.enums.PaymentMethod.PAYDUNYA);
+        payment.setReference(reference);
+        payment.setPaidAt(now);
+        payment.setConfirmedAt(now);
+        payment.setConfirmedBy("paiement-en-ligne");
+        payment.setConfirmedUnchecked(false);
+        payment.setRejectionReason(null);
+        paymentRepository.save(payment);
+
+        if (AWAITING_PAYMENT.contains(reg.getStatus())) {
+            openEnrollment(reg);
+        }
+        Map<String, Object> confirmed = new LinkedHashMap<>();
+        confirmed.put("registrationId", reg.getId().toString());
+        confirmed.put("montant", payment.getAmount());
+        confirmed.put("moyen", "PAYDUNYA");
+        confirmed.put("reference", reference);
+        audit.record(AuditAction.PAYMENT_CONFIRMED, "Payment", payment.getId(),
+                "Paiement de " + payment.getAmount() + " " + payment.getCurrency() + " reçu en ligne et confirmé automatiquement pour " + person(reg),
+                confirmed, null);
+        return paymentMapper.toAdmin(payment);
+    }
+
+    @Override
+    @Transactional
     public AdminPaymentResponse rejectPayment(UUID paymentId, String reason) {
         Payment payment = getPayment(paymentId);
         if (payment.getStatus() != PaymentStatus.DECLARED) {
@@ -505,6 +550,11 @@ public class PaymentServiceImpl implements PaymentService {
                     payment.getStatus() == PaymentStatus.DECLARED
                             ? "Votre paiement a déjà été déclaré : nous le vérifions."
                             : "Ce paiement n'est plus à régler.");
+        }
+        // Le manuel n'est qu'un secours quand le service est réglé « en ligne » : tant que la passerelle répond, on ne déclare pas à la main.
+        if (!paymentPolicy.optionsFor(com.modeltech.datamasteryhub.modules.payments.PayableService.REGISTRATION,
+                reg.getPayerType() == com.modeltech.datamasteryhub.modules.training.enums.PayerType.COMPANY).manual()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Le paiement manuel n'est pas proposé : réglez en ligne.");
         }
         if (reg.getStatus() != RegistrationStatus.PAYMENT_PENDING && reg.getStatus() != RegistrationStatus.CONFIRMED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cette inscription n'attend plus de paiement.");

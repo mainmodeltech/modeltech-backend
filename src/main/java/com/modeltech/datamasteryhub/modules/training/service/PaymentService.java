@@ -46,6 +46,12 @@ public interface PaymentService {
 
     AdminPaymentResponse rejectPayment(UUID paymentId, String reason);
 
+    /**
+     * Confirme une échéance payée <b>en ligne</b>, après que le paiement a été relu chez le prestataire (voir RegistrationCheckoutService).
+     * Aucun contrôle à quatre yeux : c'est le prestataire, pas une personne, qui atteste l'encaissement. Ouvre l'inscription au premier paiement.
+     */
+    AdminPaymentResponse confirmOnline(UUID paymentId, String reference);
+
     AdminPaymentResponse remind(UUID paymentId);
 
     /** Consigne le remboursement d'une échéance confirmée ; si plus rien n'est payé, l'inscription est annulée. */

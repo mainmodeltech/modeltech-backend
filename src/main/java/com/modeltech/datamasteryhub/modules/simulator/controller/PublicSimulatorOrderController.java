@@ -2,6 +2,7 @@ package com.modeltech.datamasteryhub.modules.simulator.controller;
 
 import com.modeltech.datamasteryhub.common.dto.ApiResponse;
 import com.modeltech.datamasteryhub.common.ratelimit.IpRateLimiter;
+import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.DeclareRequest;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.OrderStatusView;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.PlansView;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.PurchaseRequest;
@@ -14,13 +15,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -47,6 +51,21 @@ public class PublicSimulatorOrderController {
     public ResponseEntity<ApiResponse<PurchaseResponse>> order(@Valid @RequestBody PurchaseRequest request, HttpServletRequest http) {
         rateLimiter.check(http, "simulator-order");
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Commande créée", orders.create(request)));
+    }
+
+    @PostMapping("/orders/{ref}/declare")
+    @Operation(summary = "Déclarer un paiement manuel (Wave, Orange Money, virement)",
+            description = "Réservé aux commandes payées manuellement : moyen + référence de l'opération. L'équipe vérifie puis confirme ; l'accès ne s'ouvre qu'à la confirmation.")
+    public ResponseEntity<ApiResponse<OrderStatusView>> declare(@PathVariable UUID ref, @Valid @RequestBody DeclareRequest request, HttpServletRequest http) {
+        rateLimiter.check(http, "simulator-order-declare");
+        return ResponseEntity.ok(ApiResponse.ok("Paiement déclaré : nous le vérifions", orders.declare(ref, request)));
+    }
+
+    @PostMapping(value = "/orders/{ref}/proof", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Joindre le justificatif d'un paiement manuel (image)")
+    public ResponseEntity<ApiResponse<OrderStatusView>> proof(@PathVariable UUID ref, @RequestPart("file") MultipartFile file, HttpServletRequest http) {
+        rateLimiter.check(http, "simulator-order-proof");
+        return ResponseEntity.ok(ApiResponse.ok("Justificatif enregistré", orders.uploadProof(ref, file)));
     }
 
     @GetMapping("/orders/{ref}")
