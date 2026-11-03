@@ -6,9 +6,11 @@ import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.AdminPla
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.GatewayStatus;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.OrderView;
 import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.PlanUpdateRequest;
+import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.ProofLink;
+import com.modeltech.datamasteryhub.modules.simulator.dto.OrderPayloads.RejectOrderRequest;
 import com.modeltech.datamasteryhub.modules.simulator.entity.OrderStatus;
 import com.modeltech.datamasteryhub.modules.simulator.entity.PlanCode;
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway;
 import com.modeltech.datamasteryhub.modules.simulator.service.OrderService;
 import com.modeltech.datamasteryhub.modules.simulator.service.PlanService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,6 +62,23 @@ public class AdminSimulatorOrderController {
     @PostMapping("/orders/{id}/verify")
     public ResponseEntity<ApiResponse<OrderView>> verify(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok("Commande revérifiée", orders.verify(id, Actor.email())));
+    }
+
+    /** Confirme un paiement manuel après avoir vu l'argent : ouvre l'accès. */
+    @PostMapping("/orders/{id}/confirm")
+    public ResponseEntity<ApiResponse<OrderView>> confirm(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok("Paiement confirmé : accès ouvert", orders.confirm(id, Actor.email())));
+    }
+
+    /** Refuse un paiement déclaré (montant ou justificatif non conforme) : l'acheteur peut déclarer à nouveau. */
+    @PostMapping("/orders/{id}/reject")
+    public ResponseEntity<ApiResponse<OrderView>> reject(@PathVariable UUID id, @Valid @RequestBody RejectOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Paiement refusé", orders.reject(id, request.reason(), Actor.email())));
+    }
+
+    @GetMapping("/orders/{id}/proof")
+    public ResponseEntity<ApiResponse<ProofLink>> proof(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok("Justificatif", new ProofLink(orders.proofLink(id))));
     }
 
     @GetMapping("/payments/status")

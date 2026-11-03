@@ -1,6 +1,6 @@
 package com.modeltech.datamasteryhub.modules.simulator.controller;
 
-import com.modeltech.datamasteryhub.modules.simulator.payment.PaymentGateway;
+import com.modeltech.datamasteryhub.modules.payments.gateway.PaymentGateway;
 import com.modeltech.datamasteryhub.modules.simulator.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

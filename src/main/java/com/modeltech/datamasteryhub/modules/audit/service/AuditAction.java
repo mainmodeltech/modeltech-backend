@@ -60,6 +60,9 @@ public enum AuditAction {
     SIM_ORDER_PAID("Simulateur", "Forfait du simulateur payé en ligne"),
     SIM_ORDER_VERIFIED("Simulateur", "Commande du simulateur revérifiée"),
     SIM_PLAN_UPDATED("Simulateur", "Forfait du simulateur modifié"),
+    SIM_ORDER_DECLARED("Simulateur", "Paiement manuel d'une commande du simulateur déclaré"),
+    SIM_ORDER_REJECTED("Simulateur", "Paiement manuel d'une commande du simulateur refusé"),
+    PAYMENT_SETTINGS_CHANGED("Paiements", "Réglages de paiement modifiés"),
 
     // ── Site ──
     SITE_CONTENT_CHANGED("Site", "Contenu du site modifié");

@@ -94,6 +94,8 @@ public class SecurityConfig {
                                 "/api/v1/simulator/waitlist",
                                 "/api/v1/simulator/trial",
                                 "/api/v1/simulator/orders",
+                                "/api/v1/simulator/orders/*/declare",
+                                "/api/v1/simulator/orders/*/proof",
                                 // Notification du prestataire de paiement : rien n'y est cru, l'etat est relu aupres de lui (voir PayDunyaIpnController)
                                 "/api/v1/payments/paydunya/ipn",
                                 "/api/v1/partner-applications",

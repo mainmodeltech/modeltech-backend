@@ -34,8 +34,41 @@ public class SimOrder {
     @Column(name = "plan_name", nullable = false)
     private String planName;
 
+    /** Prix du catalogue. */
     @Column(name = "amount_xof", nullable = false)
     private int amountXof;
+
+    /** Frais de paiement en ligne répercutés sur le client (0 si on les absorbe ou si le paiement est manuel). */
+    @Column(name = "fee_xof", nullable = false)
+    private int feeXof;
+
+    /** Montant réellement encaissé : prix + frais. C'est lui que le prestataire doit confirmer. */
+    @Column(name = "charged_xof", nullable = false)
+    private int chargedXof;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private OrderChannel channel = OrderChannel.ONLINE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "manual_method", length = 20)
+    private ManualMethod manualMethod;
+
+    @Column(name = "manual_reference", length = 120)
+    private String manualReference;
+
+    @Column(name = "declared_at")
+    private LocalDateTime declaredAt;
+
+    /** Justificatif du paiement manuel : pièce privée, jamais d'adresse publique (lien signé à courte durée pour l'équipe). */
+    @Column(name = "proof_object_key", length = 512)
+    private String proofObjectKey;
+
+    @Column(name = "confirmed_by")
+    private String confirmedBy;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
 
     @Column(name = "duration_days", nullable = false)
     private int durationDays;

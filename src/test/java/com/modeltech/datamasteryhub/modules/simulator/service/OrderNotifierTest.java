@@ -53,6 +53,7 @@ class OrderNotifierTest {
         order.setPlanCode(PlanCode.PRO);
         order.setPlanName("Pro");
         order.setAmountXof(45000);
+        order.setChargedXof(45000);
         order.setDurationDays(90);
         order.setExamAttempts(5);
         order.setPaidAt(LocalDateTime.of(2026, 11, 2, 10, 0));

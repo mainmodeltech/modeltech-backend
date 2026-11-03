@@ -1,4 +1,4 @@
-package com.modeltech.datamasteryhub.modules.simulator.payment;
+package com.modeltech.datamasteryhub.modules.payments.gateway;
 
 /**
  * Passerelle de paiement en ligne (patron Adapter) : le domaine du simulateur ne connaît que ce contrat, jamais le fournisseur.

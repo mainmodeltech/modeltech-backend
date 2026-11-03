@@ -61,7 +61,7 @@ public final class DefaultProfiles {
 
         // Profils d'avant la refonte, conservés pour que rien ne casse le jour de la bascule : à réduire ensuite.
         EnumSet<Permission> fullManagement = EnumSet.allOf(Permission.class);
-        fullManagement.removeAll(EnumSet.of(ACCOUNTS_MANAGE, PROFILES_MANAGE, SYSTEM_MANAGE, AUDIT_VIEW));
+        fullManagement.removeAll(EnumSet.of(ACCOUNTS_MANAGE, PROFILES_MANAGE, SYSTEM_MANAGE, PAYMENT_SETTINGS_MANAGE, AUDIT_VIEW));
         add(RoleNames.ADMIN, "Gestion complète (transition)", "Ancien profil « Administrateur » : tout sauf les comptes, les profils et l'audit. À remplacer par les profils par métier.",
                 fullManagement);
 

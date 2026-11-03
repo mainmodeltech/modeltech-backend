@@ -63,6 +63,12 @@ app:
   masterclass:
     meet-link: ${MASTERCLASS_MEET_LINK:https://meet.google.com/xxx-xxxx-xxx}
   # Paiement en ligne du simulateur (PayDunya). Les cles viennent UNIQUEMENT de l'environnement : vides = achat en ligne desactive.
+  # Frais du prestataire de paiement : ABSORB (defaut : le client paie le prix du catalogue) ou PASS_ON (repercutes sur le paiement en ligne).
+  payments:
+    fees:
+      mode: ${PAYMENTS_FEES_MODE:ABSORB}
+      percent: ${PAYMENTS_FEES_PERCENT:0}          # taux du prestataire en %, ex. 3.5
+      fixed-xof: ${PAYMENTS_FEES_FIXED_XOF:0}      # part fixe par transaction, en XOF
   paydunya:
     mode: ${PAYDUNYA_MODE:sandbox}                  # sandbox (aucun argent reel) ou live
     master-key: ${PAYDUNYA_MASTER_KEY:}

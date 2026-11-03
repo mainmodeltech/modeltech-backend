@@ -70,7 +70,7 @@ public class AccessService {
 
     /** Accès ouvert par un achat en ligne confirmé (appelé par la vérification d'une commande, jamais depuis une requête du navigateur). */
     @Transactional
-    public UUID grantPurchased(Learner learner, PlanCode plan, int days, int examAttempts, UUID orderId, String reason) {
+    public UUID grantPurchased(Learner learner, PlanCode plan, int days, int examAttempts, UUID orderId, String reason, String grantedBy) {
         SimCertification certification = certifications.findByCodeAndActiveTrue(QuestionBankService.CERTIFICATION)
                 .orElseThrow(() -> new ResourceNotFoundException("Certification", "code", QuestionBankService.CERTIFICATION));
         LocalDateTime now = LocalDateTime.now();
@@ -81,7 +81,7 @@ public class AccessService {
         g.setStartsAt(now);
         g.setExpiresAt(now.plusDays(days));
         g.setExamAttemptsTotal(examAttempts);
-        g.setGrantedBy("paiement-en-ligne");
+        g.setGrantedBy(grantedBy);
         g.setReason(reason);
         g.setSourcePaymentId(orderId);
         return grants.save(g).getId();
